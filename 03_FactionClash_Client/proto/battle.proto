@@ -1,0 +1,79 @@
+syntax = "proto3";
+package battle;
+
+enum Faction { RED = 0; BLUE = 1; }
+enum UnitType { INFANTRY = 0; ARCHER = 1; CAVALRY = 2; }
+enum MacroType { ADVANCE = 0; ENCIRCLE = 1; RETREAT = 2; FLANK = 3; }
+
+// --- Client → Server ---
+message C_JoinBattle {
+    Faction faction = 1;
+    UnitType unit_type = 2;
+}
+message C_SceneReady {}
+message C_Move {
+    float x = 1;
+    float z = 2;
+    float vx = 3;
+    float vz = 4;
+}
+message C_Attack {
+    uint32 target_id = 1;
+}
+
+// --- Server → Client ---
+message S_BattleInit {
+    uint32 unit_id = 1;
+    Faction faction = 2;
+    UnitType unit_type = 3;
+    float spawn_x = 4;
+    float spawn_z = 5;
+}
+message S_Spawn {
+    uint32 unit_id = 1;
+    Faction faction = 2;
+    UnitType unit_type = 3;
+    float x = 4;
+    float z = 5;
+    int32 hp = 6;
+    int32 max_hp = 7;
+}
+message S_Despawn {
+    uint32 unit_id = 1;
+}
+message S_Move {
+    repeated UnitPos units = 1;
+}
+message UnitPos {
+    uint32 unit_id = 1;
+    float x = 2;
+    float z = 3;
+    float vx = 4;
+    float vz = 5;
+}
+message S_MacroCommand {
+    MacroType command = 1;
+    float target_x = 2;
+    float target_z = 3;
+    Faction faction = 4;
+}
+message S_MoraleUpdate {
+    repeated UnitMorale units = 1;
+}
+message UnitMorale {
+    uint32 unit_id = 1;
+    int32 morale = 2;
+}
+message S_Damage {
+    uint32 attacker_id = 1;
+    uint32 target_id = 2;
+    int32 damage = 3;
+    int32 remaining_hp = 4;
+}
+message S_Death {
+    uint32 unit_id = 1;
+    uint32 killer_id = 2;
+}
+message S_BattleEnd {
+    Faction winner = 1;
+}

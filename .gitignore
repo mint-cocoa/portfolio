@@ -1,0 +1,6 @@
+*.db
+_archive/
+_plans/
+.claude/
+_site/
+_freeze/
