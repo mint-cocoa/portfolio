@@ -49,6 +49,24 @@
       color: #495057;
       font-weight: 500;
     }
+    .project-links {
+      margin-top: 0.75rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+    .project-links a {
+      font-size: 0.85rem;
+      color: #6c757d;
+      text-decoration: none;
+      padding: 0.2rem 0.6rem;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .project-links a:hover {
+      color: #2780e3;
+      border-color: #2780e3;
+    }
     .video-section { margin-bottom: 2.5rem; }
     .video-container {
       position: relative;
@@ -119,6 +137,10 @@
           <span>Linux</span>
           <span>Game Server</span>
         </div>
+        <div class="project-links">
+          <a href="server/ServerCorePortfolio.html"><i class="bi bi-file-earmark-text"></i> HTML</a>
+          <a href="server/ServerCorePortfolio.pdf" download><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+        </div>
       </div>
 
       <div class="project-entry">
@@ -129,6 +151,10 @@
           <span>DirectX 11</span>
           <span>RPG</span>
           <span>Multiplayer</span>
+        </div>
+        <div class="project-links">
+          <a href="client/ClientPortfolio.html"><i class="bi bi-file-earmark-text"></i> HTML</a>
+          <a href="client/ClientPortfolio.pdf" download><i class="bi bi-file-earmark-pdf"></i> PDF</a>
         </div>
       </div>
     </section>
