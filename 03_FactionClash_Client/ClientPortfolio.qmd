@@ -1,6 +1,6 @@
 ---
 title: "클라이언트 구현 포트폴리오"
-subtitle: "C++ DirectX 11 아이소메트릭 멀티플레이 던전 RPG"
+subtitle: "C++ DirectX 11 멀티플레이 던전 RPG 클라이언트"
 author: "배진후"
 lang: ko
 format:
@@ -22,17 +22,6 @@ format:
         .quarto-figure .mermaid-js { text-align: center; }
         .mermaid-js svg { max-width: 100% !important; min-width: 70%; }
         </style>
-  pdf:
-    documentclass: article
-    papersize: a4
-    toc: true
-    number-sections: true
-    colorlinks: true
-    geometry:
-      - margin=2.5cm
-    include-in-header:
-      text: |
-        \usepackage{kotex}
 ---
 
 ## 프로젝트 개요 {#sec-overview}

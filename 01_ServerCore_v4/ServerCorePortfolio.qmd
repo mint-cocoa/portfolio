@@ -1,6 +1,6 @@
 ---
-title: "입사 지원 포트폴리오"
-subtitle: "io_uring 기반 C++ 범용 네트워크 라이브러리와 데모 멀티플레이 던전 크롤러 게임"
+title: "서버 구현 포트폴리오"
+subtitle: "io_uring 기반 C++ 게임 서버 라이브러리 및 데모 멀티플레이 서버"
 author: "배진후"
 lang: ko
 format:
@@ -16,17 +16,6 @@ format:
     linestretch: 1.6
     mermaid:
       theme: neutral
-  pdf:
-    documentclass: article
-    papersize: a4
-    toc: true
-    number-sections: true
-    colorlinks: true
-    geometry:
-      - margin=2.5cm
-    include-in-header:
-      text: |
-        \usepackage{kotex}
 ---
 
 ## 프로젝트 개요 {#sec-overview}
