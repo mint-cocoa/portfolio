@@ -1,0 +1,12 @@
+format:
+  pdf:
+    documentclass: article
+    papersize: a4
+    toc: true
+    number-sections: true
+    colorlinks: true
+    geometry:
+      - margin=2.5cm
+    include-in-header:
+      text: |
+        \usepackage{kotex}
