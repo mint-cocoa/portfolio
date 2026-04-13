@@ -41,6 +41,16 @@
     .project-entry h3 a:hover { text-decoration: underline; }
     .project-entry p { color: #495057; font-size: 0.95rem; margin-bottom: 0.6rem; }
     .tech-stack { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .pdf-link {
+      display: inline-block;
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      color: #2780e3;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .pdf-link:hover { text-decoration: underline; }
+    .pdf-link i { margin-right: 0.2rem; }
     .tech-stack span {
       font-size: 0.75rem;
       padding: 0.15rem 0.55rem;
@@ -48,24 +58,6 @@
       border-radius: 3px;
       color: #495057;
       font-weight: 500;
-    }
-    .project-links {
-      margin-top: 0.75rem;
-      display: flex;
-      gap: 0.5rem;
-    }
-    .project-links a {
-      font-size: 0.85rem;
-      color: #6c757d;
-      text-decoration: none;
-      padding: 0.2rem 0.6rem;
-      border: 1px solid #dee2e6;
-      border-radius: 4px;
-      transition: color 0.2s, border-color 0.2s;
-    }
-    .project-links a:hover {
-      color: #2780e3;
-      border-color: #2780e3;
     }
     .video-section { margin-bottom: 2.5rem; }
     .video-container {
@@ -137,9 +129,7 @@
           <span>Linux</span>
           <span>Game Server</span>
         </div>
-        <div class="project-links">
-          <a href="server/ServerCorePortfolio.pdf" download><i class="bi bi-file-earmark-pdf"></i> PDF 다운로드</a>
-        </div>
+        <a class="pdf-link" href="server/ServerCorePortfolio.pdf" download><i class="bi bi-file-earmark-pdf"></i> PDF 다운로드</a>
       </div>
 
       <div class="project-entry">
@@ -151,9 +141,7 @@
           <span>RPG</span>
           <span>Multiplayer</span>
         </div>
-        <div class="project-links">
-          <a href="client/ClientPortfolio.pdf" download><i class="bi bi-file-earmark-pdf"></i> PDF 다운로드</a>
-        </div>
+        <a class="pdf-link" href="client/ClientPortfolio.pdf" download><i class="bi bi-file-earmark-pdf"></i> PDF 다운로드</a>
       </div>
     </section>
 
