@@ -4,3 +4,14 @@ _plans/
 .claude/
 _site/
 _freeze/
+
+# Source/build files (GitHub Pages only uses docs/)
+01_ServerCore_v4/
+02_SwarmDominion_DX11/
+03_FactionClash_Client/
+.vscode/
+_pdf-defaults.yml
+html2pdf.py
+*.docx
+*.txt
+자기소개서*.md
