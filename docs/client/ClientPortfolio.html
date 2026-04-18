@@ -202,7 +202,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><strong>서버</strong></td>
-<td>ServerCore v4 기반 GameServer (WSL2 Linux)</td>
+<td><a href="https://github.com/mint-cocoa/multiplayer-dungeon-rpg-server">multiplayer-dungeon-rpg-server</a> on <a href="https://github.com/mint-cocoa/libiouring-core">libiouring-core</a> (WSL2 Linux)</td>
 </tr>
 <tr class="even">
 <td><strong>프로토콜</strong></td>
@@ -217,7 +217,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </figure>
 </div>
-<p>DirectX 11 API로 제작한 멀티플레이 던전 RPG 클라이언트입니다. ServerCore 포트폴리오에서 구현한 io_uring 기반 게임서버와 연동되며, 엔진 런타임에 의존하지 않고 DX11 파이프라인, 리소스 로더, 네트워크 계층을 직접 구현해 저수준 렌더링과 네트워크 동작을 다뤄보는 것이 목표였습니다.</p>
+<p>DirectX 11 API로 제작한 멀티플레이 던전 RPG 클라이언트입니다. <code>libiouring-core</code> 기반 <code>multiplayer-dungeon-rpg-server</code>와 연동되며, 엔진 런타임에 의존하지 않고 DX11 파이프라인, 리소스 로더, 네트워크 계층을 직접 구현해 저수준 렌더링과 네트워크 동작을 다뤄보는 것이 목표였습니다.</p>
 <pre><code>isometric_client/
 ├── src/
 │   ├── Core/       App, DX11Device, EngineContext, Input, Timer, WinMain
