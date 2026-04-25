@@ -1,0 +1,12 @@
+.git
+.github
+_site
+_freeze
+build
+cmake-build-*
+*.db
+*.docx
+_archive
+01_ServerCore_v4
+02_SwarmDominion_DX11
+03_FactionClash_Client

@@ -1,0 +1,58 @@
+name: portfolio image
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-push-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout portfolio
+        uses: actions/checkout@v4
+
+      - name: Setup Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Render DevOps portfolio
+        run: ./scripts/render-devops.sh
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/mint-cocoa/portfolio:${{ github.sha }}
+
+      - name: Checkout GitOps repo
+        uses: actions/checkout@v4
+        with:
+          repository: mint-cocoa/home-k8s-gitops
+          token: ${{ secrets.HOME_K8S_GITOPS_TOKEN }}
+          path: home-k8s-gitops
+
+      - name: Update portfolio image tag
+        working-directory: home-k8s-gitops
+        run: |
+          sed -i 's/tag: ".*"/tag: "'"${GITHUB_SHA}"'"/' apps/portfolio/values.yaml
+
+      - name: Commit GitOps update
+        working-directory: home-k8s-gitops
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add apps/portfolio/values.yaml
+          git commit -m "deploy portfolio ${GITHUB_SHA}" || exit 0
+          git push

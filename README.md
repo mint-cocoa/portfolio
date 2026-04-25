@@ -9,12 +9,39 @@
 
 ```
 포폴문서/
+├── CMakeLists.txt             ← iouring_runtime_web 기반 정적 포트폴리오 서버 빌드
+├── Dockerfile                 ← portfolio_site 컨테이너 이미지 빌드
+├── scripts/render-devops.sh   ← DevOps QMD 문서 렌더 스크립트
+├── src/                       ← C++ 포트폴리오 정적 파일 서버
+├── docs/                      ← 공개 HTML/PDF/QMD 산출물
 ├── 01_ServerCore_v4/          ← io_uring 기반 게임 서버 프레임워크
 ├── 02_SwarmDominion_DX11/     ← DX12 SVO 렌더러 포트폴리오 (조사/설계)
 ├── 03_FactionClash_Client/    ← DX11 아이소메트릭 멀티플레이 던전 RPG 클라이언트
 ├── _plans/                    ← 구현 계획 문서 모음
 ├── _archive/                  ← 구버전/중복 파일 보관
 └── README.md                  ← 이 파일
+```
+
+---
+
+## 빌드와 배포
+
+DevOps 포트폴리오 문서는 Quarto 소스에서 렌더링합니다.
+
+```bash
+./scripts/render-devops.sh
+```
+
+포트폴리오 사이트는 `iouring_runtime_web` 기반 C++ 서버로 `docs/`를 서빙합니다.
+컨테이너 이미지는 `ghcr.io/mint-cocoa/portfolio:${GITHUB_SHA}`로 빌드되며,
+GitHub Actions가 `home-k8s-gitops`의 `apps/portfolio/values.yaml` tag를 갱신합니다.
+
+로컬 컨테이너 확인:
+
+```bash
+docker build -t portfolio:local .
+docker run --rm --security-opt seccomp=unconfined --ulimit memlock=-1:-1 \
+  -p 3000:3000 portfolio:local
 ```
 
 ---
