@@ -1,0 +1,85 @@
+---
+title: "포트폴리오 문서"
+subtitle: "서버, 클라이언트, 홈랩 DevOps 구현 문서 모음"
+author: "배진후"
+format:
+  html:
+    toc: false
+    page-layout: full
+    css: portfolio.css
+---
+
+::: {.summary-grid}
+::: {.summary-card}
+**서버**
+
+`io_uring` 기반 C++ 네트워크 런타임과 멀티플레이 게임 서버 구현
+:::
+
+::: {.summary-card}
+**클라이언트**
+
+DirectX 11 아이소메트릭 멀티플레이 던전 RPG 클라이언트
+:::
+
+::: {.summary-card}
+**운영**
+
+GHCR, GitOps, Argo CD, Kubernetes Ingress까지 연결한 홈랩 배포 경로
+:::
+
+::: {.summary-card}
+**검증**
+
+벤치마크, 실제 배포 URL, 운영 이벤트 수집으로 구현 결과 확인
+:::
+:::
+
+## 문서
+
+::: {.doc-grid}
+::: {.doc-card}
+### [서버 구현 포트폴리오](server/ServerCorePortfolio.html)
+
+`libiouring-core`, `libiouringweb`, `multiplayer-dungeon-rpg-server`로 분리한
+C++ 서버 런타임과 게임 서버 구현 문서입니다.
+
+::: {.tag-row}
+`C++` `io_uring` `Linux` `Game Server`
+:::
+:::
+
+::: {.doc-card .client}
+### [클라이언트 구현 포트폴리오](client/ClientPortfolio.html)
+
+DirectX 11 렌더링, 씬 전환, TCP 패킷 처리, 게임 UI를 직접 구현한 클라이언트
+문서입니다.
+
+::: {.tag-row}
+`C++` `DirectX 11` `Protobuf` `RPG Client`
+:::
+:::
+
+::: {.doc-card .devops}
+### [홈랩 DevOps 포트폴리오](devops/DevOpsPortfolio.html)
+
+C++ 웹 런타임으로 만든 앱을 컨테이너 이미지, GitOps, Argo CD, Kubernetes로
+배포한 운영 문서입니다.
+
+::: {.tag-row}
+`Kubernetes` `GitOps` `Argo CD` `GHCR`
+:::
+:::
+:::
+
+## 관련 레포
+
+| 레포 | 역할 |
+|---|---|
+| [portfolio](https://github.com/mint-cocoa/portfolio) | 이 문서 묶음과 C++ 정적 파일 서버 이미지 |
+| [iouring-runtime](https://github.com/mint-cocoa/iouring-runtime) | 최신 `io_uring` 런타임, web, proxy 모듈 |
+| [libiouring-core](https://github.com/mint-cocoa/libiouring-core) | 서버 구현 문서에서 참조하는 코어 런타임 |
+| [libiouringweb](https://github.com/mint-cocoa/libiouringweb) | HTTP/web 계층 |
+| [multiplayer-dungeon-rpg-server](https://github.com/mint-cocoa/multiplayer-dungeon-rpg-server) | 멀티플레이 던전 RPG 서버 |
+| [game-client](https://github.com/mint-cocoa/game-client) | DirectX 11 게임 클라이언트 |
+| [home-k8s-gitops](https://github.com/mint-cocoa/home-k8s-gitops) | 홈 Kubernetes desired state |

@@ -16,3 +16,6 @@ html2pdf.py
 *.txt
 !CMakeLists.txt
 자기소개서*.md
+
+/.quarto/
+**/*.quarto_ipynb

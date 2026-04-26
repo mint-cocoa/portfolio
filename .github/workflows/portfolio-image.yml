@@ -19,8 +19,8 @@ jobs:
       - name: Setup Quarto
         uses: quarto-dev/quarto-actions/setup@v2
 
-      - name: Render DevOps portfolio
-        run: ./scripts/render-devops.sh
+      - name: Render portfolio documents
+        run: ./scripts/render-docs.sh
 
       - name: Login to GHCR
         uses: docker/login-action@v3

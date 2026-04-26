@@ -72,12 +72,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="DevOpsPortfolio_files/libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="DevOpsPortfolio_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="DevOpsPortfolio_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="DevOpsPortfolio_files/libs/bootstrap/bootstrap-fa77a9dd3c6b4f62cc70b19340b1d079.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="DevOpsPortfolio_files/libs/bootstrap/bootstrap-cd37af5c9656c96ad5e78ce08c954e10.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script src="DevOpsPortfolio_files/libs/quarto-diagram/mermaid.min.js"></script>
 <script src="DevOpsPortfolio_files/libs/quarto-diagram/mermaid-init.js"></script>
 <link href="DevOpsPortfolio_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
 
 
+<link rel="stylesheet" href="../portfolio.css">
 </head>
 
 <body class="quarto-light">
@@ -88,19 +89,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">목차</h2>
    
   <ul>
-  <li><a href="#개요" id="toc-개요" class="nav-link active" data-scroll-target="#개요">개요</a></li>
-  <li><a href="#문제-정의" id="toc-문제-정의" class="nav-link" data-scroll-target="#문제-정의">문제 정의</a></li>
-  <li><a href="#전체-구조" id="toc-전체-구조" class="nav-link" data-scroll-target="#전체-구조">전체 구조</a></li>
-  <li><a href="#c-런타임-기반-웹-앱" id="toc-c-런타임-기반-웹-앱" class="nav-link" data-scroll-target="#c-런타임-기반-웹-앱">C++ 런타임 기반 웹 앱</a></li>
-  <li><a href="#dropapp" id="toc-dropapp" class="nav-link" data-scroll-target="#dropapp">dropapp</a></li>
-  <li><a href="#webhook-inbox" id="toc-webhook-inbox" class="nav-link" data-scroll-target="#webhook-inbox">webhook-inbox</a></li>
-  <li><a href="#컨테이너-이미지" id="toc-컨테이너-이미지" class="nav-link" data-scroll-target="#컨테이너-이미지">컨테이너 이미지</a></li>
-  <li><a href="#github-actions" id="toc-github-actions" class="nav-link" data-scroll-target="#github-actions">GitHub Actions</a></li>
-  <li><a href="#gitops와-argo-cd" id="toc-gitops와-argo-cd" class="nav-link" data-scroll-target="#gitops와-argo-cd">GitOps와 Argo CD</a></li>
-  <li><a href="#도메인과-ingress" id="toc-도메인과-ingress" class="nav-link" data-scroll-target="#도메인과-ingress">도메인과 Ingress</a></li>
-  <li><a href="#운영-검증" id="toc-운영-검증" class="nav-link" data-scroll-target="#운영-검증">운영 검증</a></li>
-  <li><a href="#결과" id="toc-결과" class="nav-link" data-scroll-target="#결과">결과</a></li>
-  <li><a href="#회고" id="toc-회고" class="nav-link" data-scroll-target="#회고">회고</a></li>
+  <li><a href="#핵심-요약" id="toc-핵심-요약" class="nav-link active" data-scroll-target="#핵심-요약"><span class="header-section-number">1</span> 핵심 요약</a></li>
+  <li><a href="#개요" id="toc-개요" class="nav-link" data-scroll-target="#개요"><span class="header-section-number">2</span> 개요</a></li>
+  <li><a href="#문제-정의" id="toc-문제-정의" class="nav-link" data-scroll-target="#문제-정의"><span class="header-section-number">3</span> 문제 정의</a></li>
+  <li><a href="#전체-구조" id="toc-전체-구조" class="nav-link" data-scroll-target="#전체-구조"><span class="header-section-number">4</span> 전체 구조</a></li>
+  <li><a href="#배포-흐름" id="toc-배포-흐름" class="nav-link" data-scroll-target="#배포-흐름"><span class="header-section-number">5</span> 배포 흐름</a></li>
+  <li><a href="#kubernetes-ha-cluster" id="toc-kubernetes-ha-cluster" class="nav-link" data-scroll-target="#kubernetes-ha-cluster"><span class="header-section-number">6</span> Kubernetes HA Cluster</a></li>
+  <li><a href="#현재-workloads" id="toc-현재-workloads" class="nav-link" data-scroll-target="#현재-workloads"><span class="header-section-number">7</span> 현재 Workloads</a></li>
+  <li><a href="#c-런타임-기반-웹-앱" id="toc-c-런타임-기반-웹-앱" class="nav-link" data-scroll-target="#c-런타임-기반-웹-앱"><span class="header-section-number">8</span> C++ 런타임 기반 웹 앱</a></li>
+  <li><a href="#dropapp" id="toc-dropapp" class="nav-link" data-scroll-target="#dropapp"><span class="header-section-number">9</span> dropapp</a></li>
+  <li><a href="#webhook-inbox" id="toc-webhook-inbox" class="nav-link" data-scroll-target="#webhook-inbox"><span class="header-section-number">10</span> webhook-inbox</a></li>
+  <li><a href="#컨테이너-이미지" id="toc-컨테이너-이미지" class="nav-link" data-scroll-target="#컨테이너-이미지"><span class="header-section-number">11</span> 컨테이너 이미지</a></li>
+  <li><a href="#github-actions" id="toc-github-actions" class="nav-link" data-scroll-target="#github-actions"><span class="header-section-number">12</span> GitHub Actions</a></li>
+  <li><a href="#gitops와-argo-cd" id="toc-gitops와-argo-cd" class="nav-link" data-scroll-target="#gitops와-argo-cd"><span class="header-section-number">13</span> GitOps와 Argo CD</a></li>
+  <li><a href="#도메인과-ingress" id="toc-도메인과-ingress" class="nav-link" data-scroll-target="#도메인과-ingress"><span class="header-section-number">14</span> 도메인과 Ingress</a></li>
+  <li><a href="#storage-plane" id="toc-storage-plane" class="nav-link" data-scroll-target="#storage-plane"><span class="header-section-number">15</span> Storage Plane</a></li>
+  <li><a href="#observability" id="toc-observability" class="nav-link" data-scroll-target="#observability"><span class="header-section-number">16</span> Observability</a></li>
+  <li><a href="#verified-traffic-flows" id="toc-verified-traffic-flows" class="nav-link" data-scroll-target="#verified-traffic-flows"><span class="header-section-number">17</span> Verified Traffic Flows</a></li>
+  <li><a href="#운영-검증" id="toc-운영-검증" class="nav-link" data-scroll-target="#운영-검증"><span class="header-section-number">18</span> 운영 검증</a></li>
+  <li><a href="#결과" id="toc-결과" class="nav-link" data-scroll-target="#결과"><span class="header-section-number">19</span> 결과</a></li>
+  <li><a href="#current-gaps" id="toc-current-gaps" class="nav-link" data-scroll-target="#current-gaps"><span class="header-section-number">20</span> Current Gaps</a></li>
+  <li><a href="#회고" id="toc-회고" class="nav-link" data-scroll-target="#회고"><span class="header-section-number">21</span> 회고</a></li>
+  <li><a href="#관련-레포" id="toc-관련-레포" class="nav-link" data-scroll-target="#관련-레포"><span class="header-section-number">22</span> 관련 레포</a></li>
+  <li><a href="#다음-문서" id="toc-다음-문서" class="nav-link" data-scroll-target="#다음-문서"><span class="header-section-number">23</span> 다음 문서</a></li>
   </ul>
 </nav>
 </div>
@@ -109,7 +120,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">홈랩 DevOps 포트폴리오</h1>
-<p class="subtitle lead">io_uring C++ 런타임으로 만든 웹 앱 배포 파이프라인</p>
+<p class="subtitle lead">io_uring C++ 런타임과 홈랩 Kubernetes GitOps 운영 경로</p>
 </div>
 
 
@@ -132,41 +143,181 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="개요" class="level2">
-<h2 class="anchored" data-anchor-id="개요">개요</h2>
-<p>이 문서는 <code>iouring-runtime</code> 위에서 실제 홈랩 서비스를 만들고, 컨테이너 이미지, GitHub Actions, GitOps, Argo CD, Kubernetes Ingress까지 연결한 과정을 정리한 운영 포트폴리오입니다. 목표는 단순한 예제 서버가 아니라, 개인 도메인에서 접근 가능한 실사용 웹 앱을 C++ 런타임 기반으로 배포하는 것이었습니다.</p>
-<p>구현한 서비스는 두 가지입니다.</p>
+<section id="핵심-요약" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="핵심-요약"><span class="header-section-number">1</span> 핵심 요약</h2>
+<div class="summary-grid">
+<div class="summary-card">
+<p><strong>Runtime</strong></p>
+<p>C++ <code>io_uring</code> 기반 web runtime으로 portfolio 정적 파일 서버 운영</p>
+</div>
+<div class="summary-card">
+<p><strong>Platform</strong></p>
+<p>Proxmox VM 위 3 control-plane + 2 worker native Kubernetes HA cluster</p>
+</div>
+<div class="summary-card">
+<p><strong>Deploy</strong></p>
+<p>GitHub Actions가 GHCR image push 후 GitOps repo의 image tag를 갱신</p>
+</div>
+<div class="summary-card">
+<p><strong>Operate</strong></p>
+<p>MetalLB, ingress-nginx, edge proxy로 <code>portfolio.mintcocoa.cc</code> HTTPS 노출</p>
+</div>
+</div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>항목</th>
+<th>내용</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>문서 역할</td>
+<td>C++ 런타임과 홈랩 Kubernetes 운영 경로를 연결한 증거 정리</td>
+</tr>
+<tr class="even">
+<td>현재 live 배포</td>
+<td><code>portfolio</code></td>
+</tr>
+<tr class="odd">
+<td>준비된 GitOps 앱</td>
+<td><code>dropapp</code>, <code>webhook-inbox</code></td>
+</tr>
+<tr class="even">
+<td>이미지 레지스트리</td>
+<td>GHCR</td>
+</tr>
+<tr class="odd">
+<td>배포 제어</td>
+<td>GitOps + Argo CD automated sync</td>
+</tr>
+<tr class="even">
+<td>실행 환경</td>
+<td>Proxmox VM 기반 native Kubernetes HA cluster</td>
+</tr>
+<tr class="odd">
+<td>검증된 공개 경로</td>
+<td><code>portfolio.mintcocoa.cc</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="개요" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="개요"><span class="header-section-number">2</span> 개요</h2>
+<p>이 문서는 <code>iouring-runtime</code> 위에서 portfolio 정적 파일 서버를 만들고, 컨테이너 이미지, GitHub Actions, GitOps, Argo CD, Kubernetes Ingress까지 연결한 과정을 정리한 운영 포트폴리오입니다. 목표는 단순한 예제 서버가 아니라, 개인 도메인에서 접근 가능한 실사용 경로를 C++ 런타임 기반으로 배포하는 것이었습니다.</p>
+<p>현재 검증된 live workload는 <code>portfolio</code>입니다. <code>dropapp</code>과 <code>webhook-inbox</code>는 <code>iouring-runtime</code> 기반으로 구현하고 GitOps repository에 정의해 둔 준비된 workload이며, 아직 live cluster 배포 검증 대상으로 활성화하지 않았습니다.</p>
 <ul>
-<li><code>dropapp</code>: 1시간 TTL을 가진 파일 드롭 앱</li>
-<li><code>webhook-inbox</code>: GitHub Actions, Argo CD, 홈랩 서비스 이벤트를 받는 운영 이벤트 inbox</li>
+<li><code>portfolio</code>: C++ 정적 파일 서버로 서빙되는 포트폴리오 문서</li>
+<li><code>dropapp</code>: 1시간 TTL을 가진 파일 드롭 앱, GitOps 정의 준비</li>
+<li><code>webhook-inbox</code>: GitHub Actions, Argo CD, 홈랩 서비스 이벤트 inbox, GitOps 정의 준비</li>
 </ul>
 </section>
-<section id="문제-정의" class="level2">
-<h2 class="anchored" data-anchor-id="문제-정의">문제 정의</h2>
+<section id="문제-정의" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="문제-정의"><span class="header-section-number">3</span> 문제 정의</h2>
 <p>기존 포트폴리오 문서는 게임 서버와 클라이언트 구현 중심이었습니다. 하지만 서버 런타임을 실제 운영 환경까지 연결했다는 증거는 별도로 정리되어 있지 않았습니다. 이번 작업의 핵심 질문은 다음과 같았습니다.</p>
 <ol type="1">
 <li>직접 만든 C++ io_uring 런타임이 HTTP 앱을 안정적으로 서빙할 수 있는가?</li>
 <li>앱을 이미지화하고, GHCR, GitOps, Argo CD로 자동 배포할 수 있는가?</li>
 <li>배포 결과를 내 도메인에서 실제 서비스로 노출할 수 있는가?</li>
-<li>운영 중 이벤트와 상태를 모아볼 수 있는 내부 가시성 앱을 만들 수 있는가?</li>
+<li>관리, edge, VM, workload, delivery, storage 계층을 분리해 운영할 수 있는가?</li>
 </ol>
 </section>
-<section id="전체-구조" class="level2">
-<h2 class="anchored" data-anchor-id="전체-구조">전체 구조</h2>
+<section id="전체-구조" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="전체-구조"><span class="header-section-number">4</span> 전체 구조</h2>
 <div class="cell" data-layout-align="default">
 <div class="cell-output-display">
 <div>
 <p></p><figure class="figure"><p></p>
 <div>
 <pre class="mermaid mermaid-js">flowchart LR
-    Dev[Local development] --&gt; GitHub[iouring-runtime / portfolio repos]
+    Internet[Internet] --&gt; Router[Home Router]
+    Router --&gt; Edge[Mini PC Edge Proxy&lt;br/&gt;172.30.1.27]
+    Edge --&gt; LB[MetalLB LoadBalancer IP&lt;br/&gt;172.30.1.240]
+    LB --&gt; Ingress[ingress-nginx]
+    Ingress --&gt; Service[Kubernetes Service]
+    Service --&gt; Pod[Pod]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>홈랩은 관리, edge, 가상화, workload, delivery, storage 계층을 분리해 운영합니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 23%">
+<col style="width: 23%">
+<col style="width: 30%">
+<col style="width: 23%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Layer</th>
+<th>Component</th>
+<th style="text-align: right;">Address</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Management Plane</td>
+<td>Odroid</td>
+<td style="text-align: right;"><code>172.30.1.83</code></td>
+<td>Terraform, Ansible, Kubespray, kubectl, Helm, GitOps bootstrap</td>
+</tr>
+<tr class="even">
+<td>Edge Plane</td>
+<td>Mini PC</td>
+<td style="text-align: right;"><code>172.30.1.27</code></td>
+<td>External HTTPS entrypoint, Kubernetes API HAProxy</td>
+</tr>
+<tr class="odd">
+<td>Virtualization Plane</td>
+<td>Proxmox VE</td>
+<td style="text-align: right;"><code>172.30.1.12</code></td>
+<td>VM runtime, snapshots, backup base</td>
+</tr>
+<tr class="even">
+<td>Workload Plane</td>
+<td>Kubernetes VMs</td>
+<td style="text-align: right;"><code>172.30.1.231-235</code></td>
+<td>Application and platform workloads</td>
+</tr>
+<tr class="odd">
+<td>Delivery Plane</td>
+<td>GitHub Actions, GHCR, Argo CD</td>
+<td style="text-align: right;">external + cluster</td>
+<td>Image build, registry, GitOps deployment</td>
+</tr>
+<tr class="even">
+<td>Storage Plane</td>
+<td>OMV VM</td>
+<td style="text-align: right;"><code>172.30.1.52</code></td>
+<td>NFS backing store for Kubernetes PVCs</td>
+</tr>
+</tbody>
+</table>
+<p>현재 Kubernetes cluster는 Proxmox VM 위에 Kubespray로 설치한 native Kubernetes HA cluster입니다. 과거 <code>k3s</code> 명칭이 남아 있는 Terraform 경로가 있지만, 현재 검증된 상태는 단일 control-plane k3s가 아닙니다.</p>
+</section>
+<section id="배포-흐름" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="배포-흐름"><span class="header-section-number">5</span> 배포 흐름</h2>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+    Dev[Developer PC] --&gt; GitHub[GitHub push]
     GitHub --&gt; Actions[GitHub Actions]
-    Actions --&gt; GHCR[GHCR container images]
-    Actions --&gt; GitOps[home-k8s-gitops values update]
-    GitOps --&gt; Argo[Argo CD]
-    Argo --&gt; K8s[Kubernetes home cluster]
-    K8s --&gt; Ingress[nginx ingress + MetalLB]
-    Ingress --&gt; Domain[mintcocoa.cc domains]
+    Actions --&gt; GHCR[GHCR image push]
+    GHCR --&gt; GitOps[GitOps repository update]
+    GitOps --&gt; Argo[Argo CD sync]
+    Argo --&gt; Rollout[Kubernetes rollout]
+    Rollout --&gt; Exposure[ingress-nginx + MetalLB exposure]
 </pre>
 </div>
 <p></p></figure><p></p>
@@ -180,25 +331,147 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>GitHub Actions가 GitOps repo의 Helm values를 해당 SHA로 갱신합니다.</li>
 <li>Argo CD가 변경된 chart를 감지해 클러스터에 반영합니다.</li>
 </ul>
+<p>현재 검증된 Argo CD Applications는 <code>home-root</code>, <code>metallb-config</code>, <code>nfs-subdir-external-provisioner</code>, <code>prometheus</code>, <code>grafana</code>, <code>demo-whoami</code>, <code>portfolio</code>이며 모두 <code>Synced</code> / <code>Healthy</code> 상태입니다.</p>
 </section>
-<section id="c-런타임-기반-웹-앱" class="level2">
-<h2 class="anchored" data-anchor-id="c-런타임-기반-웹-앱">C++ 런타임 기반 웹 앱</h2>
+<section id="kubernetes-ha-cluster" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="kubernetes-ha-cluster"><span class="header-section-number">6</span> Kubernetes HA Cluster</h2>
+<p>현재 workload plane은 Proxmox VM 위에서 동작하는 5-node native Kubernetes HA cluster입니다.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Host</th>
+<th style="text-align: right;">IP</th>
+<th>Role</th>
+<th>Status</th>
+<th>Runtime</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>k8s-cp-1</code></td>
+<td style="text-align: right;"><code>172.30.1.231</code></td>
+<td>control-plane</td>
+<td>Ready</td>
+<td>containerd</td>
+</tr>
+<tr class="even">
+<td><code>k8s-cp-2</code></td>
+<td style="text-align: right;"><code>172.30.1.232</code></td>
+<td>control-plane</td>
+<td>Ready</td>
+<td>containerd</td>
+</tr>
+<tr class="odd">
+<td><code>k8s-cp-3</code></td>
+<td style="text-align: right;"><code>172.30.1.233</code></td>
+<td>control-plane</td>
+<td>Ready</td>
+<td>containerd</td>
+</tr>
+<tr class="even">
+<td><code>k8s-worker-1</code></td>
+<td style="text-align: right;"><code>172.30.1.234</code></td>
+<td>worker</td>
+<td>Ready</td>
+<td>containerd</td>
+</tr>
+<tr class="odd">
+<td><code>k8s-worker-2</code></td>
+<td style="text-align: right;"><code>172.30.1.235</code></td>
+<td>worker</td>
+<td>Ready</td>
+<td>containerd</td>
+</tr>
+</tbody>
+</table>
+<p>검증된 버전은 다음과 같습니다.</p>
+<pre class="text"><code>Client Version: v1.34.7
+Server Version: v1.35.4</code></pre>
+<p>기본 구성은 Calico CNI, CoreDNS, NodeLocal DNS, kube-proxy, metrics-server를 포함합니다. 세 개의 control-plane node가 API server, scheduler, controller-manager, etcd를 담당하고, worker node가 application/platform workload를 수용합니다.</p>
+</section>
+<section id="현재-workloads" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="현재-workloads"><span class="header-section-number">7</span> 현재 Workloads</h2>
+<p>현재 live cluster에서 검증된 workload는 다음과 같습니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Namespace</th>
+<th>Workload</th>
+<th>Purpose</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>argocd</code></td>
+<td><code>argocd-*</code></td>
+<td>GitOps controller</td>
+<td>Running</td>
+</tr>
+<tr class="even">
+<td><code>demo</code></td>
+<td><code>demo-whoami</code></td>
+<td>Ingress demo app</td>
+<td>Running</td>
+</tr>
+<tr class="odd">
+<td><code>ingress-smoke</code></td>
+<td><code>echo</code></td>
+<td>Ingress smoke test</td>
+<td>Running</td>
+</tr>
+<tr class="even">
+<td><code>monitoring</code></td>
+<td><code>prometheus-server</code></td>
+<td>Metrics collection</td>
+<td>Running</td>
+</tr>
+<tr class="odd">
+<td><code>monitoring</code></td>
+<td><code>grafana</code></td>
+<td>Dashboard UI</td>
+<td>Running</td>
+</tr>
+<tr class="even">
+<td><code>portfolio</code></td>
+<td><code>portfolio</code></td>
+<td>Portfolio site</td>
+<td>Running</td>
+</tr>
+<tr class="odd">
+<td><code>storage-system</code></td>
+<td><code>nfs-subdir-external-provisioner</code></td>
+<td>Dynamic NFS PV provisioning</td>
+<td>Running</td>
+</tr>
+</tbody>
+</table>
+<p><code>dropapp</code>과 <code>webhook-inbox</code>는 GitOps repository에 app definition이 있지만, 현재 live cluster에는 배포하지 않은 상태입니다. 따라서 포트폴리오에서는 이 둘을 검증된 운영 workload가 아니라 준비된 GitOps workload로 구분합니다.</p>
+</section>
+<section id="c-런타임-기반-웹-앱" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="c-런타임-기반-웹-앱"><span class="header-section-number">8</span> C++ 런타임 기반 웹 앱</h2>
 <p><code>iouring_runtime_web</code>는 <code>WebServer</code>, 라우터, request context, response builder, streaming upload API를 제공합니다. 웹 앱은 다음과 같은 형태로 작성했습니다.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>iouring_runtime<span class="op">::</span>web<span class="op">::</span>WebServer server<span class="op">(</span>config<span class="op">);</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>server<span class="op">.</span>Get<span class="op">(</span><span class="st">"/healthz"</span><span class="op">,</span> <span class="op">[](</span>RequestContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    ctx<span class="op">.</span>response<span class="op">.</span>ContentType<span class="op">(</span><span class="st">"text/plain; charset=utf-8"</span><span class="op">)</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span>Body<span class="op">(</span><span class="st">"ok"</span><span class="op">)</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span>Send<span class="op">();</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="op">});</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>server<span class="op">.</span>Get<span class="op">(</span><span class="st">"/"</span><span class="op">,</span> <span class="op">[&amp;](</span>RequestContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    ServeStaticFile<span class="op">(</span>ctx<span class="op">,</span> static_root<span class="op">,</span> <span class="st">"index.html"</span><span class="op">);</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="op">});</span></span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>iouring_runtime<span class="op">::</span>web<span class="op">::</span>WebServer server<span class="op">(</span>config<span class="op">);</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>server<span class="op">.</span>Get<span class="op">(</span><span class="st">"/healthz"</span><span class="op">,</span> <span class="op">[](</span>RequestContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    ctx<span class="op">.</span>response<span class="op">.</span>ContentType<span class="op">(</span><span class="st">"text/plain; charset=utf-8"</span><span class="op">)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span>Body<span class="op">(</span><span class="st">"ok"</span><span class="op">)</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span>Send<span class="op">();</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="op">});</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>server<span class="op">.</span>Get<span class="op">(</span><span class="st">"/"</span><span class="op">,</span> <span class="op">[&amp;](</span>RequestContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    ServeStaticFile<span class="op">(</span>ctx<span class="op">,</span> static_root<span class="op">,</span> <span class="st">"index.html"</span><span class="op">);</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="op">});</span></span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
 <p>중요한 점은 단순히 TCP 서버를 만든 것이 아니라, HTTP 라우팅, 정적 파일 서빙, raw body upload, JSON API, 인증 헤더 처리까지 실제 웹 앱에 필요한 표면을 구현했다는 점입니다.</p>
 </section>
-<section id="dropapp" class="level2">
-<h2 class="anchored" data-anchor-id="dropapp">dropapp</h2>
+<section id="dropapp" class="level2" data-number="9">
+<h2 data-number="9" class="anchored" data-anchor-id="dropapp"><span class="header-section-number">9</span> dropapp</h2>
 <p><code>dropapp</code>은 TTL 파일 드롭 앱입니다.</p>
 <table class="caption-top table">
 <thead>
@@ -229,15 +502,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>optional bearer token for upload/delete</td>
 </tr>
 <tr class="even">
-<td>배포</td>
-<td><code>dropapp.mintcocoa.cc</code></td>
+<td>배포 상태</td>
+<td>GitOps 정의 준비, live cluster 미활성화</td>
 </tr>
 </tbody>
 </table>
 <p>처음에는 파일명을 일반 헤더로 보내며 한글 파일명에서 브라우저 오류가 발생했습니다. 해결은 파일명을 <code>encodeURIComponent</code>로 인코딩해 전송하고, 서버에서 안전하게 디코딩하는 방식으로 처리했습니다.</p>
 </section>
-<section id="webhook-inbox" class="level2">
-<h2 class="anchored" data-anchor-id="webhook-inbox">webhook-inbox</h2>
+<section id="webhook-inbox" class="level2" data-number="10">
+<h2 data-number="10" class="anchored" data-anchor-id="webhook-inbox"><span class="header-section-number">10</span> webhook-inbox</h2>
 <p><code>webhook-inbox</code>는 운영 이벤트 수집 앱입니다. 초기 버전은 범용 webhook capture에 가까웠지만, 이후 GitHub Actions, Argo CD, 홈랩 서비스 이벤트를 모으는 운영 타임라인 앱으로 확장했습니다.</p>
 <p>주요 경로는 다음과 같습니다.</p>
 <table class="caption-top table">
@@ -271,26 +544,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 <p>저장은 append-only JSONL로 처리합니다.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">"service"</span><span class="fu">:</span><span class="st">"github"</span><span class="fu">,</span><span class="dt">"event_type"</span><span class="fu">:</span><span class="st">"workflow_run"</span><span class="fu">,</span><span class="dt">"status"</span><span class="fu">:</span><span class="st">"success"</span><span class="fu">,</span><span class="dt">"source"</span><span class="fu">:</span><span class="st">"mint-cocoa/iouring-runtime"</span><span class="fu">}</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">"service"</span><span class="fu">:</span><span class="st">"argocd"</span><span class="fu">,</span><span class="dt">"event_type"</span><span class="fu">:</span><span class="st">"sync"</span><span class="fu">,</span><span class="dt">"status"</span><span class="fu">:</span><span class="st">"Succeeded"</span><span class="fu">,</span><span class="dt">"source"</span><span class="fu">:</span><span class="st">"dropapp"</span><span class="fu">}</span></span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode json code-with-copy"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">"service"</span><span class="fu">:</span><span class="st">"github"</span><span class="fu">,</span><span class="dt">"event_type"</span><span class="fu">:</span><span class="st">"workflow_run"</span><span class="fu">,</span><span class="dt">"status"</span><span class="fu">:</span><span class="st">"success"</span><span class="fu">,</span><span class="dt">"source"</span><span class="fu">:</span><span class="st">"mint-cocoa/iouring-runtime"</span><span class="fu">}</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">"service"</span><span class="fu">:</span><span class="st">"argocd"</span><span class="fu">,</span><span class="dt">"event_type"</span><span class="fu">:</span><span class="st">"sync"</span><span class="fu">,</span><span class="dt">"status"</span><span class="fu">:</span><span class="st">"Succeeded"</span><span class="fu">,</span><span class="dt">"source"</span><span class="fu">:</span><span class="st">"dropapp"</span><span class="fu">}</span></span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
 <p>앱 시작 시 JSONL을 다시 읽어 in-memory index를 구성합니다. 삭제는 기존 라인을 수정하지 않고 tombstone 라인을 append해서 재시작 후에도 삭제 상태가 유지되도록 했습니다.</p>
 </section>
-<section id="컨테이너-이미지" class="level2">
-<h2 class="anchored" data-anchor-id="컨테이너-이미지">컨테이너 이미지</h2>
+<section id="컨테이너-이미지" class="level2" data-number="11">
+<h2 data-number="11" class="anchored" data-anchor-id="컨테이너-이미지"><span class="header-section-number">11</span> 컨테이너 이미지</h2>
 <p>각 앱은 multi-stage Dockerfile을 사용합니다.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode dockerfile code-with-copy"><code class="sourceCode dockerfile"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> ubuntu:24.04 <span class="kw">AS</span> build</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">apt-get</span> update <span class="kw">&amp;&amp;</span> <span class="ex">apt-get</span> install <span class="at">-y</span> build-essential cmake ninja-build liburing-dev</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> . .</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">cmake</span> <span class="at">-S</span> . <span class="at">-B</span> build <span class="at">-G</span> Ninja <span class="at">-DBUILD_WEB</span><span class="op">=</span>ON <span class="at">-DBUILD_EXAMPLES</span><span class="op">=</span>ON</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">cmake</span> <span class="at">--build</span> build <span class="at">--target</span> webhook_inbox</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> ubuntu:24.04 <span class="kw">AS</span> runtime</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">apt-get</span> update <span class="kw">&amp;&amp;</span> <span class="ex">apt-get</span> install <span class="at">-y</span> ca-certificates liburing2</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> <span class="op">--from=build</span> /src/build/bin/webhook_inbox /usr/local/bin/webhook_inbox</span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode dockerfile code-with-copy"><code class="sourceCode dockerfile"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> ubuntu:24.04 <span class="kw">AS</span> build</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">apt-get</span> update <span class="kw">&amp;&amp;</span> <span class="ex">apt-get</span> install <span class="at">-y</span> build-essential cmake ninja-build liburing-dev</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> . .</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">cmake</span> <span class="at">-S</span> . <span class="at">-B</span> build <span class="at">-G</span> Ninja <span class="at">-DBUILD_WEB</span><span class="op">=</span>ON <span class="at">-DBUILD_EXAMPLES</span><span class="op">=</span>ON</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="fu">cmake</span> <span class="at">--build</span> build <span class="at">--target</span> webhook_inbox</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> ubuntu:24.04 <span class="kw">AS</span> runtime</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">apt-get</span> update <span class="kw">&amp;&amp;</span> <span class="ex">apt-get</span> install <span class="at">-y</span> ca-certificates liburing2</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> <span class="op">--from=build</span> /src/build/bin/webhook_inbox /usr/local/bin/webhook_inbox</span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
 <p>runtime image에는 빌드 도구를 넣지 않고, 실행 바이너리와 정적 파일만 복사합니다. io_uring 사용을 위해 런타임에는 <code>liburing2</code>만 필요합니다.</p>
 </section>
-<section id="github-actions" class="level2">
-<h2 class="anchored" data-anchor-id="github-actions">GitHub Actions</h2>
+<section id="github-actions" class="level2" data-number="12">
+<h2 data-number="12" class="anchored" data-anchor-id="github-actions"><span class="header-section-number">12</span> GitHub Actions</h2>
 <p><code>main</code> push 시 workflow가 다음 순서로 실행됩니다.</p>
 <ol type="1">
 <li>GHCR 로그인</li>
@@ -301,8 +574,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ol>
 <p>이 구조 덕분에 앱 repo의 commit SHA가 그대로 배포 이미지 tag가 됩니다. 문제가 생겼을 때 Kubernetes에서 실행 중인 이미지 tag만 봐도 어떤 commit인지 추적할 수 있습니다.</p>
 </section>
-<section id="gitops와-argo-cd" class="level2">
-<h2 class="anchored" data-anchor-id="gitops와-argo-cd">GitOps와 Argo CD</h2>
+<section id="gitops와-argo-cd" class="level2" data-number="13">
+<h2 data-number="13" class="anchored" data-anchor-id="gitops와-argo-cd"><span class="header-section-number">13</span> GitOps와 Argo CD</h2>
 <p>GitOps repo는 앱별 Helm chart와 cluster application manifest를 분리했습니다.</p>
 <pre class="text"><code>apps/
   dropapp/
@@ -311,16 +584,16 @@ clusters/home/
   dropapp-application.yaml
   webhook-inbox-application.yaml</code></pre>
 <p>Application은 automated sync를 사용합니다.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">syncPolicy</span><span class="kw">:</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">automated</span><span class="kw">:</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">prune</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">selfHeal</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">syncOptions</span><span class="kw">:</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> CreateNamespace=true</span></span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">syncPolicy</span><span class="kw">:</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">automated</span><span class="kw">:</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">prune</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">selfHeal</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">syncOptions</span><span class="kw">:</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> CreateNamespace=true</span></span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
 <p>이 설정으로 GitOps repo가 바뀌면 Argo CD가 자동으로 Deployment, Service, Ingress, PVC를 맞춥니다.</p>
 </section>
-<section id="도메인과-ingress" class="level2">
-<h2 class="anchored" data-anchor-id="도메인과-ingress">도메인과 Ingress</h2>
+<section id="도메인과-ingress" class="level2" data-number="14">
+<h2 data-number="14" class="anchored" data-anchor-id="도메인과-ingress"><span class="header-section-number">14</span> 도메인과 Ingress</h2>
 <p>클러스터 내부에서는 nginx ingress와 MetalLB를 사용했습니다.</p>
 <div class="cell" data-layout-align="default">
 <div class="cell-output-display">
@@ -328,51 +601,266 @@ clusters/home/
 <p></p><figure class="figure"><p></p>
 <div>
 <pre class="mermaid mermaid-js">flowchart LR
-    Internet --&gt; Proxy[tcp_reverse_proxy]
-    Proxy --&gt; MetalLB[172.30.1.240]
+    Internet --&gt; Proxy[Mini PC Edge Proxy&lt;br/&gt;172.30.1.27]
+    Proxy --&gt; MetalLB[MetalLB&lt;br/&gt;172.30.1.240]
     MetalLB --&gt; Nginx[nginx ingress]
-    Nginx --&gt; Dropapp[dropapp service]
-    Nginx --&gt; Inbox[webhook-inbox service]
     Nginx --&gt; Portfolio[portfolio service]
+    Nginx --&gt; Demo[demo-whoami service]
+    Nginx --&gt; Grafana[grafana service]
+    Nginx --&gt; Argo[Argo CD service]
 </pre>
 </div>
 <p></p></figure><p></p>
 </div>
 </div>
 </div>
-<p>도메인별 라우팅은 Ingress host로 분리합니다.</p>
+<p>현재 direct ingress path는 <code>172.30.1.240</code> 기준으로 정상입니다.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Host</th>
+<th>Direct ingress result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>portfolio.mintcocoa.cc</code></td>
+<td><code>200 OK</code></td>
+</tr>
+<tr class="even">
+<td><code>demo.mintcocoa.cc</code></td>
+<td><code>200 OK</code></td>
+</tr>
+<tr class="odd">
+<td><code>grafana.homelab.local</code></td>
+<td><code>302 /login</code></td>
+</tr>
+<tr class="even">
+<td><code>argocd.homelab.local</code></td>
+<td><code>200 OK</code></td>
+</tr>
+</tbody>
+</table>
+<p>Edge proxy path는 <code>portfolio.mintcocoa.cc</code> HTTPS 경로가 portfolio service에 도달하는 것까지 검증했습니다. <code>demo.mintcocoa.cc</code>, <code>grafana.homelab.local</code>, <code>argocd.homelab.local</code>은 direct ingress에서는 동작하지만 edge proxy에서는 아직 proxy homepage로 라우팅되는 mismatch가 남아 있습니다.</p>
+</section>
+<section id="storage-plane" class="level2" data-number="15">
+<h2 data-number="15" class="anchored" data-anchor-id="storage-plane"><span class="header-section-number">15</span> Storage Plane</h2>
+<p>Persistent storage는 OMV VM의 NFS export를 Kubernetes dynamic provisioning에 연결하는 방식으로 구성했습니다.</p>
+<pre class="text"><code>NFS server: 172.30.1.52:/export/k8s_pv
+Provisioner: cluster.local/nfs-subdir-external-provisioner
+StorageClass: nfs-client
+Default StorageClass: yes</code></pre>
+<p>검증된 PVC/PV 상태는 다음과 같습니다.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Namespace</th>
+<th>PVC</th>
+<th style="text-align: right;">Size</th>
+<th>Access Mode</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>monitoring</code></td>
+<td><code>grafana</code></td>
+<td style="text-align: right;">1Gi</td>
+<td>RWO</td>
+<td>Bound</td>
+</tr>
+<tr class="even">
+<td><code>monitoring</code></td>
+<td><code>prometheus-server</code></td>
+<td style="text-align: right;">2Gi</td>
+<td>RWO</td>
+<td>Bound</td>
+</tr>
+<tr class="odd">
+<td><code>storage-smoke</code></td>
+<td><code>nfs-smoke-pvc</code></td>
+<td style="text-align: right;">1Gi</td>
+<td>RWX</td>
+<td>Bound</td>
+</tr>
+</tbody>
+</table>
+<p>이 구성으로 application이 PVC만 요청하면 NFS provisioner가 PV를 생성하고, cluster 내 workload는 동일한 storage class를 통해 persistent volume을 사용할 수 있습니다.</p>
+</section>
+<section id="observability" class="level2" data-number="16">
+<h2 data-number="16" class="anchored" data-anchor-id="observability"><span class="header-section-number">16</span> Observability</h2>
+<p>관측성은 full <code>kube-prometheus-stack</code> 대신 Prometheus chart와 Grafana chart를 분리한 lightweight profile로 구성했습니다.</p>
+<p>이 선택의 이유는 다음과 같습니다.</p>
 <ul>
-<li><code>dropapp.mintcocoa.cc</code></li>
-<li><code>webhook.mintcocoa.cc</code></li>
-<li><code>portfolio.mintcocoa.cc</code></li>
+<li>Proxmox host의 memory가 제한적입니다.</li>
+<li>이미 native HA control-plane을 운영하고 있어 control-plane overhead를 줄여야 합니다.</li>
+<li>현재 demo scope에서는 Prometheus Operator의 CRD와 controller overhead가 필수는 아닙니다.</li>
 </ul>
-<p>외부에서 실제 접속하려면 edge proxy의 host route도 동일하게 클러스터 ingress LoadBalancer IP로 연결해야 합니다.</p>
+<p>현재 구성은 다음과 같습니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 23%">
+<col style="width: 23%">
+<col style="width: 30%">
+<col style="width: 23%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Chart</th>
+<th style="text-align: right;">Version</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Prometheus</td>
+<td><code>prometheus-community/prometheus</code></td>
+<td style="text-align: right;">29.2.1</td>
+<td>Metrics collection</td>
+</tr>
+<tr class="even">
+<td>Grafana</td>
+<td><code>grafana/grafana</code></td>
+<td style="text-align: right;">10.5.15</td>
+<td>Dashboard UI</td>
+</tr>
+<tr class="odd">
+<td>kube-state-metrics</td>
+<td>Prometheus subchart</td>
+<td style="text-align: right;">chart-managed</td>
+<td>Kubernetes object metrics</td>
+</tr>
+</tbody>
+</table>
+<p>Sizing은 짧은 보존 기간과 작은 PVC를 기준으로 잡았습니다.</p>
+<pre class="text"><code>Prometheus retention: 24h
+Prometheus retention size: 1GB
+Prometheus PVC: 2Gi on nfs-client
+Grafana PVC: 1Gi on nfs-client</code></pre>
 </section>
-<section id="운영-검증" class="level2">
-<h2 class="anchored" data-anchor-id="운영-검증">운영 검증</h2>
+<section id="verified-traffic-flows" class="level2" data-number="17">
+<h2 data-number="17" class="anchored" data-anchor-id="verified-traffic-flows"><span class="header-section-number">17</span> Verified Traffic Flows</h2>
+<p>Direct Kubernetes ingress flow는 다음 경로로 검증했습니다.</p>
+<pre class="text"><code>Client
+  -&gt; 172.30.1.240
+  -&gt; nginx ingress
+  -&gt; portfolio/demo/grafana/argocd Service
+  -&gt; Pod</code></pre>
+<p>Edge proxy flow는 현재 portfolio 경로에 대해 검증했습니다.</p>
+<pre class="text"><code>Client
+  -&gt; 172.30.1.27:443
+  -&gt; portfolio.mintcocoa.cc
+  -&gt; portfolio service</code></pre>
+<p>즉, Kubernetes Ingress 자체는 여러 hostname에서 정상 동작하고 있으며, 남은 문제는 edge proxy의 virtual host 또는 upstream mapping입니다.</p>
+</section>
+<section id="운영-검증" class="level2" data-number="18">
+<h2 data-number="18" class="anchored" data-anchor-id="운영-검증"><span class="header-section-number">18</span> 운영 검증</h2>
 <p>배포 후 다음을 검증했습니다.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">kubectl</span> get application <span class="at">-n</span> argocd</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="ex">kubectl</span> get all,ingress,pvc <span class="at">-n</span> webhook-inbox</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">--resolve</span> webhook.mintcocoa.cc:80:172.30.1.240 <span class="dt">\</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  http://webhook.mintcocoa.cc/healthz</span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
-<p>검증 포인트는 단순히 Pod가 뜨는지가 아니라, 실제 Ingress 경로로 HTTP API가 응답하고, 이벤트가 PVC에 JSONL로 기록되는지까지 확인하는 것이었습니다.</p>
+<div class="evidence-block">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>검증 항목</th>
+<th>확인 기준</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Argo CD Application</td>
+<td>앱이 <code>Synced</code> / <code>Healthy</code> 상태로 수렴</td>
+</tr>
+<tr class="even">
+<td>Kubernetes resources</td>
+<td>Deployment, Service, Ingress, PVC가 namespace에 생성</td>
+</tr>
+<tr class="odd">
+<td>HTTP health check</td>
+<td><code>portfolio.mintcocoa.cc</code> direct ingress와 edge HTTPS 경로 응답</td>
+</tr>
+<tr class="even">
+<td>Storage</td>
+<td>NFS provisioner가 PVC 요청으로 PV를 생성</td>
+</tr>
+<tr class="odd">
+<td>Image traceability</td>
+<td>실행 중인 image tag가 Git commit SHA와 일치</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">kubectl</span> get application <span class="at">-n</span> argocd</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ex">kubectl</span> get nodes <span class="at">-o</span> wide</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="ex">kubectl</span> get all,ingress,pvc <span class="at">-A</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-sS</span> <span class="at">-I</span> <span class="at">--resolve</span> portfolio.mintcocoa.cc:80:172.30.1.240 <span class="dt">\</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  http://portfolio.mintcocoa.cc</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-k</span> <span class="at">-sS</span> <span class="at">--resolve</span> portfolio.mintcocoa.cc:443:172.30.1.27 <span class="dt">\</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  https://portfolio.mintcocoa.cc</span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
+<p>검증 포인트는 단순히 Pod가 뜨는지가 아니라, 실제 Ingress 경로로 HTTP API가 응답하고, Argo CD가 GitOps source에서 live cluster를 수렴시키며, storage와 edge path가 운영 가능한 상태인지까지 확인하는 것이었습니다.</p>
 </section>
-<section id="결과" class="level2">
-<h2 class="anchored" data-anchor-id="결과">결과</h2>
+<section id="결과" class="level2" data-number="19">
+<h2 data-number="19" class="anchored" data-anchor-id="결과"><span class="header-section-number">19</span> 결과</h2>
 <p>이번 작업으로 다음을 달성했습니다.</p>
 <ul>
-<li>직접 만든 C++ io_uring 웹 런타임으로 실사용 앱 2개를 구현했습니다.</li>
-<li>앱을 GHCR 이미지로 빌드하고 GitOps repo를 자동 갱신했습니다.</li>
+<li>직접 만든 C++ io_uring 웹 런타임으로 portfolio 정적 파일 서버를 운영 경로에 올렸습니다.</li>
+<li>앱을 GHCR 이미지로 빌드하고 GitOps repo를 자동 갱신하는 경로를 구성했습니다.</li>
 <li>Argo CD automated sync로 홈 Kubernetes 클러스터에 배포했습니다.</li>
-<li>도메인 기반 Ingress 라우팅과 <code>/healthz</code> 검증 경로를 갖췄습니다.</li>
-<li>운영 이벤트를 수집하는 내부 가시성 앱을 추가했습니다.</li>
-<li>이 포트폴리오 문서 자체도 같은 런타임 서버 위에 서빙할 수 있게 구성했습니다.</li>
+<li>Proxmox VM 기반 5-node Kubernetes HA cluster에서 workload를 운영했습니다.</li>
+<li>MetalLB, ingress-nginx, edge proxy를 통해 <code>portfolio.mintcocoa.cc</code> HTTPS 경로를 검증했습니다.</li>
+<li>Prometheus, Grafana, NFS dynamic provisioner로 관측과 persistent storage 기반을 갖췄습니다.</li>
 </ul>
 </section>
-<section id="회고" class="level2">
-<h2 class="anchored" data-anchor-id="회고">회고</h2>
-<p>가장 큰 성과는 런타임, 앱, 컨테이너, GitOps, 도메인 라우팅이 하나의 end-to-end 시스템으로 연결됐다는 점입니다. C++ 서버 구현만으로 끝내지 않고, 실제 운영에 필요한 배포 자동화와 관측 가능성까지 연결하면서 런타임의 실사용성을 검증했습니다.</p>
-<p>다음 단계는 <code>webhook-inbox</code>에 내부 service health poller를 추가해 webhook 기반 이벤트뿐 아니라 서비스의 현재 상태도 자동으로 수집하는 것입니다.</p>
+<section id="current-gaps" class="level2" data-number="20">
+<h2 data-number="20" class="anchored" data-anchor-id="current-gaps"><span class="header-section-number">20</span> Current Gaps</h2>
+<p>현재 남은 운영 gap은 다음과 같습니다.</p>
+<ol type="1">
+<li>Edge proxy routing을 정리해 <code>demo.mintcocoa.cc</code>, <code>grafana.homelab.local</code>, <code>argocd.homelab.local</code>도 <code>172.30.1.240</code>의 ingress backend로 라우팅해야 합니다.</li>
+<li><code>dropapp</code>과 <code>webhook-inbox</code>는 GitOps 정의만 준비된 상태이므로 Argo CD Application을 활성화하고 live cluster에서 검증해야 합니다.</li>
+<li>일부 repository와 Terraform path에는 아직 <code>k3s</code> 명칭이 남아 있습니다. 현재 verified state는 Kubespray 기반 native Kubernetes HA cluster이므로 문서/경로명을 장기적으로 정리해야 합니다.</li>
+<li>Edge proxy virtual host 정리 후 public DNS와 home router forwarding을 외부 네트워크에서 재검증해야 합니다.</li>
+</ol>
+</section>
+<section id="회고" class="level2" data-number="21">
+<h2 data-number="21" class="anchored" data-anchor-id="회고"><span class="header-section-number">21</span> 회고</h2>
+<p>가장 큰 성과는 런타임, 컨테이너, GitOps, Kubernetes HA cluster, ingress, edge proxy가 하나의 end-to-end 시스템으로 연결됐다는 점입니다. C++ 서버 구현만으로 끝내지 않고, 실제 운영에 필요한 배포 자동화, 관측 가능성, persistent storage까지 연결하면서 런타임의 실사용성을 검증했습니다.</p>
+<p>다음 단계는 edge proxy virtual host mapping을 정리하고, <code>dropapp</code>과 <code>webhook-inbox</code> Argo CD Applications를 활성화해 live workload로 검증하는 것입니다.</p>
+</section>
+<section id="관련-레포" class="level2" data-number="22">
+<h2 data-number="22" class="anchored" data-anchor-id="관련-레포"><span class="header-section-number">22</span> 관련 레포</h2>
+<div class="repo-links">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>레포</th>
+<th>역할</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://github.com/mint-cocoa/iouring-runtime">iouring-runtime</a></td>
+<td>C++ runtime, web module, proxy module</td>
+</tr>
+<tr class="even">
+<td><a href="https://github.com/mint-cocoa/portfolio">portfolio</a></td>
+<td>이 문서와 C++ 정적 파일 서버 이미지</td>
+</tr>
+<tr class="odd">
+<td><a href="https://github.com/mint-cocoa/home-k8s-gitops">home-k8s-gitops</a></td>
+<td>Helm values, Argo CD Application, cluster desired state</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="다음-문서" class="level2" data-number="23">
+<h2 data-number="23" class="anchored" data-anchor-id="다음-문서"><span class="header-section-number">23</span> 다음 문서</h2>
+<div class="next-docs">
+<p><a href="../index.html">포트폴리오 문서 인덱스</a> · <a href="../server/ServerCorePortfolio.html">서버 구현 포트폴리오</a> · <a href="../client/ClientPortfolio.html">클라이언트 구현 포트폴리오</a></p>
+</div>
 </section>
 
 </main>
@@ -464,6 +952,11 @@ clusters/home/
           if (link.dataset.originalHref !== undefined) {
             link.href = link.dataset.originalHref;
           }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
         }
       }
     function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {

@@ -2,6 +2,5 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$repo_root"
 
-quarto render docs/devops/DevOpsPortfolio.qmd --to html
+"$repo_root/scripts/render-docs.sh"
