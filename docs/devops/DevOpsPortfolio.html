@@ -72,7 +72,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="DevOpsPortfolio_files/libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="DevOpsPortfolio_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="DevOpsPortfolio_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="DevOpsPortfolio_files/libs/bootstrap/bootstrap-cd37af5c9656c96ad5e78ce08c954e10.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="DevOpsPortfolio_files/libs/bootstrap/bootstrap-b266025aee7dee100f5553a3ab926a66.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script src="DevOpsPortfolio_files/libs/quarto-diagram/mermaid.min.js"></script>
 <script src="DevOpsPortfolio_files/libs/quarto-diagram/mermaid-init.js"></script>
 <link href="DevOpsPortfolio_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
@@ -106,12 +106,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#storage-plane" id="toc-storage-plane" class="nav-link" data-scroll-target="#storage-plane"><span class="header-section-number">15</span> Storage Plane</a></li>
   <li><a href="#observability" id="toc-observability" class="nav-link" data-scroll-target="#observability"><span class="header-section-number">16</span> Observability</a></li>
   <li><a href="#verified-traffic-flows" id="toc-verified-traffic-flows" class="nav-link" data-scroll-target="#verified-traffic-flows"><span class="header-section-number">17</span> Verified Traffic Flows</a></li>
-  <li><a href="#운영-검증" id="toc-운영-검증" class="nav-link" data-scroll-target="#운영-검증"><span class="header-section-number">18</span> 운영 검증</a></li>
-  <li><a href="#결과" id="toc-결과" class="nav-link" data-scroll-target="#결과"><span class="header-section-number">19</span> 결과</a></li>
-  <li><a href="#current-gaps" id="toc-current-gaps" class="nav-link" data-scroll-target="#current-gaps"><span class="header-section-number">20</span> Current Gaps</a></li>
-  <li><a href="#회고" id="toc-회고" class="nav-link" data-scroll-target="#회고"><span class="header-section-number">21</span> 회고</a></li>
-  <li><a href="#관련-레포" id="toc-관련-레포" class="nav-link" data-scroll-target="#관련-레포"><span class="header-section-number">22</span> 관련 레포</a></li>
-  <li><a href="#다음-문서" id="toc-다음-문서" class="nav-link" data-scroll-target="#다음-문서"><span class="header-section-number">23</span> 다음 문서</a></li>
+  <li><a href="#live-ops-dashboard" id="toc-live-ops-dashboard" class="nav-link" data-scroll-target="#live-ops-dashboard"><span class="header-section-number">18</span> Live Ops Dashboard</a></li>
+  <li><a href="#운영-검증" id="toc-운영-검증" class="nav-link" data-scroll-target="#운영-검증"><span class="header-section-number">19</span> 운영 검증</a></li>
+  <li><a href="#운영-증거" id="toc-운영-증거" class="nav-link" data-scroll-target="#운영-증거"><span class="header-section-number">20</span> 운영 증거</a>
+  <ul class="collapse">
+  <li><a href="#gitops-sync" id="toc-gitops-sync" class="nav-link" data-scroll-target="#gitops-sync"><span class="header-section-number">20.1</span> GitOps Sync</a></li>
+  <li><a href="#cluster-runtime" id="toc-cluster-runtime" class="nav-link" data-scroll-target="#cluster-runtime"><span class="header-section-number">20.2</span> Cluster Runtime</a></li>
+  <li><a href="#ingress-and-live-portfolio" id="toc-ingress-and-live-portfolio" class="nav-link" data-scroll-target="#ingress-and-live-portfolio"><span class="header-section-number">20.3</span> Ingress And Live Portfolio</a></li>
+  <li><a href="#ci-to-gitops-rollout" id="toc-ci-to-gitops-rollout" class="nav-link" data-scroll-target="#ci-to-gitops-rollout"><span class="header-section-number">20.4</span> CI To GitOps Rollout</a></li>
+  <li><a href="#storage-and-observability" id="toc-storage-and-observability" class="nav-link" data-scroll-target="#storage-and-observability"><span class="header-section-number">20.5</span> Storage And Observability</a></li>
+  </ul></li>
+  <li><a href="#결과" id="toc-결과" class="nav-link" data-scroll-target="#결과"><span class="header-section-number">21</span> 결과</a></li>
+  <li><a href="#current-gaps" id="toc-current-gaps" class="nav-link" data-scroll-target="#current-gaps"><span class="header-section-number">22</span> Current Gaps</a></li>
+  <li><a href="#회고" id="toc-회고" class="nav-link" data-scroll-target="#회고"><span class="header-section-number">23</span> 회고</a></li>
+  <li><a href="#관련-레포" id="toc-관련-레포" class="nav-link" data-scroll-target="#관련-레포"><span class="header-section-number">24</span> 관련 레포</a></li>
+  <li><a href="#다음-문서" id="toc-다음-문서" class="nav-link" data-scroll-target="#다음-문서"><span class="header-section-number">25</span> 다음 문서</a></li>
   </ul>
 </nav>
 </div>
@@ -754,8 +763,31 @@ Grafana PVC: 1Gi on nfs-client</code></pre>
   -&gt; portfolio service</code></pre>
 <p>즉, Kubernetes Ingress 자체는 여러 hostname에서 정상 동작하고 있으며, 남은 문제는 edge proxy의 virtual host 또는 upstream mapping입니다.</p>
 </section>
-<section id="운영-검증" class="level2" data-number="18">
-<h2 data-number="18" class="anchored" data-anchor-id="운영-검증"><span class="header-section-number">18</span> 운영 검증</h2>
+<section id="live-ops-dashboard" class="level2" data-number="18">
+<h2 data-number="18" class="anchored" data-anchor-id="live-ops-dashboard"><span class="header-section-number">18</span> Live Ops Dashboard</h2>
+<p>운영 상태를 포트폴리오에서 바로 확인할 수 있도록 별도 read-only Ops API를 구성했습니다. 대시보드는 정적 Quarto dashboard로 렌더링되며, 브라우저에서 <code>https://ops-api.mintcocoa.cc</code>를 호출해 Prometheus와 Proxmox 요약 상태를 읽습니다.</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+    Portfolio[portfolio.mintcocoa.cc&lt;br/&gt;mint-cocoa.github.io] --&gt; Dashboard[OpsDashboard.html]
+    Dashboard --&gt; Tunnel[ops-api.mintcocoa.cc&lt;br/&gt;Cloudflare Tunnel]
+    Tunnel --&gt; FastAPI[FastAPI&lt;br/&gt;127.0.0.1:18081]
+    FastAPI --&gt; Prometheus[Prometheus Ingress&lt;br/&gt;prometheus.homelab.local]
+    FastAPI --&gt; Proxmox[Proxmox API&lt;br/&gt;172.30.1.12:8006]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>이 경로는 기존 C++ TCP reverse proxy와 분리했습니다. <code>ops-api.mintcocoa.cc</code>는 Cloudflare Tunnel CNAME으로 연결되고, 로컬 FastAPI는 <code>127.0.0.1:18081</code>에만 바인딩됩니다. CORS는 <code>https://portfolio.mintcocoa.cc</code>와 <code>https://mint-cocoa.github.io</code>만 허용합니다.</p>
+<p>대시보드: <a href="OpsDashboard.html">Live Ops Dashboard</a></p>
+</section>
+<section id="운영-검증" class="level2" data-number="19">
+<h2 data-number="19" class="anchored" data-anchor-id="운영-검증"><span class="header-section-number">19</span> 운영 검증</h2>
 <p>배포 후 다음을 검증했습니다.</p>
 <div class="evidence-block">
 <table class="caption-top table">
@@ -802,8 +834,44 @@ Grafana PVC: 1Gi on nfs-client</code></pre>
 <span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  https://portfolio.mintcocoa.cc</span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
 <p>검증 포인트는 단순히 Pod가 뜨는지가 아니라, 실제 Ingress 경로로 HTTP API가 응답하고, Argo CD가 GitOps source에서 live cluster를 수렴시키며, storage와 edge path가 운영 가능한 상태인지까지 확인하는 것이었습니다.</p>
 </section>
-<section id="결과" class="level2" data-number="19">
-<h2 data-number="19" class="anchored" data-anchor-id="결과"><span class="header-section-number">19</span> 결과</h2>
+<section id="운영-증거" class="level2" data-number="20">
+<h2 data-number="20" class="anchored" data-anchor-id="운영-증거"><span class="header-section-number">20</span> 운영 증거</h2>
+<p>아래 캡처는 2026-04-26 기준 실제 홈랩 클러스터와 GitHub Actions에서 수집한 운영 증거입니다. Secret, token, repo credential 원문은 포함하지 않았습니다.</p>
+<section id="gitops-sync" class="level3" data-number="20.1">
+<h3 data-number="20.1" class="anchored" data-anchor-id="gitops-sync"><span class="header-section-number">20.1</span> GitOps Sync</h3>
+<p>Argo CD Application들이 <code>Synced / Healthy</code> 상태로 수렴했고, portfolio 앱의 Service, Deployment, Ingress 리소스도 같은 revision에서 동기화되어 있습니다.</p>
+<p><img src="assets/argocd-applications-synced.png" class="img-fluid"></p>
+<p><img src="assets/argocd-portfolio-tree.png" class="img-fluid"></p>
+</section>
+<section id="cluster-runtime" class="level3" data-number="20.2">
+<h3 data-number="20.2" class="anchored" data-anchor-id="cluster-runtime"><span class="header-section-number">20.2</span> Cluster Runtime</h3>
+<p>컨트롤 플레인 3대와 워커 2대로 구성된 5-node Kubernetes 클러스터가 모두 <code>Ready</code> 상태입니다.</p>
+<p><img src="assets/kubectl-nodes-wide.png" class="img-fluid"></p>
+</section>
+<section id="ingress-and-live-portfolio" class="level3" data-number="20.3">
+<h3 data-number="20.3" class="anchored" data-anchor-id="ingress-and-live-portfolio"><span class="header-section-number">20.3</span> Ingress And Live Portfolio</h3>
+<p><code>portfolio.mintcocoa.cc</code> Ingress는 nginx class를 사용하고, MetalLB가 할당한 <code>172.30.1.240</code> LoadBalancer IP를 통해 서비스로 연결됩니다.</p>
+<p><img src="assets/kubectl-ingress-wide.png" class="img-fluid"></p>
+<p><img src="assets/portfolio-workload-wide.png" class="img-fluid"></p>
+<p><img src="assets/portfolio-live-domain.png" class="img-fluid"></p>
+<p><img src="assets/portfolio-live-browser.png" class="img-fluid"></p>
+</section>
+<section id="ci-to-gitops-rollout" class="level3" data-number="20.4">
+<h3 data-number="20.4" class="anchored" data-anchor-id="ci-to-gitops-rollout"><span class="header-section-number">20.4</span> CI To GitOps Rollout</h3>
+<p>GitHub Actions의 <code>portfolio image</code> workflow가 commit SHA <code>6da88c60da7c1d2c8582e01130a0b1ff4e6bf1c8</code> 이미지를 GHCR에 push했고, GitOps repo의 <code>apps/portfolio/values.yaml</code> image tag를 같은 SHA로 갱신했습니다. Argo CD portfolio revision <code>adf1f540af7480826d0af76b818b367a32a67d5f</code>는 이 GitOps 변경 commit입니다.</p>
+<p><img src="assets/github-actions-portfolio-image.png" class="img-fluid"></p>
+<p><img src="assets/github-actions-image-push-log.png" class="img-fluid"></p>
+<p><img src="assets/gitops-portfolio-values-tag.png" class="img-fluid"></p>
+</section>
+<section id="storage-and-observability" class="level3" data-number="20.5">
+<h3 data-number="20.5" class="anchored" data-anchor-id="storage-and-observability"><span class="header-section-number">20.5</span> Storage And Observability</h3>
+<p>Prometheus와 Grafana는 <code>monitoring</code> namespace에서 실행 중이며, 기본 StorageClass는 <code>nfs-client</code>입니다. Grafana와 Prometheus PVC가 <code>Bound</code> 상태로 유지되어 stateless demo가 아니라 persistent storage까지 연결된 구성을 보여줍니다.</p>
+<p><img src="assets/monitoring-pods-pvc.png" class="img-fluid"></p>
+<p><img src="assets/storageclass-pv-pvc.png" class="img-fluid"></p>
+</section>
+</section>
+<section id="결과" class="level2" data-number="21">
+<h2 data-number="21" class="anchored" data-anchor-id="결과"><span class="header-section-number">21</span> 결과</h2>
 <p>이번 작업으로 다음을 달성했습니다.</p>
 <ul>
 <li>직접 만든 C++ io_uring 웹 런타임으로 portfolio 정적 파일 서버를 운영 경로에 올렸습니다.</li>
@@ -814,8 +882,8 @@ Grafana PVC: 1Gi on nfs-client</code></pre>
 <li>Prometheus, Grafana, NFS dynamic provisioner로 관측과 persistent storage 기반을 갖췄습니다.</li>
 </ul>
 </section>
-<section id="current-gaps" class="level2" data-number="20">
-<h2 data-number="20" class="anchored" data-anchor-id="current-gaps"><span class="header-section-number">20</span> Current Gaps</h2>
+<section id="current-gaps" class="level2" data-number="22">
+<h2 data-number="22" class="anchored" data-anchor-id="current-gaps"><span class="header-section-number">22</span> Current Gaps</h2>
 <p>현재 남은 운영 gap은 다음과 같습니다.</p>
 <ol type="1">
 <li>Edge proxy routing을 정리해 <code>demo.mintcocoa.cc</code>, <code>grafana.homelab.local</code>, <code>argocd.homelab.local</code>도 <code>172.30.1.240</code>의 ingress backend로 라우팅해야 합니다.</li>
@@ -824,13 +892,13 @@ Grafana PVC: 1Gi on nfs-client</code></pre>
 <li>Edge proxy virtual host 정리 후 public DNS와 home router forwarding을 외부 네트워크에서 재검증해야 합니다.</li>
 </ol>
 </section>
-<section id="회고" class="level2" data-number="21">
-<h2 data-number="21" class="anchored" data-anchor-id="회고"><span class="header-section-number">21</span> 회고</h2>
+<section id="회고" class="level2" data-number="23">
+<h2 data-number="23" class="anchored" data-anchor-id="회고"><span class="header-section-number">23</span> 회고</h2>
 <p>가장 큰 성과는 런타임, 컨테이너, GitOps, Kubernetes HA cluster, ingress, edge proxy가 하나의 end-to-end 시스템으로 연결됐다는 점입니다. C++ 서버 구현만으로 끝내지 않고, 실제 운영에 필요한 배포 자동화, 관측 가능성, persistent storage까지 연결하면서 런타임의 실사용성을 검증했습니다.</p>
 <p>다음 단계는 edge proxy virtual host mapping을 정리하고, <code>dropapp</code>과 <code>webhook-inbox</code> Argo CD Applications를 활성화해 live workload로 검증하는 것입니다.</p>
 </section>
-<section id="관련-레포" class="level2" data-number="22">
-<h2 data-number="22" class="anchored" data-anchor-id="관련-레포"><span class="header-section-number">22</span> 관련 레포</h2>
+<section id="관련-레포" class="level2" data-number="24">
+<h2 data-number="24" class="anchored" data-anchor-id="관련-레포"><span class="header-section-number">24</span> 관련 레포</h2>
 <div class="repo-links">
 <table class="caption-top table">
 <thead>
@@ -856,8 +924,8 @@ Grafana PVC: 1Gi on nfs-client</code></pre>
 </table>
 </div>
 </section>
-<section id="다음-문서" class="level2" data-number="23">
-<h2 data-number="23" class="anchored" data-anchor-id="다음-문서"><span class="header-section-number">23</span> 다음 문서</h2>
+<section id="다음-문서" class="level2" data-number="25">
+<h2 data-number="25" class="anchored" data-anchor-id="다음-문서"><span class="header-section-number">25</span> 다음 문서</h2>
 <div class="next-docs">
 <p><a href="../index.html">포트폴리오 문서 인덱스</a> · <a href="../server/ServerCorePortfolio.html">서버 구현 포트폴리오</a> · <a href="../client/ClientPortfolio.html">클라이언트 구현 포트폴리오</a></p>
 </div>

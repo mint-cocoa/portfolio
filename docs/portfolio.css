@@ -6,6 +6,7 @@
   --portfolio-blue: #2563eb;
   --portfolio-green: #16815b;
   --portfolio-red: #c2413d;
+  --portfolio-amber: #a16207;
 }
 
 body {
@@ -52,7 +53,7 @@ body {
 
 .doc-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 1rem;
   margin: 1rem 0 2rem;
 }
@@ -72,6 +73,10 @@ body {
 
 .doc-card.devops {
   border-top-color: var(--portfolio-green);
+}
+
+.doc-card.ops {
+  border-top-color: var(--portfolio-amber);
 }
 
 .doc-card h3 {
@@ -117,8 +122,7 @@ body {
 }
 
 @media (max-width: 900px) {
-  .summary-grid,
-  .doc-grid {
+  .summary-grid {
     grid-template-columns: 1fr;
   }
 }

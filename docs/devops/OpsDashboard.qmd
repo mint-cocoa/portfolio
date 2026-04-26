@@ -1,0 +1,332 @@
+---
+title: "Live Ops Dashboard"
+author: "배진후"
+lang: ko
+format:
+  dashboard:
+    theme: cosmo
+    scrolling: true
+    nav-buttons:
+      - text: Portfolio
+        href: ../index.html
+      - text: DevOps
+        href: DevOpsPortfolio.html
+---
+
+```{=html}
+<style>
+.ops-kicker {
+  color: #5d667a;
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.ops-value {
+  color: #172033;
+  font-size: clamp(1.55rem, 3vw, 2.45rem);
+  font-weight: 720;
+  line-height: 1.1;
+}
+
+.ops-subtle {
+  color: #5d667a;
+  font-size: 0.88rem;
+}
+
+.ops-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid #d9dee8;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  background: #f5f7fb;
+  color: #172033;
+  font-size: 0.86rem;
+}
+
+.ops-dot {
+  width: 0.58rem;
+  height: 0.58rem;
+  border-radius: 999px;
+  background: #a16207;
+}
+
+.ops-dot.ok {
+  background: #16815b;
+}
+
+.ops-dot.fail {
+  background: #c2413d;
+}
+
+.ops-stack {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ops-hop {
+  border: 1px solid #d9dee8;
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: #fff;
+}
+
+.ops-hop strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.ops-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.ops-table th,
+.ops-table td {
+  border-bottom: 1px solid #e6e9f0;
+  padding: 0.42rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.ops-table th {
+  color: #5d667a;
+  font-weight: 650;
+}
+
+.ops-pill {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.12rem 0.45rem;
+  background: #f5f7fb;
+  color: #172033;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.ops-pill.running,
+.ops-pill.online,
+.ops-pill.up {
+  background: #e8f6ef;
+  color: #166044;
+}
+
+.ops-pill.stopped,
+.ops-pill.down {
+  background: #faecea;
+  color: #9b2f2b;
+}
+</style>
+```
+
+## Row {height="18%"}
+
+::: {.valuebox icon="activity" color="success"}
+Prometheus Targets
+
+<div class="ops-value" id="targets-value">Loading</div>
+<div class="ops-subtle" id="targets-detail">ops-api.mintcocoa.cc 연결 중</div>
+:::
+
+::: {.valuebox icon="hdd-network" color="primary"}
+Kubernetes Pods
+
+<div class="ops-value" id="pods-value">Loading</div>
+<div class="ops-subtle" id="pods-detail">Prometheus kube-state-metrics</div>
+:::
+
+::: {.valuebox icon="server" color="info"}
+Proxmox Node
+
+<div class="ops-value" id="node-value">Loading</div>
+<div class="ops-subtle" id="node-detail">172.30.1.12 API token auth</div>
+:::
+
+::: {.valuebox icon="pc-display" color="warning"}
+Virtual Machines
+
+<div class="ops-value" id="vm-value">Loading</div>
+<div class="ops-subtle" id="vm-detail">running / total</div>
+:::
+
+## Row {height="35%"}
+
+::: {.card title="End-to-End Runtime Path"}
+```{=html}
+<div class="ops-stack">
+  <div class="ops-hop">
+    <strong>Portfolio UI</strong>
+    <span class="ops-subtle">https://portfolio.mintcocoa.cc 또는 https://mint-cocoa.github.io</span>
+  </div>
+  <div class="ops-hop">
+    <strong>Cloudflare Tunnel</strong>
+    <span class="ops-subtle">ops-api.mintcocoa.cc -> http://127.0.0.1:18081</span>
+  </div>
+  <div class="ops-hop">
+    <strong>FastAPI Ops API</strong>
+    <span class="ops-subtle">Prometheus Ingress와 Proxmox API를 read-only summary로 정리</span>
+  </div>
+  <div class="ops-hop">
+    <strong>Observed Backends</strong>
+    <span class="ops-subtle">Prometheus targets, Kubernetes workload series, Proxmox node/VM resources</span>
+  </div>
+</div>
+```
+:::
+
+::: {.card title="Live Health"}
+```{=html}
+<p>
+  <span class="ops-status">
+    <span class="ops-dot" id="health-dot"></span>
+    <span id="health-text">Checking</span>
+  </span>
+</p>
+```
+
+| Check | Status |
+|---|---|
+| Prometheus | <span id="health-prometheus">Loading</span> |
+| Proxmox | <span id="health-proxmox">Loading</span> |
+| Auth mode | <span id="health-auth">Loading</span> |
+| Updated | <span id="updated-at">Loading</span> |
+:::
+
+## Row {height="47%"}
+
+::: {.card title="Proxmox VM Inventory"}
+```{=html}
+<table class="ops-table">
+  <thead>
+    <tr>
+      <th>VMID</th>
+      <th>Name</th>
+      <th>Status</th>
+      <th>vCPU</th>
+      <th>Memory</th>
+      <th>Uptime</th>
+    </tr>
+  </thead>
+  <tbody id="vm-table-body">
+    <tr><td colspan="6">Loading</td></tr>
+  </tbody>
+</table>
+```
+:::
+
+::: {.card title="Metric Series Snapshot"}
+```{=html}
+<table class="ops-table">
+  <tbody>
+    <tr><th>Deployments</th><td id="deployments-value">Loading</td></tr>
+    <tr><th>PVC phases</th><td id="pvc-value">Loading</td></tr>
+    <tr><th>Container CPU series</th><td id="container-series-value">Loading</td></tr>
+    <tr><th>Prometheus up series</th><td id="up-series-value">Loading</td></tr>
+  </tbody>
+</table>
+```
+:::
+
+```{=html}
+<script>
+const OPS_API_BASE = "https://ops-api.mintcocoa.cc";
+
+const setText = (id, value) => {
+  const element = document.getElementById(id);
+  if (element) element.textContent = value;
+};
+
+const statusPill = (value) => {
+  const safe = String(value ?? "unknown").toLowerCase();
+  return `<span class="ops-pill ${safe}">${value ?? "unknown"}</span>`;
+};
+
+const formatNumber = (value) => {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return "-";
+  return Number(value).toLocaleString("en-US", { maximumFractionDigits: 2 });
+};
+
+const formatBytes = (value) => {
+  const bytes = Number(value);
+  if (!Number.isFinite(bytes) || bytes <= 0) return "-";
+  const units = ["B", "KiB", "MiB", "GiB", "TiB"];
+  let size = bytes;
+  let index = 0;
+  while (size >= 1024 && index < units.length - 1) {
+    size /= 1024;
+    index += 1;
+  }
+  return `${size.toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
+};
+
+const formatDuration = (seconds) => {
+  const total = Number(seconds);
+  if (!Number.isFinite(total) || total <= 0) return "-";
+  const days = Math.floor(total / 86400);
+  const hours = Math.floor((total % 86400) / 3600);
+  if (days > 0) return `${days}d ${hours}h`;
+  return `${hours}h`;
+};
+
+const loadDashboard = async () => {
+  const health = await fetch(`${OPS_API_BASE}/api/health`, { cache: "no-store" }).then((r) => r.json());
+  const summary = await fetch(`${OPS_API_BASE}/api/ops/summary`, { cache: "no-store" }).then((r) => r.json());
+
+  const prom = summary.prometheus?.data;
+  const node = summary.proxmoxNodes?.data?.nodes?.[0];
+  const vms = summary.proxmoxVMs?.data?.resources ?? [];
+  const runningVms = vms.filter((vm) => vm.status === "running").length;
+
+  const healthDot = document.getElementById("health-dot");
+  if (healthDot) healthDot.className = `ops-dot ${health.ok ? "ok" : "fail"}`;
+  setText("health-text", health.ok ? "Ops API healthy" : "Ops API degraded");
+  setText("health-prometheus", health.prometheus);
+  setText("health-proxmox", health.proxmox);
+  setText("health-auth", health.proxmoxAuthMode);
+
+  setText("targets-value", `${prom?.targets?.up ?? "-"} / ${prom?.targets?.total ?? "-"}`);
+  setText("targets-detail", `${prom?.targets?.down ?? "-"} down targets`);
+  setText("pods-value", formatNumber(prom?.series?.pods));
+  setText("pods-detail", `${formatNumber(prom?.series?.deployments)} deployments observed`);
+  setText("node-value", node?.node ?? "-");
+  setText("node-detail", `${node?.status ?? "unknown"} · ${formatBytes(node?.mem)} / ${formatBytes(node?.maxmem)}`);
+  setText("vm-value", `${runningVms} / ${vms.length}`);
+  setText("vm-detail", "running / total qemu resources");
+
+  setText("deployments-value", formatNumber(prom?.series?.deployments));
+  setText("pvc-value", formatNumber(prom?.series?.pvcPhases));
+  setText("container-series-value", formatNumber(prom?.series?.containerCpuSeries));
+  setText("up-series-value", formatNumber(prom?.series?.up));
+  setText("updated-at", new Date((summary.generatedAt ?? Date.now() / 1000) * 1000).toLocaleString());
+
+  const body = document.getElementById("vm-table-body");
+  if (body) {
+    body.innerHTML = vms
+      .slice()
+      .sort((a, b) => Number(a.vmid ?? 0) - Number(b.vmid ?? 0))
+      .map((vm) => `
+        <tr>
+          <td>${vm.vmid ?? "-"}</td>
+          <td>${vm.name ?? vm.id ?? "-"}</td>
+          <td>${statusPill(vm.status)}</td>
+          <td>${vm.maxcpu ?? "-"}</td>
+          <td>${formatBytes(vm.mem)} / ${formatBytes(vm.maxmem)}</td>
+          <td>${formatDuration(vm.uptime)}</td>
+        </tr>
+      `)
+      .join("");
+  }
+};
+
+loadDashboard().catch((error) => {
+  const healthDot = document.getElementById("health-dot");
+  if (healthDot) healthDot.className = "ops-dot fail";
+  setText("health-text", "Ops API fetch failed");
+  setText("targets-value", "Error");
+  setText("targets-detail", error.message);
+  setText("updated-at", new Date().toLocaleString());
+});
+</script>
+```

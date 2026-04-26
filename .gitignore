@@ -4,6 +4,9 @@ _plans/
 .claude/
 _site/
 _freeze/
+.venv/
+__pycache__/
+*.py[cod]
 
 # Source/build files (GitHub Pages only uses docs/)
 01_ServerCore_v4/
@@ -16,6 +19,9 @@ html2pdf.py
 *.txt
 !CMakeLists.txt
 자기소개서*.md
+
+# Local ops credentials
+.env.ops
 
 /.quarto/
 **/*.quarto_ipynb

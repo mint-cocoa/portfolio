@@ -29,9 +29,9 @@ GHCR, GitOps, Argo CD, Kubernetes Ingress까지 연결한 홈랩 배포 경로
 :::
 
 ::: {.summary-card}
-**검증**
+**라이브**
 
-벤치마크, 실제 배포 URL, 운영 이벤트 수집으로 구현 결과 확인
+Cloudflare Tunnel 뒤의 Ops API로 Prometheus와 Proxmox 상태 표시
 :::
 :::
 
@@ -68,6 +68,17 @@ C++ 웹 런타임으로 만든 앱을 컨테이너 이미지, GitOps, Argo CD, K
 
 ::: {.tag-row}
 `Kubernetes` `GitOps` `Argo CD` `GHCR`
+:::
+:::
+
+::: {.doc-card .ops}
+### [Live Ops Dashboard](devops/OpsDashboard.html)
+
+`ops-api.mintcocoa.cc`를 통해 Prometheus target, Kubernetes workload,
+Proxmox node/VM 상태를 실시간으로 읽는 대시보드입니다.
+
+::: {.tag-row}
+`Quarto Dashboard` `Prometheus` `Proxmox` `Cloudflare Tunnel`
 :::
 :::
 :::

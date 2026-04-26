@@ -1,0 +1,13 @@
+[Unit]
+Description=Cloudflare Tunnel bongo-test
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/cloudflared --config /home/cocoa/.cloudflared/config.yml tunnel run bongo-test
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

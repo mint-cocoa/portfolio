@@ -1,0 +1,17 @@
+[Unit]
+Description=Portfolio Ops FastAPI
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/cocoa/portfolio
+EnvironmentFile=-/home/cocoa/portfolio/.env.ops
+Environment=OPS_API_HOST=127.0.0.1
+Environment=OPS_API_PORT=18081
+ExecStart=/home/cocoa/portfolio/scripts/run-ops-api.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
