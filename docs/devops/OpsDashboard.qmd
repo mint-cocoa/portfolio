@@ -96,6 +96,18 @@ format:
   font-weight: 650;
 }
 
+.ops-table .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .ops-pill {
   display: inline-block;
   border-radius: 999px;
@@ -219,6 +231,12 @@ Virtual Machines
 ::: {.card title="Metric Series Snapshot"}
 ```{=html}
 <table class="ops-table">
+  <thead class="sr-only">
+    <tr>
+      <th>Metric</th>
+      <th>Value</th>
+    </tr>
+  </thead>
   <tbody>
     <tr><th>Deployments</th><td id="deployments-value">Loading</td></tr>
     <tr><th>PVC phases</th><td id="pvc-value">Loading</td></tr>

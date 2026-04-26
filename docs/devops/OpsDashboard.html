@@ -160,6 +160,18 @@ ul.task-list li input[type="checkbox"] {
   font-weight: 650;
 }
 
+.ops-table .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .ops-pill {
   display: inline-block;
   border-radius: 999px;
@@ -379,6 +391,12 @@ Metric Series Snapshot
 </span></div></div>
 <div class="card-body html-fill-item html-fill-container">
 <table class="ops-table caption-top table">
+<thead class="sr-only">
+<tr class="header">
+<th data-quarto-table-cell-role="th">Metric</th>
+<th data-quarto-table-cell-role="th">Value</th>
+</tr>
+</thead>
 <tbody>
 <tr class="odd">
 <th data-quarto-table-cell-role="th">Deployments</th>
