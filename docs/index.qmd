@@ -13,7 +13,7 @@ format:
 ::: {.summary-card}
 **서버**
 
-`io_uring` 기반 C++ 네트워크 런타임, 웹 서버 예제, 멀티플레이 게임 서버 구현
+`io_uring` 기반 C++ 네트워크 런타임과 web/proxy/game 서버 구현
 :::
 
 ::: {.summary-card}
@@ -41,8 +41,8 @@ Cloudflare Tunnel 뒤의 Ops API로 Prometheus와 Proxmox 상태 표시
 ::: {.doc-card}
 ### [서버 구현 포트폴리오](server/ServerCorePortfolio.html)
 
-`libiouring-core`, `libiouringweb`, `multiplayer-dungeon-rpg-server`로 분리한
-C++ 서버 런타임과 게임 서버 구현 문서입니다.
+`iouring-runtime` 위에 web, proxy, multiplayer game 서버를 분리해 올린
+C++ 서버 런타임 구현 문서입니다.
 
 ::: {.serve-path}
 **서빙 경로**
@@ -61,7 +61,7 @@ C++ 서버 런타임과 게임 서버 구현 문서입니다.
 :::
 
 ::: {.tag-row}
-`C++` `io_uring` `Web Server` `Game Server`
+`C++` `io_uring` `Linux` `Web` `Proxy` `Game Server`
 :::
 :::
 
