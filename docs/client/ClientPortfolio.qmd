@@ -54,14 +54,14 @@ Login, Character Select, Lobby, GameScene 흐름과 패킷 버퍼링 안정화
 |------|------|
 | **프로젝트명** | Isometric Client — DX11 멀티플레이 던전 RPG |
 | **기술 스택** | C++, DirectX 11, Protobuf 3, Dear ImGui, WinSock2 |
-| **서버** | [multiplayer-dungeon-rpg-server](https://github.com/mint-cocoa/multiplayer-dungeon-rpg-server) on [libiouring-core](https://github.com/mint-cocoa/libiouring-core) |
+| **서버** | [iouring-runtime/examples/game/dungeon_full_server](https://github.com/mint-cocoa/iouring-runtime/tree/main/examples/game/dungeon_full_server) on `RuntimeGame` |
 | **공개 저장소** | [game-client](https://github.com/mint-cocoa/game-client) |
 | **프로토콜** | Binary Header `[size:uint16][msgId:uint16]` + Protobuf 3 payload |
 | **핵심 기술** | 인스턴스드 던전 렌더링, 프로시저럴 이펙트 셰이더, 비동기 네트워킹, 씬 기반 상태 관리 |
 
 : 프로젝트 요약 {#tbl-overview}
 
-DirectX 11 API로 제작한 멀티플레이 던전 RPG 클라이언트입니다. `libiouring-core` 기반 `multiplayer-dungeon-rpg-server`와 연동되며, 엔진 런타임에 의존하지 않고 DX11 파이프라인, 리소스 로더, 네트워크 계층을 직접 구현해 저수준 렌더링과 네트워크 동작을 다뤄보는 것이 목표였습니다.
+DirectX 11 API로 제작한 멀티플레이 던전 RPG 클라이언트입니다. 현재 서버 쪽 기준 구현은 `iouring-runtime`의 `RuntimeGame` 위에 올라간 `dungeon_full_server` 예제이며, 기존 `multiplayer-dungeon-rpg-server`는 이 구조로 흡수된 히스토리 레포입니다. 클라이언트는 엔진 런타임에 의존하지 않고 DX11 파이프라인, 리소스 로더, 네트워크 계층을 직접 구현해 저수준 렌더링과 네트워크 동작을 다뤄보는 것이 목표였습니다.
 ```
 isometric_client/
 ├── src/
@@ -779,8 +779,9 @@ ImGui는 윈도우를 생성하면 자동으로 해당 윈도우에 포커스를
 | 레포 | 역할 |
 |---|---|
 | [game-client](https://github.com/mint-cocoa/game-client) | DirectX 11 클라이언트 구현 |
-| [multiplayer-dungeon-rpg-server](https://github.com/mint-cocoa/multiplayer-dungeon-rpg-server) | 연동 게임 서버 |
-| [libiouring-core](https://github.com/mint-cocoa/libiouring-core) | 서버 런타임 |
+| [iouring-runtime](https://github.com/mint-cocoa/iouring-runtime) | `RuntimeGame`과 `dungeon_full_server` 기준 서버 |
+| [multiplayer-dungeon-rpg-server](https://github.com/mint-cocoa/multiplayer-dungeon-rpg-server) | 통합 이전 연동 게임 서버 히스토리 |
+| [libiouring-core](https://github.com/mint-cocoa/libiouring-core) | 통합 이전 서버 런타임 히스토리 |
 :::
 
 ## 다음 문서

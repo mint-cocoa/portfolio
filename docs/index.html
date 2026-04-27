@@ -37,7 +37,7 @@ ul.task-list li input[type="checkbox"] {
 <link href="index_files/libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="index_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="index_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="index_files/libs/bootstrap/bootstrap-b266025aee7dee100f5553a3ab926a66.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="index_files/libs/bootstrap/bootstrap-1259379c7d25c9af9af798b25a89f741.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 
 
 <link rel="stylesheet" href="portfolio.css">
@@ -98,7 +98,7 @@ ul.task-list li input[type="checkbox"] {
 <div class="doc-grid">
 <section id="서버-구현-포트폴리오" class="level3 doc-card" data-number="1.1">
 <h3 data-number="1.1" class="anchored" data-anchor-id="서버-구현-포트폴리오"><span class="header-section-number">1.1</span> <a href="server/ServerCorePortfolio.html">서버 구현 포트폴리오</a></h3>
-<p><code>iouring-runtime</code> 위에 web, proxy, multiplayer game 서버를 분리해 올린 C++ 서버 런타임 구현 문서입니다.</p>
+<p><code>iouring-runtime</code>의 core Runtime 위에 <code>RuntimeWeb</code>, <code>RuntimeProxy</code>, <code>RuntimeGame</code>을 분리하고 예제 서버들을 올린 C++ 서버 런타임 구현 문서입니다.</p>
 <div class="serve-path">
 <p><strong>서빙 경로</strong></p>
 <p><code>portfolio.mintcocoa.cc/server/ServerCorePortfolio.html</code></p>
@@ -108,6 +108,8 @@ ul.task-list li input[type="checkbox"] {
 <p><strong>연결되는 런타임 예제</strong></p>
 <p><a href="https://github.com/mint-cocoa/iouring-runtime/tree/main/examples/web"><code>iouring-runtime/examples/web</code></a></p>
 <p><code>hello_http</code>, <code>status_server</code>, <code>file_store_server</code>, <code>speedtest_server</code>, <code>dropapp</code>, <code>webhook_inbox</code></p>
+<p><a href="https://github.com/mint-cocoa/iouring-runtime/tree/main/examples/proxy/tcp_reverse_proxy"><code>iouring-runtime/examples/proxy/tcp_reverse_proxy</code></a></p>
+<p><a href="https://github.com/mint-cocoa/iouring-runtime/tree/main/examples/game/dungeon_full_server"><code>iouring-runtime/examples/game/dungeon_full_server</code></a></p>
 </div>
 <div class="tag-row">
 <p><code>C++</code> <code>io_uring</code> <code>Linux</code> <code>Web</code> <code>Proxy</code> <code>Game Server</code></p>
@@ -172,19 +174,19 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 <tr class="even">
 <td><a href="https://github.com/mint-cocoa/iouring-runtime">iouring-runtime</a></td>
-<td>최신 <code>io_uring</code> 런타임, web/proxy 모듈, <code>examples/web</code> 웹 서버 예제</td>
+<td>최신 <code>io_uring</code> Runtime, <code>RuntimeWeb</code>, <code>RuntimeProxy</code>, <code>RuntimeGame</code>, 웹/프록시/게임 예제</td>
 </tr>
 <tr class="odd">
 <td><a href="https://github.com/mint-cocoa/libiouring-core">libiouring-core</a></td>
-<td>서버 구현 문서에서 참조하는 코어 런타임</td>
+<td>통합 이전 코어 런타임 히스토리</td>
 </tr>
 <tr class="even">
 <td><a href="https://github.com/mint-cocoa/libiouringweb">libiouringweb</a></td>
-<td>HTTP/web 계층</td>
+<td>통합 이전 HTTP/web 계층 히스토리</td>
 </tr>
 <tr class="odd">
 <td><a href="https://github.com/mint-cocoa/multiplayer-dungeon-rpg-server">multiplayer-dungeon-rpg-server</a></td>
-<td>멀티플레이 던전 RPG 서버</td>
+<td><code>dungeon_full_server</code>로 흡수된 멀티플레이 던전 RPG 서버 히스토리</td>
 </tr>
 <tr class="even">
 <td><a href="https://github.com/mint-cocoa/game-client">game-client</a></td>

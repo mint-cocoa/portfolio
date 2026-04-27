@@ -6,10 +6,8 @@
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
-#include <fstream>
 #include <limits>
 #include <optional>
-#include <sstream>
 #include <string>
 #include <string_view>
 
@@ -139,24 +137,6 @@ std::optional<std::filesystem::path> SafeRelativePath(std::string_view raw_path)
     return relative;
 }
 
-std::optional<std::string> ReadFile(const std::filesystem::path& path,
-                                    std::uint64_t max_bytes) {
-    std::error_code ec;
-    if (!std::filesystem::is_regular_file(path, ec)) return std::nullopt;
-    const auto size = std::filesystem::file_size(path, ec);
-    if (ec || size > max_bytes) return std::nullopt;
-
-    std::ifstream file(path, std::ios::binary);
-    if (!file) return std::nullopt;
-    std::string body;
-    body.resize(static_cast<std::size_t>(size));
-    file.read(body.data(), static_cast<std::streamsize>(body.size()));
-    if (!file && static_cast<std::uint64_t>(file.gcount()) != size) {
-        return std::nullopt;
-    }
-    return body;
-}
-
 void SendText(RequestContext& ctx, HttpStatus status, std::string body) {
     ctx.response.Status(status)
         .ContentType("text/plain; charset=utf-8")
@@ -165,20 +145,25 @@ void SendText(RequestContext& ctx, HttpStatus status, std::string body) {
 }
 
 void ServeStatic(RequestContext& ctx, const std::filesystem::path& root,
+                 std::string_view raw_path,
                  std::uint64_t max_file_bytes) {
-    const auto safe = SafeRelativePath(ctx.request.path);
+    const auto safe = SafeRelativePath(raw_path);
     if (!safe) {
         SendText(ctx, HttpStatus::kBadRequest, "Bad Request");
         return;
     }
 
     auto path = root / *safe;
-    auto body = ReadFile(path, max_file_bytes);
-    if (!body && safe->extension().empty()) {
+    std::error_code ec;
+    if (!std::filesystem::is_regular_file(path, ec) && safe->extension().empty()) {
         path = root / *safe / "index.html";
-        body = ReadFile(path, max_file_bytes);
     }
-    if (!body) {
+    if (!std::filesystem::is_regular_file(path, ec)) {
+        SendText(ctx, HttpStatus::kNotFound, "Not Found");
+        return;
+    }
+    const auto size = std::filesystem::file_size(path, ec);
+    if (ec || size > max_file_bytes) {
         SendText(ctx, HttpStatus::kNotFound, "Not Found");
         return;
     }
@@ -186,9 +171,10 @@ void ServeStatic(RequestContext& ctx, const std::filesystem::path& root,
     const bool no_cache = path.filename() == "index.html" ||
                           path.extension() == ".html";
     ctx.response.ContentType(MimeType(path.string()))
-        .Header("Cache-Control", no_cache ? "no-cache" : "public, max-age=3600")
-        .Body(std::move(*body))
-        .Send();
+        .Header("Cache-Control", no_cache ? "no-cache" : "public, max-age=3600");
+    if (!ctx.response.SendFile(path.string(), MimeType(path.string()))) {
+        SendText(ctx, HttpStatus::kInternalServerError, "Internal Server Error");
+    }
 }
 
 } // namespace
@@ -222,10 +208,11 @@ int main() {
         ctx.response.ContentType("text/plain; charset=utf-8").Body("ok").Send();
     });
     server.Get("/", [&](RequestContext& ctx) {
-        ServeStatic(ctx, static_root, max_file_bytes);
+        ServeStatic(ctx, static_root, "/", max_file_bytes);
     });
     server.Get("/*path", [&](RequestContext& ctx) {
-        ServeStatic(ctx, static_root, max_file_bytes);
+        ServeStatic(ctx, static_root, ctx.request.ParamDecoded("path"),
+                    max_file_bytes);
     });
 
     server.Start();

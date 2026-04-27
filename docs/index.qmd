@@ -41,8 +41,8 @@ Cloudflare Tunnel 뒤의 Ops API로 Prometheus와 Proxmox 상태 표시
 ::: {.doc-card}
 ### [서버 구현 포트폴리오](server/ServerCorePortfolio.html)
 
-`iouring-runtime` 위에 web, proxy, multiplayer game 서버를 분리해 올린
-C++ 서버 런타임 구현 문서입니다.
+`iouring-runtime`의 core Runtime 위에 `RuntimeWeb`, `RuntimeProxy`, `RuntimeGame`을
+분리하고 예제 서버들을 올린 C++ 서버 런타임 구현 문서입니다.
 
 ::: {.serve-path}
 **서빙 경로**
@@ -58,6 +58,10 @@ C++ 서버 런타임 구현 문서입니다.
 [`iouring-runtime/examples/web`](https://github.com/mint-cocoa/iouring-runtime/tree/main/examples/web)
 
 `hello_http`, `status_server`, `file_store_server`, `speedtest_server`, `dropapp`, `webhook_inbox`
+
+[`iouring-runtime/examples/proxy/tcp_reverse_proxy`](https://github.com/mint-cocoa/iouring-runtime/tree/main/examples/proxy/tcp_reverse_proxy)
+
+[`iouring-runtime/examples/game/dungeon_full_server`](https://github.com/mint-cocoa/iouring-runtime/tree/main/examples/game/dungeon_full_server)
 :::
 
 ::: {.tag-row}
@@ -136,9 +140,9 @@ Proxmox node/VM 상태를 실시간으로 읽는 대시보드입니다.
 | 레포 | 역할 |
 |---|---|
 | [portfolio](https://github.com/mint-cocoa/portfolio) | 이 문서 묶음과 C++ 정적 파일 서버 이미지 |
-| [iouring-runtime](https://github.com/mint-cocoa/iouring-runtime) | 최신 `io_uring` 런타임, web/proxy 모듈, `examples/web` 웹 서버 예제 |
-| [libiouring-core](https://github.com/mint-cocoa/libiouring-core) | 서버 구현 문서에서 참조하는 코어 런타임 |
-| [libiouringweb](https://github.com/mint-cocoa/libiouringweb) | HTTP/web 계층 |
-| [multiplayer-dungeon-rpg-server](https://github.com/mint-cocoa/multiplayer-dungeon-rpg-server) | 멀티플레이 던전 RPG 서버 |
+| [iouring-runtime](https://github.com/mint-cocoa/iouring-runtime) | 최신 `io_uring` Runtime, `RuntimeWeb`, `RuntimeProxy`, `RuntimeGame`, 웹/프록시/게임 예제 |
+| [libiouring-core](https://github.com/mint-cocoa/libiouring-core) | 통합 이전 코어 런타임 히스토리 |
+| [libiouringweb](https://github.com/mint-cocoa/libiouringweb) | 통합 이전 HTTP/web 계층 히스토리 |
+| [multiplayer-dungeon-rpg-server](https://github.com/mint-cocoa/multiplayer-dungeon-rpg-server) | `dungeon_full_server`로 흡수된 멀티플레이 던전 RPG 서버 히스토리 |
 | [game-client](https://github.com/mint-cocoa/game-client) | DirectX 11 게임 클라이언트 |
 | [home-k8s-gitops](https://github.com/mint-cocoa/home-k8s-gitops) | 홈 Kubernetes desired state |

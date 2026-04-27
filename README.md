@@ -1,6 +1,6 @@
 # 포트폴리오 문서 저장소
 
-> 최종 정리일: 2026-04-18
+> 최종 정리일: 2026-04-27
 > 3개 프로젝트의 포트폴리오 문서, 소스코드, 벤치마크 데이터를 프로젝트별로 분류
 
 ---
@@ -9,7 +9,7 @@
 
 ```
 포폴문서/
-├── CMakeLists.txt             ← iouring_runtime_web 기반 정적 포트폴리오 서버 빌드
+├── CMakeLists.txt             ← iouring_runtime_web(RuntimeWeb) 기반 정적 포트폴리오 서버 빌드
 ├── Dockerfile                 ← portfolio_site 컨테이너 이미지 빌드
 ├── scripts/render-devops.sh   ← DevOps QMD 문서 렌더 스크립트
 ├── src/                       ← C++ 포트폴리오 정적 파일 서버
@@ -50,9 +50,10 @@ docker run --rm --security-opt seccomp=unconfined --ulimit memlock=-1:-1 \
 
 **경로**: `01_ServerCore_v4/`
 **공개 저장소**
-- `libiouring-core`: https://github.com/mint-cocoa/libiouring-core
-- `libiouringweb`: https://github.com/mint-cocoa/libiouringweb
-- `multiplayer-dungeon-rpg-server`: https://github.com/mint-cocoa/multiplayer-dungeon-rpg-server
+- `iouring-runtime`: https://github.com/mint-cocoa/iouring-runtime
+- `libiouring-core`: https://github.com/mint-cocoa/libiouring-core (통합 이전 히스토리)
+- `libiouringweb`: https://github.com/mint-cocoa/libiouringweb (통합 이전 히스토리)
+- `multiplayer-dungeon-rpg-server`: https://github.com/mint-cocoa/multiplayer-dungeon-rpg-server (RuntimeGame 예제로 흡수된 서버 히스토리)
 **기술 스택**: C++20, io_uring, Linux
 
 ### 핵심 파일
@@ -65,9 +66,12 @@ docker run --rm --security-opt seccomp=unconfined --ulimit memlock=-1:-1 \
 
 ### 프로젝트 요약
 
-io_uring 기반 비동기 I/O 서버 프레임워크와 그 위에 구현한 멀티플레이 RPG 서버 포트폴리오입니다. 현재는 `libiouring-core`(코어 런타임), `libiouringweb`(웹 프레임워크), `multiplayer-dungeon-rpg-server`(실제 게임 서버 구현)로 분리해 공개했습니다.
+io_uring 기반 비동기 I/O 서버 프레임워크와 그 위에 구현한 web/proxy/game 서버 포트폴리오입니다. 현재 main의 중심은 `iouring-runtime`이며, core `Runtime` 위에 `RuntimeWeb`, `RuntimeProxy`, `RuntimeGame`을 선택형 모듈로 분리했습니다. 기존 독립 게임 서버는 `examples/game/dungeon_full_server`가 `RuntimeGame`을 재사용하는 형태로 흡수했습니다.
 
 **핵심 성과**:
+- 전체 모듈 동시 빌드: `BUILD_WEB=ON`, `BUILD_PROXY=ON`, `BUILD_GAME=ON`, `BUILD_TESTS=ON`
+- 테스트: core/web/proxy/game 총 24개 통과
+- 게임 smoke: `dungeon_protocol_probe`로 로그인, 캐릭터, 룸 생성, scene ready, 채팅, 파티 업데이트 통과
 - Echo 서버: 327K echo/s (100 클라이언트)
 - 브로드캐스트: io_uring이 epoll 대비 p50 레이턴시 525배 개선
 - Room 샤딩: 400봇 기준 epoll 대비 13,905배 개선
