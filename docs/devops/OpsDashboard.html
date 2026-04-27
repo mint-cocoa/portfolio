@@ -39,9 +39,9 @@ ul.task-list li input[type="checkbox"] {
 <link href="OpsDashboard_files/libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="OpsDashboard_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="OpsDashboard_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="OpsDashboard_files/libs/bootstrap/bootstrap-79bab7428df56b7f87f804fd620cd91f.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="OpsDashboard_files/libs/bootstrap/bootstrap-dark-79bab7428df56b7f87f804fd620cd91f.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
-<link href="OpsDashboard_files/libs/bootstrap/bootstrap-79bab7428df56b7f87f804fd620cd91f.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="OpsDashboard_files/libs/bootstrap/bootstrap-c67e9200bb8b3f1227a38767e35d102d.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="OpsDashboard_files/libs/bootstrap/bootstrap-dark-c67e9200bb8b3f1227a38767e35d102d.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="OpsDashboard_files/libs/bootstrap/bootstrap-c67e9200bb8b3f1227a38767e35d102d.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script src="OpsDashboard_files/libs/quarto-dashboard/quarto-dashboard.js"></script>
 <script src="OpsDashboard_files/libs/quarto-dashboard/stickythead.js"></script>
 
@@ -129,16 +129,169 @@ ul.task-list li input[type="checkbox"] {
   gap: 0.75rem;
 }
 
-.ops-hop {
+.ops-hop,
+.ops-node,
+.ops-endpoint-button {
   border: 1px solid #d9dee8;
   border-radius: 8px;
-  padding: 0.75rem;
   background: #fff;
+}
+
+.ops-hop {
+  padding: 0.75rem;
 }
 
 .ops-hop strong {
   display: block;
   margin-bottom: 0.25rem;
+}
+
+.ops-map {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.8fr) minmax(220px, 1fr) minmax(260px, 1.2fr) minmax(280px, 1.35fr);
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.ops-lane {
+  display: grid;
+  gap: 0.65rem;
+  align-content: start;
+}
+
+.ops-lane-title {
+  color: #5d667a;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.ops-node {
+  width: 100%;
+  min-height: 5.4rem;
+  padding: 0.8rem;
+  color: #172033;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.ops-node:hover,
+.ops-node:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.ops-node.active {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+.ops-node.edge {
+  border-left: 5px solid #a16207;
+}
+
+.ops-node.k8s {
+  border-left: 5px solid #16815b;
+}
+
+.ops-node.proxmox {
+  border-left: 5px solid #2563eb;
+}
+
+.ops-node.storage {
+  border-left: 5px solid #7c3aed;
+}
+
+.ops-node strong,
+.ops-endpoint-button strong {
+  display: block;
+  margin-bottom: 0.24rem;
+  font-size: 0.95rem;
+}
+
+.ops-node code,
+.ops-endpoint-button code {
+  color: #5d667a;
+  background: #f5f7fb;
+  font-size: 0.78rem;
+  white-space: normal;
+}
+
+.ops-node-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+.ops-endpoint-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.6rem;
+}
+
+.ops-endpoint-button {
+  min-height: 5.1rem;
+  padding: 0.75rem;
+  color: #172033;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ops-endpoint-button:hover,
+.ops-endpoint-button:focus {
+  border-color: #16815b;
+  box-shadow: 0 0 0 3px rgba(22, 129, 91, 0.14);
+  outline: none;
+}
+
+.ops-response-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.ops-response-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.ops-action-button {
+  border: 1px solid #d9dee8;
+  border-radius: 8px;
+  background: #fff;
+  color: #172033;
+  cursor: pointer;
+  font-size: 0.86rem;
+  padding: 0.42rem 0.68rem;
+}
+
+.ops-action-button:hover,
+.ops-action-button:focus {
+  border-color: #2563eb;
+  outline: none;
+}
+
+.ops-code {
+  max-height: 27rem;
+  margin: 0;
+  overflow: auto;
+  border: 1px solid #d9dee8;
+  border-radius: 8px;
+  background: #101827;
+  color: #e6edf7;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  padding: 0.8rem;
+  white-space: pre-wrap;
 }
 
 .ops-table {
@@ -190,12 +343,26 @@ ul.task-list li input[type="checkbox"] {
 }
 
 .ops-pill.stopped,
-.ops-pill.down {
+.ops-pill.down,
+.ops-pill.fail,
+.ops-pill.error {
   background: #faecea;
   color: #9b2f2b;
 }
+
+@media (max-width: 1180px) {
+  .ops-map {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .ops-map {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
-<div class="bslib-grid-item html-fill-item bslib-grid" data-layout="flow" style="display: grid; grid-template-rows: minmax(3em, 18fr) minmax(3em, 35fr) minmax(3em, 47fr); grid-auto-columns: minmax(0, 1fr);">
+<div class="bslib-grid-item html-fill-item bslib-grid" data-layout="flow" style="display: grid; grid-template-rows: minmax(3em, 18fr) minmax(3em, 45fr) minmax(3em, 22fr) minmax(3em, 33fr); grid-auto-columns: minmax(0, 1fr);">
 <div class="bslib-grid" style="display: grid; grid-template-columns: minmax(3em, 1fr) minmax(3em, 1fr) minmax(3em, 1fr) minmax(3em, 1fr);
 grid-auto-rows: minmax(0, 1fr);">
 <div class="card valuebox bslib-card html-fill-container bslib-value-box bg-success showcase-left-center" data-bslib-card-init="" data-require-bs-caller="card()">
@@ -286,23 +453,101 @@ running / total
 </div>
 <div class="bslib-grid" style="display: grid; grid-template-columns: minmax(3em, 1fr) minmax(3em, 1fr);
 grid-auto-rows: minmax(0, 1fr);">
-<div class="card bslib-card html-fill-container" title="End-to-End Runtime Path" data-bslib-card-init="" data-require-bs-caller="card()" data-full-screen="false">
-<div class="ops-stack">
-  <div class="ops-hop">
-    <strong>Portfolio UI</strong>
-    <span class="ops-subtle">https://portfolio.mintcocoa.cc 또는 https://mint-cocoa.github.io</span>
+<div class="card bslib-card html-fill-container" title="Interactive Homelab Flow" data-bslib-card-init="" data-require-bs-caller="card()" data-full-screen="false">
+<div class="ops-map" aria-label="Homelab architecture API map">
+  <div class="ops-lane">
+    <div class="ops-lane-title">Entry</div>
+    <button class="ops-node edge" data-endpoint="/api/health" data-title="Public Ops API Health">
+      <strong>ops-api.mintcocoa.cc</strong>
+      <span class="ops-subtle">외부에서 접근하는 read-only 운영 API</span>
+      <div class="ops-node-meta">
+        <span class="ops-pill" id="map-api-status">checking</span>
+      </div>
+    </button>
+    <button class="ops-node edge" data-endpoint="/api/ops/summary" data-title="Dashboard Summary">
+      <strong>Edge Plane</strong>
+      <span class="ops-subtle">172.30.1.27 reverse proxy / HAProxy</span>
+      <div class="ops-node-meta">
+        <code>/api/ops/summary</code>
+      </div>
+    </button>
   </div>
-  <div class="ops-hop">
-    <strong>Cloudflare Tunnel</strong>
-    <span class="ops-subtle">ops-api.mintcocoa.cc -&gt; http://127.0.0.1:18081</span>
+
+  <div class="ops-lane">
+    <div class="ops-lane-title">Kubernetes / Prometheus</div>
+    <button class="ops-node k8s" data-endpoint="/api/prometheus/summary" data-title="Prometheus Summary">
+      <strong>Prometheus</strong>
+      <span class="ops-subtle">targets, pods, deployments, PVC metric series</span>
+      <div class="ops-node-meta">
+        <span class="ops-pill" id="map-prom-status">checking</span>
+        <code>/api/prometheus/summary</code>
+      </div>
+    </button>
+    <button class="ops-node k8s" data-endpoint="/api/prometheus/targets" data-title="Scrape Targets">
+      <strong>Scrape Targets</strong>
+      <span class="ops-subtle">Prometheus active target 상태</span>
+      <div class="ops-node-meta">
+        <code>/api/prometheus/targets</code>
+      </div>
+    </button>
+    <button class="ops-node k8s" data-endpoint="/api/prometheus/query?query=count(kube_pod_info)" data-title="Pod Metric Query">
+      <strong>Kubernetes Workloads</strong>
+      <span class="ops-subtle">kube-state-metrics 기반 workload 수치</span>
+      <div class="ops-node-meta">
+        <code>/api/prometheus/query</code>
+      </div>
+    </button>
   </div>
-  <div class="ops-hop">
-    <strong>FastAPI Ops API</strong>
-    <span class="ops-subtle">Prometheus Ingress와 Proxmox API를 read-only summary로 정리</span>
+
+  <div class="ops-lane">
+    <div class="ops-lane-title">Proxmox VE</div>
+    <button class="ops-node proxmox" data-endpoint="/api/proxmox/version" data-title="Proxmox Version">
+      <strong>Proxmox VE</strong>
+      <span class="ops-subtle">172.30.1.12 API / auth mode</span>
+      <div class="ops-node-meta">
+        <span class="ops-pill" id="map-pve-status">checking</span>
+        <code>/api/proxmox/version</code>
+      </div>
+    </button>
+    <button class="ops-node proxmox" data-endpoint="/api/proxmox/resources?type=vm" data-title="VM Resources">
+      <strong>Kubernetes VMs</strong>
+      <span class="ops-subtle">control-plane, worker, OMV VM inventory</span>
+      <div class="ops-node-meta">
+        <code>/api/proxmox/resources?type=vm</code>
+      </div>
+    </button>
+    <button class="ops-node proxmox" data-endpoint="/api/proxmox/nodes" data-title="Proxmox Nodes">
+      <strong>Physical Node</strong>
+      <span class="ops-subtle">CPU, memory, uptime summary</span>
+      <div class="ops-node-meta">
+        <code>/api/proxmox/nodes</code>
+      </div>
+    </button>
   </div>
-  <div class="ops-hop">
-    <strong>Observed Backends</strong>
-    <span class="ops-subtle">Prometheus targets, Kubernetes workload series, Proxmox node/VM resources</span>
+
+  <div class="ops-lane">
+    <div class="ops-lane-title">Storage / Network Resources</div>
+    <button class="ops-node storage" data-endpoint="/api/proxmox/resources?type=storage" data-title="Storage Resources">
+      <strong>OMV / NFS Storage Path</strong>
+      <span class="ops-subtle">PVC backing storage and Proxmox storage resources</span>
+      <div class="ops-node-meta">
+        <code>/api/proxmox/resources?type=storage</code>
+      </div>
+    </button>
+    <button class="ops-node storage" data-endpoint="/api/proxmox/resources?type=pool" data-title="Proxmox Pools">
+      <strong>Resource Pools</strong>
+      <span class="ops-subtle">Proxmox pool inventory</span>
+      <div class="ops-node-meta">
+        <code>/api/proxmox/resources?type=pool</code>
+      </div>
+    </button>
+    <button class="ops-node storage" data-endpoint="/api/proxmox/resources?type=sdn" data-title="Proxmox SDN">
+      <strong>SDN Resources</strong>
+      <span class="ops-subtle">Proxmox SDN resource view</span>
+      <div class="ops-node-meta">
+        <code>/api/proxmox/resources?type=sdn</code>
+      </div>
+    </button>
   </div>
 </div>
 <bslib-tooltip placement="auto" bsoptions="[]" data-require-bs-version="5" data-require-bs-caller="tooltip()">
@@ -310,7 +555,30 @@ grid-auto-rows: minmax(0, 1fr);">
     <span class="bslib-full-screen-enter badge rounded-pill">
         <svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 24 24" style="height:1em;width:1em;" aria-hidden="true" role="img"><path d="M20 5C20 4.4 19.6 4 19 4H13C12.4 4 12 3.6 12 3C12 2.4 12.4 2 13 2H21C21.6 2 22 2.4 22 3V11C22 11.6 21.6 12 21 12C20.4 12 20 11.6 20 11V5ZM4 19C4 19.6 4.4 20 5 20H11C11.6 20 12 20.4 12 21C12 21.6 11.6 22 11 22H3C2.4 22 2 21.6 2 21V13C2 12.4 2.4 12 3 12C3.6 12 4 12.4 4 13V19Z"></path></svg>
     </span>
-</bslib-tooltip><script data-bslib-card-init="">bslib.Card.initializeAllCards();</script></div><div class="card bslib-card html-fill-container" data-title="Live Health" data-bslib-card-init="" data-require-bs-caller="card()" data-full-screen="false">
+</bslib-tooltip><script data-bslib-card-init="">bslib.Card.initializeAllCards();</script></div><div class="card bslib-card html-fill-container" title="Live API Explorer" data-bslib-card-init="" data-require-bs-caller="card()" data-full-screen="false">
+<div class="ops-response-header">
+  <div>
+    <p class="ops-kicker">Selected endpoint</p>
+    <strong id="selected-title">Ops Summary</strong>
+    <div class="ops-subtle" id="selected-endpoint">/api/ops/summary</div>
+  </div>
+  <div class="ops-response-actions">
+    <button class="ops-action-button" id="run-endpoint-button" type="button">Run</button>
+    <a class="ops-action-button" id="open-endpoint-link" href="https://ops-api.mintcocoa.cc/api/ops/summary" target="_blank" rel="noopener">Open</a>
+  </div>
+</div>
+
+<pre class="ops-code" id="endpoint-output">Loading</pre>
+<bslib-tooltip placement="auto" bsoptions="[]" data-require-bs-version="5" data-require-bs-caller="tooltip()">
+    <template>Expand</template>
+    <span class="bslib-full-screen-enter badge rounded-pill">
+        <svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 24 24" style="height:1em;width:1em;" aria-hidden="true" role="img"><path d="M20 5C20 4.4 19.6 4 19 4H13C12.4 4 12 3.6 12 3C12 2.4 12.4 2 13 2H21C21.6 2 22 2.4 22 3V11C22 11.6 21.6 12 21 12C20.4 12 20 11.6 20 11V5ZM4 19C4 19.6 4.4 20 5 20H11C11.6 20 12 20.4 12 21C12 21.6 11.6 22 11 22H3C2.4 22 2 21.6 2 21V13C2 12.4 2.4 12 3 12C3.6 12 4 12.4 4 13V19Z"></path></svg>
+    </span>
+</bslib-tooltip><script data-bslib-card-init="">bslib.Card.initializeAllCards();</script></div>
+</div>
+<div class="bslib-grid" style="display: grid; grid-template-columns: minmax(3em, 1fr) minmax(3em, 1fr);
+grid-auto-rows: minmax(0, 1fr);">
+<div class="card bslib-card html-fill-container" data-title="Live Health" data-bslib-card-init="" data-require-bs-caller="card()" data-full-screen="false">
 <div class="card-header"><div class="card-title"><span style="display: inline">
 Live Health
 </span></div></div>
@@ -347,6 +615,66 @@ Live Health
 </tr>
 </tbody>
 </table>
+</div>
+<bslib-tooltip placement="auto" bsoptions="[]" data-require-bs-version="5" data-require-bs-caller="tooltip()">
+    <template>Expand</template>
+    <span class="bslib-full-screen-enter badge rounded-pill">
+        <svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 24 24" style="height:1em;width:1em;" aria-hidden="true" role="img"><path d="M20 5C20 4.4 19.6 4 19 4H13C12.4 4 12 3.6 12 3C12 2.4 12.4 2 13 2H21C21.6 2 22 2.4 22 3V11C22 11.6 21.6 12 21 12C20.4 12 20 11.6 20 11V5ZM4 19C4 19.6 4.4 20 5 20H11C11.6 20 12 20.4 12 21C12 21.6 11.6 22 11 22H3C2.4 22 2 21.6 2 21V13C2 12.4 2.4 12 3 12C3.6 12 4 12.4 4 13V19Z"></path></svg>
+    </span>
+</bslib-tooltip><script data-bslib-card-init="">bslib.Card.initializeAllCards();</script></div><div class="card bslib-card html-fill-container" title="Endpoint Catalog" data-bslib-card-init="" data-require-bs-caller="card()" data-full-screen="false">
+<div class="ops-endpoint-grid" id="endpoint-catalog">
+  <button class="ops-endpoint-button" data-endpoint="/api/health" data-title="Health">
+    <strong>Health</strong>
+    <code>/api/health</code>
+  </button>
+  <button class="ops-endpoint-button" data-endpoint="/api/ops/summary" data-title="Ops Summary">
+    <strong>Unified Summary</strong>
+    <code>/api/ops/summary</code>
+  </button>
+  <button class="ops-endpoint-button" data-endpoint="/api/prometheus/query?query=up" data-title="PromQL Query">
+    <strong>PromQL Query</strong>
+    <code>/api/prometheus/query?query=up</code>
+  </button>
+  <button class="ops-endpoint-button" data-endpoint="/api/prometheus/targets" data-title="Prometheus Targets">
+    <strong>Prometheus Targets</strong>
+    <code>/api/prometheus/targets</code>
+  </button>
+  <button class="ops-endpoint-button" data-endpoint="/api/prometheus/summary" data-title="Prometheus Summary">
+    <strong>Prometheus Summary</strong>
+    <code>/api/prometheus/summary</code>
+  </button>
+  <button class="ops-endpoint-button" data-endpoint="/api/proxmox/version" data-title="Proxmox Version">
+    <strong>Proxmox Version</strong>
+    <code>/api/proxmox/version</code>
+  </button>
+  <button class="ops-endpoint-button" data-endpoint="/api/proxmox/resources" data-title="All Proxmox Resources">
+    <strong>All Resources</strong>
+    <code>/api/proxmox/resources</code>
+  </button>
+  <button class="ops-endpoint-button" data-endpoint="/api/proxmox/resources?type=vm" data-title="Proxmox VM Resources">
+    <strong>VM Resources</strong>
+    <code>/api/proxmox/resources?type=vm</code>
+  </button>
+  <button class="ops-endpoint-button" data-endpoint="/api/proxmox/resources?type=node" data-title="Proxmox Node Resources">
+    <strong>Node Resources</strong>
+    <code>/api/proxmox/resources?type=node</code>
+  </button>
+  <button class="ops-endpoint-button" data-endpoint="/api/proxmox/resources?type=storage" data-title="Proxmox Storage Resources">
+    <strong>Storage Resources</strong>
+    <code>/api/proxmox/resources?type=storage</code>
+  </button>
+  <button class="ops-endpoint-button" data-endpoint="/api/proxmox/resources?type=pool" data-title="Proxmox Pool Resources">
+    <strong>Pool Resources</strong>
+    <code>/api/proxmox/resources?type=pool</code>
+  </button>
+  <button class="ops-endpoint-button" data-endpoint="/api/proxmox/resources?type=sdn" data-title="Proxmox SDN Resources">
+    <strong>SDN Resources</strong>
+    <code>/api/proxmox/resources?type=sdn</code>
+  </button>
+  <button class="ops-endpoint-button" data-endpoint="/api/proxmox/nodes" data-title="Proxmox Nodes">
+    <strong>Nodes</strong>
+    <code>/api/proxmox/nodes</code>
+  </button>
 </div>
 <bslib-tooltip placement="auto" bsoptions="[]" data-require-bs-version="5" data-require-bs-caller="tooltip()">
     <template>Expand</template>
@@ -424,15 +752,24 @@ Metric Series Snapshot
     </span>
 </bslib-tooltip><script data-bslib-card-init="">bslib.Card.initializeAllCards();</script></div><script>
 const OPS_API_BASE = "https://ops-api.mintcocoa.cc";
+let selectedEndpoint = "/api/ops/summary";
+let selectedTitle = "Ops Summary";
 
 const setText = (id, value) => {
   const element = document.getElementById(id);
   if (element) element.textContent = value;
 };
 
+const escapeHtml = (value) => String(value ?? "")
+  .replaceAll("&", "&amp;")
+  .replaceAll("<", "&lt;")
+  .replaceAll(">", "&gt;")
+  .replaceAll('"', "&quot;")
+  .replaceAll("'", "&#039;");
+
 const statusPill = (value) => {
   const safe = String(value ?? "unknown").toLowerCase();
-  return `<span class="ops-pill ${safe}">${value ?? "unknown"}</span>`;
+  return `<span class="ops-pill ${escapeHtml(safe)}">${escapeHtml(value ?? "unknown")}</span>`;
 };
 
 const formatNumber = (value) => {
@@ -462,9 +799,55 @@ const formatDuration = (seconds) => {
   return `${hours}h`;
 };
 
+const fetchJson = async (endpoint) => {
+  const response = await fetch(`${OPS_API_BASE}${endpoint}`, { cache: "no-store" });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = payload.detail ?? `${response.status} ${response.statusText}`;
+    throw new Error(typeof message === "string" ? message : JSON.stringify(message));
+  }
+  return payload;
+};
+
+const setMapStatus = (id, value) => {
+  const element = document.getElementById(id);
+  if (!element) return;
+  const safe = String(value ?? "unknown").toLowerCase();
+  element.className = `ops-pill ${safe}`;
+  element.textContent = value ?? "unknown";
+};
+
+const updateSelectedEndpoint = (endpoint, title, run = true) => {
+  selectedEndpoint = endpoint;
+  selectedTitle = title;
+  setText("selected-title", title);
+  setText("selected-endpoint", endpoint);
+
+  const link = document.getElementById("open-endpoint-link");
+  if (link) link.href = `${OPS_API_BASE}${endpoint}`;
+
+  document.querySelectorAll("[data-endpoint]").forEach((element) => {
+    element.classList.toggle("active", element.dataset.endpoint === endpoint);
+  });
+
+  if (run) runSelectedEndpoint();
+};
+
+const runSelectedEndpoint = async () => {
+  const output = document.getElementById("endpoint-output");
+  if (output) output.textContent = `GET ${selectedEndpoint}\nLoading`;
+
+  try {
+    const payload = await fetchJson(selectedEndpoint);
+    if (output) output.textContent = JSON.stringify(payload, null, 2);
+  } catch (error) {
+    if (output) output.textContent = `GET ${selectedEndpoint}\nError: ${error.message}`;
+  }
+};
+
 const loadDashboard = async () => {
-  const health = await fetch(`${OPS_API_BASE}/api/health`, { cache: "no-store" }).then((r) => r.json());
-  const summary = await fetch(`${OPS_API_BASE}/api/ops/summary`, { cache: "no-store" }).then((r) => r.json());
+  const health = await fetchJson("/api/health");
+  const summary = await fetchJson("/api/ops/summary");
 
   const prom = summary.prometheus?.data;
   const node = summary.proxmoxNodes?.data?.nodes?.[0];
@@ -477,6 +860,9 @@ const loadDashboard = async () => {
   setText("health-prometheus", health.prometheus);
   setText("health-proxmox", health.proxmox);
   setText("health-auth", health.proxmoxAuthMode);
+  setMapStatus("map-api-status", health.ok ? "up" : "down");
+  setMapStatus("map-prom-status", health.prometheus === "ok" ? "up" : "down");
+  setMapStatus("map-pve-status", health.proxmox === "ok" ? "up" : "down");
 
   setText("targets-value", `${prom?.targets?.up ?? "-"} / ${prom?.targets?.total ?? "-"}`);
   setText("targets-detail", `${prom?.targets?.down ?? "-"} down targets`);
@@ -500,10 +886,10 @@ const loadDashboard = async () => {
       .sort((a, b) => Number(a.vmid ?? 0) - Number(b.vmid ?? 0))
       .map((vm) => `
         <tr>
-          <td>${vm.vmid ?? "-"}</td>
-          <td>${vm.name ?? vm.id ?? "-"}</td>
+          <td>${escapeHtml(vm.vmid ?? "-")}</td>
+          <td>${escapeHtml(vm.name ?? vm.id ?? "-")}</td>
           <td>${statusPill(vm.status)}</td>
-          <td>${vm.maxcpu ?? "-"}</td>
+          <td>${escapeHtml(vm.maxcpu ?? "-")}</td>
           <td>${formatBytes(vm.mem)} / ${formatBytes(vm.maxmem)}</td>
           <td>${formatDuration(vm.uptime)}</td>
         </tr>
@@ -515,11 +901,27 @@ const loadDashboard = async () => {
 loadDashboard().catch((error) => {
   const healthDot = document.getElementById("health-dot");
   if (healthDot) healthDot.className = "ops-dot fail";
+  setMapStatus("map-api-status", "down");
+  setMapStatus("map-prom-status", "error");
+  setMapStatus("map-pve-status", "error");
   setText("health-text", "Ops API fetch failed");
   setText("targets-value", "Error");
   setText("targets-detail", error.message);
   setText("updated-at", new Date().toLocaleString());
 });
+
+document.querySelectorAll("[data-endpoint]").forEach((element) => {
+  element.addEventListener("click", () => {
+    updateSelectedEndpoint(
+      element.dataset.endpoint,
+      element.dataset.title ?? element.dataset.endpoint,
+    );
+  });
+});
+
+document.getElementById("run-endpoint-button")?.addEventListener("click", runSelectedEndpoint);
+updateSelectedEndpoint(selectedEndpoint, selectedTitle, false);
+runSelectedEndpoint();
 </script><div id="3ade8a4a-fb1d-4a6c-8409-ac45482d5fc9" class="hidden">
 
 </div>
