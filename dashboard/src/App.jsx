@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Activity, Boxes, Cpu, Database, Server } from 'lucide-react';
 import { GlobalStatusBar } from './components/GlobalStatusBar';
-import { ProxmoxWidget } from './components/ProxmoxWidget';
-import { KubernetesWidget } from './components/KubernetesWidget';
 import { ArchitectureView } from './components/ArchitectureView';
 import { EdgeRuntimePanel } from './components/EdgeRuntimePanel';
 import { DeploymentPipeline } from './components/DeploymentPipeline';
 import {
+  API_LABEL,
   createOpsStream,
   fetchDeployPipeline,
   fetchEdgeRuntime,
@@ -42,6 +41,25 @@ const StatCard = ({ label, value, detail, icon: Icon, tone = 'blue' }) => {
   );
 };
 
+const DetailSection = ({ eyebrow, title, summary, children }) => (
+  <details className="group rounded-xl border border-slate-200 bg-white shadow-sm">
+    <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 px-4 py-3">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{eyebrow}</p>
+        <h3 className="mt-1 text-lg font-bold text-slate-900">{title}</h3>
+        {summary && <p className="mt-1 text-sm text-slate-500">{summary}</p>}
+      </div>
+      <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500 group-open:hidden">
+        Show details
+      </span>
+      <span className="hidden rounded-full border border-slate-200 bg-slate-900 px-3 py-1 text-xs font-semibold text-white group-open:inline-flex">
+        Hide details
+      </span>
+    </summary>
+    <div className="border-t border-slate-200 p-4">{children}</div>
+  </details>
+);
+
 function App() {
   const [health, setHealth] = useState(null);
   const [nodes, setNodes] = useState([]);
@@ -56,6 +74,8 @@ function App() {
   const [error, setError] = useState(null);
   const [streamStatus, setStreamStatus] = useState('connecting');
   const streamStatusRef = useRef('connecting');
+  const lastStreamMessageAtRef = useRef(0);
+  const pollInFlightRef = useRef(false);
 
   const updateStreamStatus = useCallback((status) => {
     streamStatusRef.current = status;
@@ -118,8 +138,10 @@ function App() {
     setLoading(false);
   }, []);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
+  const loadData = useCallback(async ({ showLoading = true } = {}) => {
+    if (showLoading) {
+      setLoading(true);
+    }
     setError(null);
     try {
       const [h, n, r, t, p, a, e, d] = await Promise.all([
@@ -146,8 +168,11 @@ function App() {
     } catch (err) {
       console.error(err);
       setError(err.message);
+    } finally {
+      if (showLoading) {
+        setLoading(false);
+      }
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -165,6 +190,7 @@ function App() {
       };
       socket.onmessage = (event) => {
         try {
+          lastStreamMessageAtRef.current = Date.now();
           applySnapshot(JSON.parse(event.data));
         } catch (err) {
           console.error(err);
@@ -183,11 +209,28 @@ function App() {
 
     const initialLoad = setTimeout(loadData, 0);
     connect();
-    const interval = setInterval(() => {
-      if (streamStatusRef.current !== 'connected') {
-        loadData();
+    const interval = setInterval(async () => {
+      const streamIsStale =
+        streamStatusRef.current === 'connected' &&
+        lastStreamMessageAtRef.current > 0 &&
+        Date.now() - lastStreamMessageAtRef.current > 12000;
+
+      if (streamIsStale) {
+        updateStreamStatus('stale');
+        if (socket) {
+          socket.close();
+        }
       }
-    }, 30000);
+
+      if (!pollInFlightRef.current) {
+        pollInFlightRef.current = true;
+        try {
+          await loadData({ showLoading: false });
+        } finally {
+          pollInFlightRef.current = false;
+        }
+      }
+    }, 2000);
 
     return () => {
       stopped = true;
@@ -208,7 +251,12 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans text-slate-900">
-      <GlobalStatusBar health={health} onRefresh={loadData} lastUpdated={lastUpdated} />
+      <GlobalStatusBar
+        health={health}
+        onRefresh={loadData}
+        lastUpdated={lastUpdated}
+        streamStatus={streamStatus}
+      />
       
       <main className="flex-1 p-4 sm:p-6 max-w-[1500px] mx-auto w-full flex flex-col gap-6">
         {loading && !lastUpdated ? (
@@ -257,24 +305,33 @@ function App() {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Live topology</p>
                 <h2 className="text-2xl font-bold text-slate-900">Infrastructure Architecture</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Public edge, Kubernetes entry, and Proxmox inventory are updated from the live API stream.
+                </p>
               </div>
               <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-500">
                 <Database size={14} />
-                ops-api.mintcocoa.cc · {streamStatus}
+                {API_LABEL} · {streamStatus}
               </div>
             </div>
             <ArchitectureView vms={vms} targets={targets} argocdMetrics={argocdMetrics} edgeRuntime={edgeRuntime} />
-            <EdgeRuntimePanel edgeRuntime={edgeRuntime} />
-            <DeploymentPipeline pipeline={deployPipeline} />
 
-            <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-300 pb-3 pt-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Inventory</p>
-                <h2 className="text-2xl font-bold text-slate-900">Dashboard Details</h2>
-              </div>
-            </div>
-            <ProxmoxWidget nodes={nodes} vms={vms} />
-            <KubernetesWidget summary={prometheusSummary} targets={targets || {}} />
+            <DetailSection
+              eyebrow="Runtime details"
+              title="C++ edge runtime routes"
+              summary="RuntimeProxy, RuntimeWeb probes, SNI routes, and route destination counts."
+            >
+              <EdgeRuntimePanel edgeRuntime={edgeRuntime} />
+            </DetailSection>
+
+            <DetailSection
+              eyebrow="Deploy evidence"
+              title="Commit to live rollout"
+              summary="GitHub Actions, image, GitOps, Argo CD, rollout, and live dashboard evidence."
+            >
+              <DeploymentPipeline pipeline={deployPipeline} />
+            </DetailSection>
+
           </>
         )}
       </main>

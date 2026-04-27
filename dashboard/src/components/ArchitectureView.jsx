@@ -3,6 +3,7 @@ import {
   Box,
   Cloud,
   Database,
+  ExternalLink,
   GitBranch,
   Globe,
   HardDrive,
@@ -20,10 +21,6 @@ const ingressRules = [
   { name: 'webhook', domain: 'webhook.mintcocoa.cc', service: 'webhook', note: 'webhook' },
   { name: 'argocd', domain: 'argocd.homelab.local', service: 'argocd-server', note: 'private UI' },
 ];
-
-const formatPercent = (value) => (
-  Number.isFinite(value) ? `${(value * 100).toFixed(1)}%` : '-'
-);
 
 const findIngressTarget = (targetData, rule) => (
   targetData?.activeTargets?.find((target) => {
@@ -83,11 +80,29 @@ const RouteRow = ({ rule, targetData, edgeRoutes }) => {
   const isObserved = target?.health === 'up';
   const status = isPublicEdge ? 'Public edge' : isObserved ? 'Observed' : 'Cluster only';
   const tone = isPublicEdge ? 'green' : isObserved ? 'blue' : 'slate';
+  const href = isPublicEdge ? `https://${rule.domain}` : null;
+  const domain = (
+    <span className="inline-flex min-w-0 items-center gap-1">
+      <span className="truncate">{rule.domain}</span>
+      {href && <ExternalLink size={12} className="shrink-0 text-slate-400" />}
+    </span>
+  );
 
   return (
     <div className="grid grid-cols-[minmax(0,1.25fr)_auto_minmax(96px,0.8fr)] items-center gap-3 border-b border-slate-100 py-2 text-xs last:border-b-0">
       <div className="min-w-0">
-        <div className="truncate font-bold text-slate-900">{rule.domain}</div>
+        {href ? (
+          <a
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            className="block truncate font-bold text-slate-900 hover:text-blue-700 hover:underline"
+          >
+            {domain}
+          </a>
+        ) : (
+          <div className="truncate font-bold text-slate-900">{domain}</div>
+        )}
         <div className="text-[11px] text-slate-500">{rule.note}</div>
       </div>
       <StatusPill tone={tone}>{status}</StatusPill>
@@ -99,6 +114,18 @@ const RouteRow = ({ rule, targetData, edgeRoutes }) => {
   );
 };
 
+const UsageBar = ({ label, value, color }) => (
+  <div>
+    <div className="mb-1 flex items-center justify-between gap-2 text-[10px] font-semibold text-slate-500">
+      <span>{label}</span>
+      <span>{value.toFixed(label === 'CPU' ? 1 : 0)}%</span>
+    </div>
+    <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
+      <div className={`h-full rounded-full ${color}`} style={{ width: `${value}%` }} />
+    </div>
+  </div>
+);
+
 const VmCard = ({ vm, type }) => {
   if (!vm) return null;
 
@@ -109,9 +136,11 @@ const VmCard = ({ vm, type }) => {
     green: 'text-green-600',
     purple: 'text-purple-600',
   }[tone];
+  const cpuPercent = Number.isFinite(vm.cpu) ? Math.min(100, Math.max(0, vm.cpu * 100)) : 0;
+  const memPercent = vm.maxmem ? Math.min(100, Math.max(0, (vm.mem / vm.maxmem) * 100)) : 0;
 
   return (
-    <div className={`grid grid-cols-[1fr_auto] gap-3 rounded-lg border bg-white p-3 text-xs shadow-sm ${running ? 'border-slate-200' : 'border-slate-200 opacity-60'}`}>
+    <div className={`grid grid-cols-[minmax(0,1fr)_86px] gap-3 rounded-lg border bg-white p-3 text-xs shadow-sm ${running ? 'border-slate-200' : 'border-slate-200 opacity-60'}`}>
       <div className="flex min-w-0 items-center gap-2">
         <Server className={iconClass} size={17} />
         <div className="min-w-0">
@@ -121,9 +150,9 @@ const VmCard = ({ vm, type }) => {
           <div className="text-slate-500">{vm.status ?? 'unknown'}</div>
         </div>
       </div>
-      <div className="text-right text-slate-700">
-        <div>CPU {formatPercent(vm.cpu)}</div>
-        <div>MEM {vm.maxmem ? `${((vm.mem / vm.maxmem) * 100).toFixed(0)}%` : '-'}</div>
+      <div className="space-y-2">
+        <UsageBar label="CPU" value={cpuPercent} color="bg-blue-500" />
+        <UsageBar label="MEM" value={memPercent} color="bg-purple-500" />
       </div>
     </div>
   );
@@ -150,14 +179,35 @@ const SummaryMetric = ({ label, value }) => (
   </div>
 );
 
+const FlowChip = ({ icon: Icon, label, detail, tone = 'slate' }) => {
+  const toneClasses = statusStyles[tone] ?? statusStyles.slate;
+
+  return (
+    <div className="min-w-0 rounded-lg border border-slate-200 bg-white px-2 py-2 shadow-sm">
+      <div className={`mb-1 inline-flex rounded-md border p-1 ${toneClasses}`}>
+        <Icon size={13} />
+      </div>
+      <div className="truncate text-xs font-bold text-slate-900">{label}</div>
+      {detail && <div className="truncate text-[10px] text-slate-500">{detail}</div>}
+    </div>
+  );
+};
+
+const FlowArrow = () => (
+  <ArrowRight className="justify-self-center text-slate-300" size={14} />
+);
+
+const flowGridClasses = {
+  3: 'grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-stretch gap-2',
+  4: 'grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-stretch gap-2',
+};
+
 export const ArchitectureView = ({ vms = [], targets = {}, argocdMetrics = [], edgeRuntime = null, className = '' }) => {
   const cpVms = vms.filter((vm) => vm.name?.includes('cp')).sort((a, b) => a.name.localeCompare(b.name));
   const workerVms = vms.filter((vm) => vm.name?.includes('worker')).sort((a, b) => a.name.localeCompare(b.name));
   const storageVms = vms.filter((vm) => vm.name?.toLowerCase().includes('omv') || vm.name?.toLowerCase().includes('nas'));
   const runningVms = vms.filter((vm) => vm.status === 'running').length;
-  const totalApps = argocdMetrics.length;
-  const syncedApps = argocdMetrics.filter((metric) => metric.metric?.sync_status === 'Synced').length;
-  const isAllSynced = totalApps > 0 && syncedApps === totalApps;
+  const isAllSynced = argocdMetrics.length > 0 && argocdMetrics.every((metric) => metric.metric?.sync_status === 'Synced');
   const edgeRoutes = edgeRuntime?.routes ?? [];
   const proxy = edgeRuntime?.proxy ?? {};
   const kubernetesRoutes = edgeRoutes.filter((route) => route.destination === 'kubernetes').length;
@@ -253,42 +303,65 @@ export const ArchitectureView = ({ vms = [], targets = {}, argocdMetrics = [], e
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <section className="rounded-lg border border-purple-200 bg-white p-4 shadow-sm">
-          <div className="mb-3 flex items-center gap-2 text-xs font-bold text-purple-800">
-            <Shield size={14} />
-            Management Plane
-          </div>
-          <div className="text-sm font-semibold text-slate-700">Odroid management node</div>
-          <div className="mt-3 space-y-2 text-xs text-slate-600">
-            <div className="flex items-center gap-2"><Settings size={14} /> Terraform to Proxmox API</div>
-            <div className="flex items-center gap-2"><Server size={14} /> Ansible to Kubernetes VMs</div>
-            <div className="flex items-center gap-2"><Cloud size={14} /> kubectl to API HAProxy</div>
-          </div>
-        </section>
-
-        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-4 text-xs font-bold text-slate-800">Storage Path</div>
-          <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600">
-            <Box size={18} className="text-blue-500" /> Pod
-            <ArrowRight size={12} />
-            <Database size={18} className="text-blue-400" /> PVC
-            <ArrowRight size={12} />
-            <HardDrive size={18} className="text-green-500" /> NFS
-            <ArrowRight size={12} />
-            <Server size={18} className="text-purple-600" /> NAS VM
-          </div>
-        </section>
-
-        <section className="rounded-lg border border-indigo-200 bg-white p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-xs font-bold text-indigo-800">
-              <GitBranch size={14} />
-              GitOps Path
+        <section className="rounded-lg border border-purple-200 bg-purple-50/30 p-4 shadow-sm">
+          <div className="mb-3 flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-purple-800">
+                <Shield size={14} />
+                Operate
+              </div>
+              <div className="mt-1 text-sm font-bold text-slate-900">관리 노드에서 클러스터 제어</div>
+              <div className="mt-1 text-xs text-slate-500">Odroid가 Proxmox와 Kubernetes 작업의 진입점입니다.</div>
             </div>
-            <StatusPill tone={isAllSynced ? 'green' : 'amber'}>{totalApps ? `${syncedApps}/${totalApps} apps` : 'awaiting metrics'}</StatusPill>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-600">
-            Dev <ArrowRight size={12} /> GitHub <ArrowRight size={12} /> GHCR <ArrowRight size={12} /> ArgoCD <ArrowRight size={12} /> K8s
+          <div className={flowGridClasses[3]}>
+            <FlowChip icon={Settings} label="Terraform" detail="VM desired state" tone="purple" />
+            <FlowArrow />
+            <FlowChip icon={Server} label="Ansible" detail="node bootstrap" tone="slate" />
+            <FlowArrow />
+            <FlowChip icon={Cloud} label="kubectl" detail="API HAProxy" tone="blue" />
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-green-200 bg-green-50/30 p-4 shadow-sm">
+          <div className="mb-3">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-green-800">
+              <Database size={14} />
+              Persist
+            </div>
+            <div className="mt-1 text-sm font-bold text-slate-900">워크로드 데이터 저장 경로</div>
+            <div className="mt-1 text-xs text-slate-500">Pod 데이터는 PVC를 거쳐 NFS/NAS VM에 보존됩니다.</div>
+          </div>
+          <div className={flowGridClasses[4]}>
+            <FlowChip icon={Box} label="Pod" detail="app writes" tone="blue" />
+            <FlowArrow />
+            <FlowChip icon={Database} label="PVC" detail="claim" tone="blue" />
+            <FlowArrow />
+            <FlowChip icon={HardDrive} label="NFS" detail="shared mount" tone="green" />
+            <FlowArrow />
+            <FlowChip icon={Server} label="NAS VM" detail="storage" tone="purple" />
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-indigo-200 bg-indigo-50/30 p-4 shadow-sm">
+          <div className="mb-3">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-indigo-800">
+                <GitBranch size={14} />
+                Release
+              </div>
+              <div className="mt-1 text-sm font-bold text-slate-900">커밋에서 운영 반영까지</div>
+              <div className="mt-1 text-xs text-slate-500">GitHub push가 이미지와 GitOps sync를 거쳐 K8s에 반영됩니다.</div>
+            </div>
+          </div>
+          <div className={flowGridClasses[4]}>
+            <FlowChip icon={GitBranch} label="GitHub" detail="push" tone="slate" />
+            <FlowArrow />
+            <FlowChip icon={Box} label="GHCR" detail="image" tone="blue" />
+            <FlowArrow />
+            <FlowChip icon={ShieldCheck} label="Argo CD" detail="sync" tone={isAllSynced ? 'green' : 'amber'} />
+            <FlowArrow />
+            <FlowChip icon={Cloud} label="K8s" detail="rollout" tone="green" />
           </div>
         </section>
       </div>

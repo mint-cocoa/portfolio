@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Boxes, CheckCircle2, CircleDashed, ExternalLink, GitBranch, GitCommit, Package, PlayCircle, RadioTower, ShieldCheck } from 'lucide-react';
+import { Boxes, CircleDashed, ExternalLink, GitBranch, GitCommit, Package, PlayCircle, RadioTower, ShieldCheck } from 'lucide-react';
 
 const icons = {
   commit: GitCommit,
@@ -9,24 +9,6 @@ const icons = {
   argocd: ShieldCheck,
   rollout: Boxes,
   live: RadioTower,
-};
-
-const statusClasses = {
-  success: 'border-green-200 bg-green-50 text-green-700',
-  completed: 'border-green-200 bg-green-50 text-green-700',
-  running: 'border-blue-200 bg-blue-50 text-blue-700',
-  in_progress: 'border-blue-200 bg-blue-50 text-blue-700',
-  queued: 'border-blue-200 bg-blue-50 text-blue-700',
-  failure: 'border-red-200 bg-red-50 text-red-700',
-  failed: 'border-red-200 bg-red-50 text-red-700',
-  cancelled: 'border-slate-200 bg-slate-50 text-slate-600',
-  unknown: 'border-slate-200 bg-slate-50 text-slate-600',
-};
-
-const StatusIcon = ({ status }) => {
-  if (['success', 'completed'].includes(status)) return <CheckCircle2 size={16} />;
-  if (['running', 'in_progress', 'queued'].includes(status)) return <PlayCircle size={16} />;
-  return <CircleDashed size={16} />;
 };
 
 const DetailRow = ({ label, value }) => {
@@ -41,22 +23,15 @@ const DetailRow = ({ label, value }) => {
 
 const StepButton = ({ step, selected, onClick }) => {
   const Icon = icons[step.id] ?? CircleDashed;
-  const statusClass = statusClasses[step.status] ?? statusClasses.unknown;
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`min-h-28 rounded-lg border bg-white p-3 text-left shadow-sm transition hover:border-slate-400 ${selected ? 'ring-2 ring-slate-900' : 'ring-0'}`}
+      className={`min-h-28 rounded-lg border bg-white p-3 text-left shadow-sm transition hover:border-slate-400 ${selected ? 'border-slate-950 ring-2 ring-slate-900' : 'border-slate-200 ring-0'}`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className={`rounded-md border p-2 ${statusClass}`}>
-          <Icon size={18} />
-        </div>
-        <div className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${statusClass}`}>
-          <StatusIcon status={step.status} />
-          {step.status}
-        </div>
+      <div className="inline-flex rounded-md border border-slate-200 bg-slate-50 p-2 text-slate-700">
+        <Icon size={18} />
       </div>
       <div className="mt-3 text-sm font-bold text-slate-900">{step.label}</div>
       <div className="mt-1 truncate text-xs font-semibold text-slate-600">{step.primary}</div>

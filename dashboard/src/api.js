@@ -1,5 +1,23 @@
-const API_BASE = 'https://ops-api.mintcocoa.cc/api';
-const WS_BASE = API_BASE.replace(/^http/, 'ws');
+const DEFAULT_API_BASE = 'https://ops-api.mintcocoa.cc/api';
+const rawApiBase = import.meta.env.VITE_OPS_API_BASE || DEFAULT_API_BASE;
+const API_BASE = rawApiBase.replace(/\/+$/, '');
+
+const websocketBase = () => {
+  const configured = import.meta.env.VITE_OPS_WS_BASE;
+  if (configured) return configured.replace(/\/+$/, '');
+  if (API_BASE.startsWith('https://')) return API_BASE.replace(/^https:/, 'wss:');
+  if (API_BASE.startsWith('http://')) return API_BASE.replace(/^http:/, 'ws:');
+
+  const path = API_BASE.startsWith('/') ? API_BASE : `/${API_BASE}`;
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${window.location.host}${path}`;
+};
+
+const WS_BASE = websocketBase();
+
+export const API_LABEL = API_BASE
+  .replace(/^https?:\/\//, '')
+  .replace(/\/api$/, '');
 
 const getJson = async (path) => {
   const response = await fetch(`${API_BASE}${path}`, { cache: 'no-store' });

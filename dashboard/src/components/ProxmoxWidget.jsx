@@ -10,7 +10,7 @@ const percent = (value, max) => {
 export const ProxmoxWidget = ({ nodes = [], vms = [] }) => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col gap-4">
-      <div className="flex items-center gap-2 border-b pb-3">
+      <div className="flex items-center gap-2 border-b border-gray-200 pb-3">
         <Server className="text-purple-600" size={24} />
         <h2 className="text-xl font-bold text-gray-800">Proxmox Infrastructure</h2>
       </div>
@@ -21,7 +21,7 @@ export const ProxmoxWidget = ({ nodes = [], vms = [] }) => {
           const memUsage = percent(node.mem, node.maxmem);
 
           return (
-          <div key={node.node} className="p-4 border rounded-lg bg-gray-50">
+          <div key={node.node} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
             <h3 className="font-semibold text-lg">{node.node} <span className="text-sm font-normal text-gray-500">({node.status})</span></h3>
             <div className="mt-2 text-sm text-gray-700">
               <div className="flex justify-between mb-1">
@@ -51,16 +51,16 @@ export const ProxmoxWidget = ({ nodes = [], vms = [] }) => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-100 text-gray-600 text-sm">
-                <th className="p-2 border-b">ID</th>
-                <th className="p-2 border-b">Name</th>
-                <th className="p-2 border-b">Status</th>
-                <th className="p-2 border-b">vCPU</th>
-                <th className="p-2 border-b">Memory</th>
+                <th className="p-2 border-b border-gray-200">ID</th>
+                <th className="p-2 border-b border-gray-200">Name</th>
+                <th className="p-2 border-b border-gray-200">Status</th>
+                <th className="p-2 border-b border-gray-200">vCPU</th>
+                <th className="p-2 border-b border-gray-200">Memory</th>
               </tr>
             </thead>
             <tbody>
               {vms.slice().sort((a,b)=>(b.cpu ?? 0) - (a.cpu ?? 0)).map(vm => (
-                <tr key={vm.vmid} className="text-sm border-b last:border-0 hover:bg-gray-50">
+                <tr key={vm.vmid} className="text-sm border-b border-gray-100 last:border-0 hover:bg-gray-50">
                   <td className="p-2">{vm.vmid}</td>
                   <td className="p-2 font-medium">{vm.name}</td>
                   <td className="p-2">
