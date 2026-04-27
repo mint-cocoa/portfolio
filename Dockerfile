@@ -7,6 +7,7 @@ RUN apt-get update \
         ca-certificates \
         cmake \
         git \
+        libssl-dev \
         ninja-build \
         pkg-config \
         liburing-dev \
