@@ -154,10 +154,10 @@ format:
 .ops-architecture {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(9rem, 0.65fr) minmax(16rem, 1.1fr) minmax(18rem, 1.25fr) minmax(24rem, 1.65fr);
+  grid-template-columns: minmax(14rem, 1fr) minmax(16rem, 1.1fr) minmax(18rem, 1.25fr) minmax(24rem, 1.65fr);
   grid-template-rows: auto auto auto;
   gap: 0.78rem;
-  min-width: 980px;
+  min-width: 1100px;
   padding: 0.9rem;
   border: 1px solid #d9dee8;
   border-radius: 10px;
@@ -426,7 +426,7 @@ format:
 .ops-bottom-path {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(5.6rem, 1fr);
+  grid-auto-columns: minmax(6.8rem, 1fr);
   gap: 0.45rem;
   align-items: stretch;
 }
@@ -600,7 +600,7 @@ format:
 
 .ops-mgmt-tool-row {
   display: grid;
-  grid-template-columns: 2rem 1fr auto;
+  grid-template-columns: 2rem 1fr;
   align-items: center;
   gap: 0.45rem;
   padding: 0.42rem 0.55rem;
@@ -868,23 +868,19 @@ Virtual Machines
     <div class="ops-mgmt-tools">
       <button class="ops-mgmt-tool-row" data-endpoint="/api/proxmox/version" data-title="Proxmox Version">
         <span class="ops-mgmt-tool-icon" style="background:#ffeedd;color:#c47b20;">Tf</span>
-        <span class="ops-mgmt-tool-label">Terraform <span class="ops-subtle">→</span> Proxmox API</span>
-        <code>172.30.1.12:8006</code>
+        <span class="ops-mgmt-tool-label">Terraform <span class="ops-subtle">→</span> Proxmox API<br><code>172.30.1.12:8006</code></span>
       </button>
       <button class="ops-mgmt-tool-row" data-endpoint="/api/proxmox/resources?type=vm" data-title="Kubernetes VMs">
         <span class="ops-mgmt-tool-icon" style="background:#e8f0ff;color:#2563eb;">A</span>
-        <span class="ops-mgmt-tool-label">Ansible / Kubespray <span class="ops-subtle">→</span> Kubernetes VMs</span>
-        <code>⚙ cluster provision</code>
+        <span class="ops-mgmt-tool-label">Ansible / Kubespray <span class="ops-subtle">→</span> K8s VMs<br><code>cluster provision</code></span>
       </button>
       <button class="ops-mgmt-tool-row" data-endpoint="/api/prometheus/summary" data-title="Kubectl Helm Access">
         <span class="ops-mgmt-tool-icon" style="background:#e8f6ef;color:#16815b;">K</span>
-        <span class="ops-mgmt-tool-label">kubectl / Helm <span class="ops-subtle">→</span> K8s API</span>
-        <code>172.30.1.27:6443</code>
+        <span class="ops-mgmt-tool-label">kubectl / Helm <span class="ops-subtle">→</span> K8s API<br><code>172.30.1.27:6443</code></span>
       </button>
       <button class="ops-mgmt-tool-row" data-endpoint="/api/prometheus/query?query=count(kube_deployment_status_replicas_available)" data-title="Argo CD Bootstrap">
         <span class="ops-mgmt-tool-icon" style="background:#f1e9ff;color:#7c3fad;">Ar</span>
-        <span class="ops-mgmt-tool-label">Argo CD bootstrap <span class="ops-subtle">→</span> Kubernetes API</span>
-        <code>GitOps init</code>
+        <span class="ops-mgmt-tool-label">Argo CD bootstrap <span class="ops-subtle">→</span> K8s API<br><code>GitOps init</code></span>
       </button>
     </div>
   </section>
@@ -894,7 +890,7 @@ Virtual Machines
     <div class="ops-bottom-path">
       <button class="ops-path-item" data-endpoint="/api/prometheus/query?query=count(kube_persistentvolumeclaim_status_phase)" data-title="PVC Metrics"><strong>Pod</strong><span>PVC request</span></button>
       <button class="ops-path-item" data-endpoint="/api/prometheus/query?query=count(kube_persistentvolumeclaim_status_phase)" data-title="PVC Phases"><strong>PVC</strong><span>claim</span></button>
-      <button class="ops-path-item" data-endpoint="/api/proxmox/resources?type=storage" data-title="StorageClass nfs-client"><strong>StorageClass</strong><span class="ops-subtle" style="font-size:0.72rem;">nfs-subdir-external-provisioner</span></button>
+      <button class="ops-path-item" data-endpoint="/api/proxmox/resources?type=storage" data-title="StorageClass nfs-client"><strong>StorageClass</strong><span style="font-size:0.72rem;line-height:1.3;">nfs-subdir-<br>external-<br>provisioner</span></button>
       <button class="ops-path-item" data-endpoint="/api/proxmox/resources?type=storage" data-title="NFS Provisioner"><strong>nfs-client</strong><span>dynamic PV</span></button>
       <button class="ops-path-item" data-endpoint="/api/proxmox/resources?type=storage" data-title="OMV NAS Storage"><strong>OMV / NAS VM</strong><span>172.30.1.52<br>/export/k8s_pv</span></button>
     </div>
