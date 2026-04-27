@@ -649,6 +649,99 @@ ul.task-list li input[type="checkbox"] {
     width: 100%;
   }
 }
+
+.ops-mgmt-node-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.52rem;
+}
+
+.ops-mgmt-tools {
+  display: grid;
+  gap: 0.38rem;
+}
+
+.ops-mgmt-tool-row {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.42rem 0.55rem;
+  border: 1px solid #d9dee8;
+  border-radius: 7px;
+  background: #fff;
+  color: #172033;
+  font: inherit;
+  font-size: 0.84rem;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.ops-mgmt-tool-row:hover,
+.ops-mgmt-tool-row:focus {
+  border-color: #7c3fad;
+  box-shadow: 0 0 0 3px rgba(124, 63, 173, 0.12);
+  outline: none;
+}
+
+.ops-mgmt-tool-row.active {
+  border-color: #7c3fad;
+  box-shadow: 0 0 0 3px rgba(124, 63, 173, 0.16);
+}
+
+.ops-mgmt-tool-icon {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 1.6rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.ops-mgmt-tool-label {
+  font-size: 0.84rem;
+}
+
+.ops-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem 1.4rem;
+  margin-top: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e6e9f0;
+  border-radius: 7px;
+  background: #fafbfd;
+  font-size: 0.82rem;
+  color: #5d667a;
+}
+
+.ops-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.ops-legend-line {
+  display: inline-block;
+  width: 2rem;
+  height: 2px;
+  border-radius: 2px;
+}
+
+.ops-legend-line.green { background: #2f7d32; }
+.ops-legend-line.blue { background: #2563eb; }
+.ops-legend-line.purple { background: #7c3fad; }
+.ops-legend-line.dashed {
+  background: none;
+  border-top: 2px dashed currentColor;
+  height: 0;
+  margin-top: 1px;
+}
+.ops-legend-line.purple.dashed { border-color: #7c3fad; }
+.ops-legend-line.blue.dashed { border-color: #2563eb; }
 </style>
 <div class="bslib-grid-item html-fill-item bslib-grid" data-layout="flow" style="display: grid; grid-template-rows: minmax(3em, 18fr) minmax(3em, 45fr) minmax(3em, 22fr) minmax(3em, 33fr); grid-auto-columns: minmax(0, 1fr);">
 <div class="bslib-grid" style="display: grid; grid-template-columns: minmax(3em, 1fr) minmax(3em, 1fr) minmax(3em, 1fr) minmax(3em, 1fr);
@@ -865,63 +958,89 @@ grid-auto-rows: minmax(0, 1fr);">
       <code>/api/proxmox/resources?type=vm</code>
     </div>
     <div class="ops-vm-list">
-      <button class="ops-mini-card ops-vm-row" data-endpoint="/api/proxmox/resources?type=vm" data-title="k8s-cp-1 VM">
-        <span class="ops-vm-badge">VM</span><span><span class="ops-node-name">k8s-cp-1</span><br><span class="ops-node-address">172.30.1.231</span></span><span>control-plane / etcd</span><span class="ops-icon">K</span>
+      <button class="ops-mini-card ops-vm-row" data-endpoint="/api/proxmox/resources?type=vm" data-title="k8s-cp-1 VM" data-vmname="k8s-cp-1">
+        <span class="ops-vm-badge">VM</span><span><span class="ops-node-name">k8s-cp-1</span><br><span class="ops-node-address">172.30.1.231</span></span><span>control-plane / etcd</span><span class="ops-pill" id="vm-status-k8s-cp-1">—</span>
       </button>
-      <button class="ops-mini-card ops-vm-row" data-endpoint="/api/proxmox/resources?type=vm" data-title="k8s-cp-2 VM">
-        <span class="ops-vm-badge">VM</span><span><span class="ops-node-name">k8s-cp-2</span><br><span class="ops-node-address">172.30.1.232</span></span><span>control-plane / etcd</span><span class="ops-icon">K</span>
+      <button class="ops-mini-card ops-vm-row" data-endpoint="/api/proxmox/resources?type=vm" data-title="k8s-cp-2 VM" data-vmname="k8s-cp-2">
+        <span class="ops-vm-badge">VM</span><span><span class="ops-node-name">k8s-cp-2</span><br><span class="ops-node-address">172.30.1.232</span></span><span>control-plane / etcd</span><span class="ops-pill" id="vm-status-k8s-cp-2">—</span>
       </button>
-      <button class="ops-mini-card ops-vm-row" data-endpoint="/api/proxmox/resources?type=vm" data-title="k8s-cp-3 VM">
-        <span class="ops-vm-badge">VM</span><span><span class="ops-node-name">k8s-cp-3</span><br><span class="ops-node-address">172.30.1.233</span></span><span>control-plane / etcd</span><span class="ops-icon">K</span>
+      <button class="ops-mini-card ops-vm-row" data-endpoint="/api/proxmox/resources?type=vm" data-title="k8s-cp-3 VM" data-vmname="k8s-cp-3">
+        <span class="ops-vm-badge">VM</span><span><span class="ops-node-name">k8s-cp-3</span><br><span class="ops-node-address">172.30.1.233</span></span><span>control-plane / etcd</span><span class="ops-pill" id="vm-status-k8s-cp-3">—</span>
       </button>
-      <button class="ops-mini-card ops-vm-row" data-endpoint="/api/proxmox/resources?type=vm" data-title="k8s-worker-1 VM">
-        <span class="ops-vm-badge green">VM</span><span><span class="ops-node-name">k8s-worker-1</span><br><span class="ops-node-address green">172.30.1.234</span></span><span>workloads</span><span class="ops-icon green">□</span>
+      <button class="ops-mini-card ops-vm-row" data-endpoint="/api/proxmox/resources?type=vm" data-title="k8s-worker-1 VM" data-vmname="k8s-worker-1">
+        <span class="ops-vm-badge green">VM</span><span><span class="ops-node-name">k8s-worker-1</span><br><span class="ops-node-address green">172.30.1.234</span></span><span>workloads</span><span class="ops-pill" id="vm-status-k8s-worker-1">—</span>
       </button>
-      <button class="ops-mini-card ops-vm-row" data-endpoint="/api/proxmox/resources?type=vm" data-title="k8s-worker-2 VM">
-        <span class="ops-vm-badge green">VM</span><span><span class="ops-node-name">k8s-worker-2</span><br><span class="ops-node-address green">172.30.1.235</span></span><span>workloads</span><span class="ops-icon green">□</span>
+      <button class="ops-mini-card ops-vm-row" data-endpoint="/api/proxmox/resources?type=vm" data-title="k8s-worker-2 VM" data-vmname="k8s-worker-2">
+        <span class="ops-vm-badge green">VM</span><span><span class="ops-node-name">k8s-worker-2</span><br><span class="ops-node-address green">172.30.1.235</span></span><span>workloads</span><span class="ops-pill" id="vm-status-k8s-worker-2">—</span>
       </button>
-      <button class="ops-mini-card ops-vm-row" data-endpoint="/api/proxmox/resources?type=storage" data-title="OMV NAS Storage">
-        <span class="ops-vm-badge purple">VM</span><span><span class="ops-node-name">OMV / NAS VM</span><br><span class="ops-node-address purple">172.30.1.52</span></span><span>NFS storage</span><span class="ops-icon purple">▣</span>
+      <button class="ops-mini-card ops-vm-row" data-endpoint="/api/proxmox/resources?type=storage" data-title="OMV NAS Storage" data-vmname="omv">
+        <span class="ops-vm-badge purple">VM</span><span><span class="ops-node-name">OMV / NAS VM</span><br><span class="ops-node-address purple">172.30.1.52</span></span><span>NFS storage</span><span class="ops-pill" id="vm-status-omv">—</span>
       </button>
     </div>
   </section>
 
   <section class="ops-plane management-plane">
-    <h3 class="ops-plane-title">Management Plane</h3>
-    <button class="ops-diagram-node storage" data-endpoint="/api/proxmox/version" data-title="Management Access">
-      <span class="ops-icon purple">O</span>
-      <strong>Odroid Management Node</strong>
-      <span class="ops-subtle">172.30.1.83</span>
-      <div class="ops-node-meta">
-        <code>Terraform</code><code>Ansible</code><code>kubectl</code><code>Helm</code>
-      </div>
-    </button>
+    <h3 class="ops-plane-title">Management Plane (Out-of-Cluster)</h3>
+    <div class="ops-mgmt-node-header">
+      <span class="ops-icon purple" style="width:1.8rem;height:1.8rem;font-size:1rem;">O</span>
+      <span><strong>Odroid Management Node</strong><br><span class="ops-node-address purple">172.30.1.83</span></span>
+    </div>
+    <div class="ops-mgmt-tools">
+      <button class="ops-mgmt-tool-row" data-endpoint="/api/proxmox/version" data-title="Proxmox Version">
+        <span class="ops-mgmt-tool-icon" style="background:#ffeedd;color:#c47b20;">Tf</span>
+        <span class="ops-mgmt-tool-label">Terraform <span class="ops-subtle">→</span> Proxmox API</span>
+        <code>172.30.1.12:8006</code>
+      </button>
+      <button class="ops-mgmt-tool-row" data-endpoint="/api/proxmox/resources?type=vm" data-title="Kubernetes VMs">
+        <span class="ops-mgmt-tool-icon" style="background:#e8f0ff;color:#2563eb;">A</span>
+        <span class="ops-mgmt-tool-label">Ansible / Kubespray <span class="ops-subtle">→</span> Kubernetes VMs</span>
+        <code>⚙ cluster provision</code>
+      </button>
+      <button class="ops-mgmt-tool-row" data-endpoint="/api/prometheus/summary" data-title="Kubectl Helm Access">
+        <span class="ops-mgmt-tool-icon" style="background:#e8f6ef;color:#16815b;">K</span>
+        <span class="ops-mgmt-tool-label">kubectl / Helm <span class="ops-subtle">→</span> K8s API</span>
+        <code>172.30.1.27:6443</code>
+      </button>
+      <button class="ops-mgmt-tool-row" data-endpoint="/api/prometheus/query?query=count(kube_deployment_status_replicas_available)" data-title="Argo CD Bootstrap">
+        <span class="ops-mgmt-tool-icon" style="background:#f1e9ff;color:#7c3fad;">Ar</span>
+        <span class="ops-mgmt-tool-label">Argo CD bootstrap <span class="ops-subtle">→</span> Kubernetes API</span>
+        <code>GitOps init</code>
+      </button>
+    </div>
   </section>
 
   <section class="ops-plane storage-plane">
     <h3 class="ops-plane-title">Storage Path</h3>
     <div class="ops-bottom-path">
-      <button class="ops-path-item" data-endpoint="/api/prometheus/query?query=count(kube_persistentvolumeclaim_status_phase)" data-title="PVC Metrics"><strong>Pod</strong><span>PVC</span></button>
-      <button class="ops-path-item" data-endpoint="/api/prometheus/query?query=count(kube_persistentvolumeclaim_status_phase)" data-title="PVC Phases"><strong>PVC</strong><span>phase</span></button>
-      <button class="ops-path-item" data-endpoint="/api/proxmox/resources?type=storage" data-title="Proxmox Storage"><strong>StorageClass</strong><span>nfs-client</span></button>
-      <button class="ops-path-item" data-endpoint="/api/proxmox/resources?type=storage" data-title="NFS Storage"><strong>OMV / NAS</strong><span>/export/k8s_pv</span></button>
+      <button class="ops-path-item" data-endpoint="/api/prometheus/query?query=count(kube_persistentvolumeclaim_status_phase)" data-title="PVC Metrics"><strong>Pod</strong><span>PVC request</span></button>
+      <button class="ops-path-item" data-endpoint="/api/prometheus/query?query=count(kube_persistentvolumeclaim_status_phase)" data-title="PVC Phases"><strong>PVC</strong><span>claim</span></button>
+      <button class="ops-path-item" data-endpoint="/api/proxmox/resources?type=storage" data-title="StorageClass nfs-client"><strong>StorageClass</strong><span class="ops-subtle" style="font-size:0.72rem;">nfs-subdir-external-provisioner</span></button>
+      <button class="ops-path-item" data-endpoint="/api/proxmox/resources?type=storage" data-title="NFS Provisioner"><strong>nfs-client</strong><span>dynamic PV</span></button>
+      <button class="ops-path-item" data-endpoint="/api/proxmox/resources?type=storage" data-title="OMV NAS Storage"><strong>OMV / NAS VM</strong><span>172.30.1.52<br>/export/k8s_pv</span></button>
     </div>
   </section>
 
   <section class="ops-plane gitops-plane">
     <h3 class="ops-plane-title">GitOps Deployment Path</h3>
     <div class="ops-bottom-path">
-      <button class="ops-path-item" data-endpoint="/api/ops/summary" data-title="Developer to Summary"><strong>Developer PC</strong><span>push</span></button>
-      <button class="ops-path-item" data-endpoint="/api/ops/summary" data-title="GitHub Repository"><strong>GitHub</strong><span>repo</span></button>
-      <button class="ops-path-item" data-endpoint="/api/ops/summary" data-title="GitHub Actions"><strong>Actions</strong><span>build</span></button>
-      <button class="ops-path-item" data-endpoint="/api/ops/summary" data-title="GHCR Image"><strong>GHCR</strong><span>image</span></button>
-      <button class="ops-path-item" data-endpoint="/api/ops/summary" data-title="GitOps Repository"><strong>GitOps</strong><span>home-k8s-gitops</span></button>
-      <button class="ops-path-item" data-endpoint="/api/prometheus/query?query=count(kube_deployment_status_replicas_available)" data-title="Argo CD Deployment"><strong>Argo CD</strong><span>sync</span></button>
-      <button class="ops-path-item" data-endpoint="/api/prometheus/summary" data-title="Kubernetes Deployment"><strong>Kubernetes</strong><span>cluster</span></button>
+      <button class="ops-path-item" data-endpoint="/api/ops/summary" data-title="Developer to Summary"><strong>Developer PC</strong><span>git push</span></button>
+      <button class="ops-path-item" data-endpoint="/api/ops/summary" data-title="GitHub Repository"><strong>GitHub</strong><span>Repository</span></button>
+      <button class="ops-path-item" data-endpoint="/api/ops/summary" data-title="GitHub Actions CI"><strong>Actions</strong><span>CI build</span></button>
+      <button class="ops-path-item" data-endpoint="/api/ops/summary" data-title="GHCR Container Image"><strong>GHCR</strong><span>Container Image</span></button>
+      <button class="ops-path-item" data-endpoint="/api/ops/summary" data-title="GitOps Repository"><strong>GitOps Repo</strong><span class="ops-subtle" style="font-size:0.72rem;">home-k8s-gitops</span></button>
+      <button class="ops-path-item" data-endpoint="/api/prometheus/query?query=count(kube_deployment_status_replicas_available)" data-title="Argo CD Sync"><strong>Argo CD</strong><span>sync</span></button>
+      <button class="ops-path-item" data-endpoint="/api/prometheus/summary" data-title="Kubernetes Deployment"><strong>Kubernetes</strong><span>Cluster</span></button>
       <button class="ops-path-item" data-endpoint="/api/prometheus/targets" data-title="Ingress Targets"><strong>Ingress</strong><span>nginx + MetalLB</span></button>
     </div>
   </section>
 </div>
+</div>
+
+<div class="ops-legend" aria-label="Flow legend">
+  <span class="ops-legend-item"><span class="ops-legend-line green"></span>User Traffic (HTTP/HTTPS)</span>
+  <span class="ops-legend-item"><span class="ops-legend-line blue"></span>Kubernetes API Traffic</span>
+  <span class="ops-legend-item"><span class="ops-legend-line purple dashed"></span>Management / GitOps / Storage</span>
+  <span class="ops-legend-item"><span class="ops-legend-line blue dashed"></span>Control / Provisioning Flow</span>
 </div>
 <bslib-tooltip placement="auto" bsoptions="[]" data-require-bs-version="5" data-require-bs-caller="tooltip()">
     <template>Expand</template>
@@ -1245,6 +1364,26 @@ const loadDashboard = async () => {
   setText("node-detail", `${node?.status ?? "unknown"} · ${formatBytes(node?.mem)} / ${formatBytes(node?.maxmem)}`);
   setText("vm-value", `${runningVms} / ${vms.length}`);
   setText("vm-detail", "running / total qemu resources");
+
+  // Update per-VM status badges in the architecture diagram
+  const vmNames = ["k8s-cp-1", "k8s-cp-2", "k8s-cp-3", "k8s-worker-1", "k8s-worker-2"];
+  for (const name of vmNames) {
+    const vm = vms.find((v) => v.name === name);
+    const badge = document.getElementById(`vm-status-${name}`);
+    if (badge && vm) {
+      const status = vm.status ?? "unknown";
+      badge.className = `ops-pill ${status === "running" ? "running" : "stopped"}`;
+      badge.textContent = status;
+    }
+  }
+  // OMV NAS badge — check storage resources for 172.30.1.52
+  const storageResources = summary.proxmoxStorage?.data?.resources ?? [];
+  const omvBadge = document.getElementById("vm-status-omv");
+  if (omvBadge) {
+    const omvUp = storageResources.length > 0;
+    omvBadge.className = `ops-pill ${omvUp ? "running" : "stopped"}`;
+    omvBadge.textContent = omvUp ? "online" : "unknown";
+  }
 
   setText("deployments-value", formatNumber(prom?.series?.deployments));
   setText("pvc-value", formatNumber(prom?.series?.pvcPhases));
