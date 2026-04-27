@@ -1,4 +1,5 @@
 const API_BASE = 'https://ops-api.mintcocoa.cc/api';
+const WS_BASE = API_BASE.replace(/^http/, 'ws');
 
 const getJson = async (path) => {
   const response = await fetch(`${API_BASE}${path}`, { cache: 'no-store' });
@@ -50,3 +51,5 @@ export const fetchProxmoxResources = async (type) => {
   const payload = await getJson(`/proxmox/resources${type ? `?type=${type}` : ''}`);
   return payload.resources ?? payload.data ?? [];
 };
+
+export const createOpsStream = () => new WebSocket(`${WS_BASE}/ops/stream`);

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import httpx
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -39,6 +39,7 @@ class Settings:
         for origin in os.getenv("OPS_API_CORS_ORIGINS", "*").split(",")
         if origin.strip()
     )
+    stream_interval_seconds: float = float(os.getenv("OPS_API_STREAM_INTERVAL_SECONDS", "5"))
 
 
 settings = Settings()
@@ -161,6 +162,12 @@ class ProxmoxClient:
 
 
 proxmox = ProxmoxClient(settings)
+
+
+def _pack_result(value: Any) -> dict[str, Any]:
+    if isinstance(value, Exception):
+        return {"ok": False, "error": str(value)}
+    return {"ok": True, "data": value}
 
 
 def _pve_resource_view(resource: dict[str, Any]) -> dict[str, Any]:
@@ -319,14 +326,58 @@ async def ops_summary() -> dict[str, Any]:
         return_exceptions=True,
     )
 
-    def pack(value: Any) -> dict[str, Any]:
-        if isinstance(value, Exception):
-            return {"ok": False, "error": str(value)}
-        return {"ok": True, "data": value}
-
     return {
         "generatedAt": int(time.time()),
-        "prometheus": pack(prom_result),
-        "proxmoxNodes": pack(pve_nodes_result),
-        "proxmoxVMs": pack(pve_resources_result),
+        "prometheus": _pack_result(prom_result),
+        "proxmoxNodes": _pack_result(pve_nodes_result),
+        "proxmoxVMs": _pack_result(pve_resources_result),
     }
+
+
+async def ops_snapshot() -> dict[str, Any]:
+    health_task = asyncio.create_task(health())
+    targets_task = asyncio.create_task(prometheus_targets())
+    prom_summary_task = asyncio.create_task(prometheus_summary())
+    argocd_task = asyncio.create_task(prometheus_query(query="argocd_app_info"))
+    pve_nodes_task = asyncio.create_task(proxmox_nodes())
+    pve_resources_task = asyncio.create_task(proxmox_resources(type="vm"))
+
+    (
+        health_result,
+        targets_result,
+        prom_summary_result,
+        argocd_result,
+        pve_nodes_result,
+        pve_resources_result,
+    ) = await asyncio.gather(
+        health_task,
+        targets_task,
+        prom_summary_task,
+        argocd_task,
+        pve_nodes_task,
+        pve_resources_task,
+        return_exceptions=True,
+    )
+
+    return {
+        "type": "ops_snapshot",
+        "generatedAt": int(time.time()),
+        "health": _pack_result(health_result),
+        "prometheusTargets": _pack_result(targets_result),
+        "prometheusSummary": _pack_result(prom_summary_result),
+        "argocdAppInfo": _pack_result(argocd_result),
+        "proxmoxNodes": _pack_result(pve_nodes_result),
+        "proxmoxVMs": _pack_result(pve_resources_result),
+    }
+
+
+@app.websocket("/api/ops/stream")
+async def ops_stream(websocket: WebSocket) -> None:
+    await websocket.accept()
+    interval = max(2.0, settings.stream_interval_seconds)
+    try:
+        while True:
+            await websocket.send_json(await ops_snapshot())
+            await asyncio.sleep(interval)
+    except WebSocketDisconnect:
+        return

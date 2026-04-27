@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Activity, Boxes, Cpu, Database, Server } from 'lucide-react';
 import { GlobalStatusBar } from './components/GlobalStatusBar';
 import { ProxmoxWidget } from './components/ProxmoxWidget';
 import { KubernetesWidget } from './components/KubernetesWidget';
 import { ArchitectureView } from './components/ArchitectureView';
 import {
+  createOpsStream,
   fetchHealth,
   fetchProxmoxNodes,
   fetchProxmoxResources,
@@ -47,6 +48,61 @@ function App() {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [streamStatus, setStreamStatus] = useState('connecting');
+  const streamStatusRef = useRef('connecting');
+
+  const updateStreamStatus = useCallback((status) => {
+    streamStatusRef.current = status;
+    setStreamStatus(status);
+  }, []);
+
+  const applySnapshot = useCallback((snapshot) => {
+    if (snapshot.health?.ok) {
+      const payload = snapshot.health.data;
+      setHealth({
+        ...payload,
+        status: payload.ok ? 'ok' : 'error',
+        details: {
+          prometheus: { status: payload.prometheus === 'ok' ? 'ok' : 'error', value: payload.prometheus },
+          proxmox: { status: payload.proxmox === 'ok' ? 'ok' : 'error', value: payload.proxmox },
+        },
+      });
+    }
+    if (snapshot.proxmoxNodes?.ok) {
+      setNodes(snapshot.proxmoxNodes.data.nodes ?? []);
+    }
+    if (snapshot.proxmoxVMs?.ok) {
+      setVms((snapshot.proxmoxVMs.data.resources ?? []).filter((res) => res.type === 'qemu'));
+    }
+    if (snapshot.prometheusTargets?.ok) {
+      const payload = snapshot.prometheusTargets.data;
+      const activeTargets = payload.targets ?? payload.data?.activeTargets ?? [];
+      setTargets({
+        ...payload,
+        activeTargets,
+        data: { ...(payload.data ?? {}), activeTargets },
+      });
+    }
+    if (snapshot.prometheusSummary?.ok) {
+      setPrometheusSummary(snapshot.prometheusSummary.data);
+    }
+    if (snapshot.argocdAppInfo?.ok) {
+      setArgocdMetrics(snapshot.argocdAppInfo.data.data?.result ?? []);
+    }
+
+    const failed = [
+      snapshot.health,
+      snapshot.proxmoxNodes,
+      snapshot.proxmoxVMs,
+      snapshot.prometheusTargets,
+      snapshot.prometheusSummary,
+      snapshot.argocdAppInfo,
+    ].filter((result) => result && !result.ok);
+
+    setError(failed.length ? failed.map((result) => result.error).join(' · ') : null);
+    setLastUpdated(new Date((snapshot.generatedAt ?? Date.now() / 1000) * 1000));
+    setLoading(false);
+  }, []);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -77,13 +133,54 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const initialLoad = setTimeout(loadData, 0);
-    const interval = setInterval(loadData, 30000); // 30 seconds
-    return () => {
-      clearTimeout(initialLoad);
-      clearInterval(interval);
+    let stopped = false;
+    let reconnect = null;
+    let socket = null;
+
+    const connect = () => {
+      if (stopped) return;
+      updateStreamStatus('connecting');
+      socket = createOpsStream();
+
+      socket.onopen = () => {
+        updateStreamStatus('connected');
+      };
+      socket.onmessage = (event) => {
+        try {
+          applySnapshot(JSON.parse(event.data));
+        } catch (err) {
+          console.error(err);
+          setError(`Ops stream payload parse failed: ${err.message}`);
+        }
+      };
+      socket.onerror = () => {
+        updateStreamStatus('degraded');
+      };
+      socket.onclose = () => {
+        if (stopped) return;
+        updateStreamStatus('reconnecting');
+        reconnect = setTimeout(connect, 5000);
+      };
     };
-  }, [loadData]);
+
+    const initialLoad = setTimeout(loadData, 0);
+    connect();
+    const interval = setInterval(() => {
+      if (streamStatusRef.current !== 'connected') {
+        loadData();
+      }
+    }, 30000);
+
+    return () => {
+      stopped = true;
+      clearTimeout(initialLoad);
+      clearTimeout(reconnect);
+      clearInterval(interval);
+      if (socket) {
+        socket.close();
+      }
+    };
+  }, [applySnapshot, loadData, updateStreamStatus]);
 
   const activeTargets = targets?.activeTargets ?? [];
   const healthyTargets = activeTargets.filter((target) => target.health === 'up').length;
@@ -145,7 +242,7 @@ function App() {
               </div>
               <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-500">
                 <Database size={14} />
-                ops-api.mintcocoa.cc
+                ops-api.mintcocoa.cc · {streamStatus}
               </div>
             </div>
             <ArchitectureView vms={vms} targets={targets} argocdMetrics={argocdMetrics} />
