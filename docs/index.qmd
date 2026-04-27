@@ -48,7 +48,8 @@ Cloudflare Tunnel 뒤의 Ops API로 Prometheus와 Proxmox 상태 표시
 ### [서버 구현 포트폴리오](server/ServerCorePortfolio.html)
 
 `iouring-runtime`의 core Runtime 위에 `RuntimeWeb`, `RuntimeProxy`, `RuntimeGame`을
-분리하고 예제 서버들을 올린 C++ 서버 런타임 구현 문서입니다.
+분리하고, 실제 실행 앱 기준으로 web 앱 6종, TCP reverse proxy, dungeon 서버
+예제를 나눠 설명한 C++ 서버 런타임 구현 문서입니다.
 
 ::: {.serve-path}
 **서빙 경로**
@@ -70,6 +71,8 @@ Cloudflare Tunnel 뒤의 Ops API로 Prometheus와 Proxmox 상태 표시
 [`iouring-runtime/examples/proxy/tcp_reverse_proxy`](https://github.com/mint-cocoa/iouring-runtime/tree/main/examples/proxy/tcp_reverse_proxy)
 
 [`iouring-runtime/examples/game/dungeon_full_server`](https://github.com/mint-cocoa/iouring-runtime/tree/main/examples/game/dungeon_full_server)
+
+[`iouring-runtime/examples/game/dungeon_packet_echo`](https://github.com/mint-cocoa/iouring-runtime/tree/main/examples/game/dungeon_packet_echo)
 :::
 
 ::: {.tag-row}

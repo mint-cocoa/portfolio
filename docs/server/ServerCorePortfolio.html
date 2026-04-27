@@ -97,7 +97,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#런타임과-애플리케이션을-분리한-이유" id="toc-런타임과-애플리케이션을-분리한-이유" class="nav-link" data-scroll-target="#런타임과-애플리케이션을-분리한-이유"><span class="header-section-number">2.2</span> 런타임과 애플리케이션을 분리한 이유</a></li>
   <li><a href="#구현-계층과-문서-범위" id="toc-구현-계층과-문서-범위" class="nav-link" data-scroll-target="#구현-계층과-문서-범위"><span class="header-section-number">2.3</span> 구현 계층과 문서 범위</a></li>
   <li><a href="#sec-current-modules" id="toc-sec-current-modules" class="nav-link" data-scroll-target="#sec-current-modules"><span class="header-section-number">2.4</span> 현재 런타임 모듈과 예제</a></li>
-  <li><a href="#코어-라이브러리-구조" id="toc-코어-라이브러리-구조" class="nav-link" data-scroll-target="#코어-라이브러리-구조"><span class="header-section-number">2.5</span> 코어 라이브러리 구조</a></li>
+  <li><a href="#sec-app-split" id="toc-sec-app-split" class="nav-link" data-scroll-target="#sec-app-split"><span class="header-section-number">2.5</span> 실제 앱 기준 분리</a></li>
+  <li><a href="#코어-라이브러리-구조" id="toc-코어-라이브러리-구조" class="nav-link" data-scroll-target="#코어-라이브러리-구조"><span class="header-section-number">2.6</span> 코어 라이브러리 구조</a></li>
   </ul></li>
   <li><a href="#sec-iouring" id="toc-sec-iouring" class="nav-link" data-scroll-target="#sec-iouring"><span class="header-section-number">3</span> io_uring 네트워크 엔진</a>
   <ul class="collapse">
@@ -122,29 +123,31 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#sec-jobqueue" id="toc-sec-jobqueue" class="nav-link" data-scroll-target="#sec-jobqueue"><span class="header-section-number">6.1</span> JobQueue &amp; 스케줄링</a></li>
   </ul></li>
   <li><a href="#sec-postgresql" id="toc-sec-postgresql" class="nav-link" data-scroll-target="#sec-postgresql"><span class="header-section-number">7</span> DB 접근 실험과 현재 예제 백엔드</a></li>
-  <li><a href="#sec-client" id="toc-sec-client" class="nav-link" data-scroll-target="#sec-client"><span class="header-section-number">8</span> 게임 서버 애플리케이션</a>
+  <li><a href="#sec-web-apps" id="toc-sec-web-apps" class="nav-link" data-scroll-target="#sec-web-apps"><span class="header-section-number">8</span> Web 서버 애플리케이션</a></li>
+  <li><a href="#sec-proxy-app" id="toc-sec-proxy-app" class="nav-link" data-scroll-target="#sec-proxy-app"><span class="header-section-number">9</span> Proxy 서버 애플리케이션</a></li>
+  <li><a href="#sec-game-app" id="toc-sec-game-app" class="nav-link" data-scroll-target="#sec-game-app"><span class="header-section-number">10</span> Game 서버 애플리케이션</a>
   <ul class="collapse">
-  <li><a href="#sec-network-sync" id="toc-sec-network-sync" class="nav-link" data-scroll-target="#sec-network-sync"><span class="header-section-number">8.1</span> 프로토콜과 네트워크 동기화</a></li>
-  <li><a href="#sec-game-systems" id="toc-sec-game-systems" class="nav-link" data-scroll-target="#sec-game-systems"><span class="header-section-number">8.2</span> 게임 시스템</a></li>
-  <li><a href="#sec-dungeon-gen" id="toc-sec-dungeon-gen" class="nav-link" data-scroll-target="#sec-dungeon-gen"><span class="header-section-number">8.3</span> 절차적 던전 생성</a></li>
-  <li><a href="#sec-zone-graph" id="toc-sec-zone-graph" class="nav-link" data-scroll-target="#sec-zone-graph"><span class="header-section-number">8.4</span> 그래프 기반 Zone 관리</a></li>
-  <li><a href="#sec-zone-lifecycle" id="toc-sec-zone-lifecycle" class="nav-link" data-scroll-target="#sec-zone-lifecycle"><span class="header-section-number">8.5</span> Zone 생명주기</a></li>
-  <li><a href="#sec-sqlite" id="toc-sec-sqlite" class="nav-link" data-scroll-target="#sec-sqlite"><span class="header-section-number">8.6</span> DB 영속화와 백엔드 교체</a></li>
-  <li><a href="#sec-dogtag" id="toc-sec-dogtag" class="nav-link" data-scroll-target="#sec-dogtag"><span class="header-section-number">8.7</span> 독텍 루팅 시스템</a></li>
-  <li><a href="#sec-session-routing" id="toc-sec-session-routing" class="nav-link" data-scroll-target="#sec-session-routing"><span class="header-section-number">8.8</span> 세션 레벨 패킷 라우팅</a></li>
+  <li><a href="#sec-network-sync" id="toc-sec-network-sync" class="nav-link" data-scroll-target="#sec-network-sync"><span class="header-section-number">10.1</span> 프로토콜과 네트워크 동기화</a></li>
+  <li><a href="#sec-game-systems" id="toc-sec-game-systems" class="nav-link" data-scroll-target="#sec-game-systems"><span class="header-section-number">10.2</span> 게임 시스템</a></li>
+  <li><a href="#sec-dungeon-gen" id="toc-sec-dungeon-gen" class="nav-link" data-scroll-target="#sec-dungeon-gen"><span class="header-section-number">10.3</span> 절차적 던전 생성</a></li>
+  <li><a href="#sec-zone-graph" id="toc-sec-zone-graph" class="nav-link" data-scroll-target="#sec-zone-graph"><span class="header-section-number">10.4</span> 그래프 기반 Zone 관리</a></li>
+  <li><a href="#sec-zone-lifecycle" id="toc-sec-zone-lifecycle" class="nav-link" data-scroll-target="#sec-zone-lifecycle"><span class="header-section-number">10.5</span> Zone 생명주기</a></li>
+  <li><a href="#sec-sqlite" id="toc-sec-sqlite" class="nav-link" data-scroll-target="#sec-sqlite"><span class="header-section-number">10.6</span> DB 영속화와 백엔드 교체</a></li>
+  <li><a href="#sec-dogtag" id="toc-sec-dogtag" class="nav-link" data-scroll-target="#sec-dogtag"><span class="header-section-number">10.7</span> 독텍 루팅 시스템</a></li>
+  <li><a href="#sec-session-routing" id="toc-sec-session-routing" class="nav-link" data-scroll-target="#sec-session-routing"><span class="header-section-number">10.8</span> 세션 레벨 패킷 라우팅</a></li>
   </ul></li>
-  <li><a href="#sec-benchmark" id="toc-sec-benchmark" class="nav-link" data-scroll-target="#sec-benchmark"><span class="header-section-number">9</span> 벤치마크 — io_uring vs epoll</a>
+  <li><a href="#sec-benchmark" id="toc-sec-benchmark" class="nav-link" data-scroll-target="#sec-benchmark"><span class="header-section-number">11</span> 벤치마크 — io_uring vs epoll</a>
   <ul class="collapse">
-  <li><a href="#sec-bench-env" id="toc-sec-bench-env" class="nav-link" data-scroll-target="#sec-bench-env"><span class="header-section-number">9.1</span> 테스트 환경</a></li>
-  <li><a href="#sec-echo-bench" id="toc-sec-echo-bench" class="nav-link" data-scroll-target="#sec-echo-bench"><span class="header-section-number">9.2</span> Echo 벤치마크</a></li>
-  <li><a href="#sec-bench-latency" id="toc-sec-bench-latency" class="nav-link" data-scroll-target="#sec-bench-latency"><span class="header-section-number">9.3</span> 브로드캐스트 지연 — 단일 존</a></li>
-  <li><a href="#sec-bench-tail" id="toc-sec-bench-tail" class="nav-link" data-scroll-target="#sec-bench-tail"><span class="header-section-number">9.4</span> Tail Latency — p99</a></li>
-  <li><a href="#sec-bench-throughput" id="toc-sec-bench-throughput" class="nav-link" data-scroll-target="#sec-bench-throughput"><span class="header-section-number">9.5</span> 처리량</a></li>
-  <li><a href="#sec-bench-rooms" id="toc-sec-bench-rooms" class="nav-link" data-scroll-target="#sec-bench-rooms"><span class="header-section-number">9.6</span> 멀티 Room — Room 샤딩 효과</a></li>
-  <li><a href="#sec-bench-conclusion" id="toc-sec-bench-conclusion" class="nav-link" data-scroll-target="#sec-bench-conclusion"><span class="header-section-number">9.7</span> 결론</a></li>
+  <li><a href="#sec-bench-env" id="toc-sec-bench-env" class="nav-link" data-scroll-target="#sec-bench-env"><span class="header-section-number">11.1</span> 테스트 환경</a></li>
+  <li><a href="#sec-echo-bench" id="toc-sec-echo-bench" class="nav-link" data-scroll-target="#sec-echo-bench"><span class="header-section-number">11.2</span> Echo 벤치마크</a></li>
+  <li><a href="#sec-bench-latency" id="toc-sec-bench-latency" class="nav-link" data-scroll-target="#sec-bench-latency"><span class="header-section-number">11.3</span> 브로드캐스트 지연 — 단일 존</a></li>
+  <li><a href="#sec-bench-tail" id="toc-sec-bench-tail" class="nav-link" data-scroll-target="#sec-bench-tail"><span class="header-section-number">11.4</span> Tail Latency — p99</a></li>
+  <li><a href="#sec-bench-throughput" id="toc-sec-bench-throughput" class="nav-link" data-scroll-target="#sec-bench-throughput"><span class="header-section-number">11.5</span> 처리량</a></li>
+  <li><a href="#sec-bench-rooms" id="toc-sec-bench-rooms" class="nav-link" data-scroll-target="#sec-bench-rooms"><span class="header-section-number">11.6</span> 멀티 Room — Room 샤딩 효과</a></li>
+  <li><a href="#sec-bench-conclusion" id="toc-sec-bench-conclusion" class="nav-link" data-scroll-target="#sec-bench-conclusion"><span class="header-section-number">11.7</span> 결론</a></li>
   </ul></li>
-  <li><a href="#관련-레포" id="toc-관련-레포" class="nav-link" data-scroll-target="#관련-레포"><span class="header-section-number">10</span> 관련 레포</a></li>
-  <li><a href="#다음-문서" id="toc-다음-문서" class="nav-link" data-scroll-target="#다음-문서"><span class="header-section-number">11</span> 다음 문서</a></li>
+  <li><a href="#관련-레포" id="toc-관련-레포" class="nav-link" data-scroll-target="#관련-레포"><span class="header-section-number">12</span> 관련 레포</a></li>
+  <li><a href="#다음-문서" id="toc-다음-문서" class="nav-link" data-scroll-target="#다음-문서"><span class="header-section-number">13</span> 다음 문서</a></li>
   </ul>
 </nav>
 </div>
@@ -192,8 +195,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><code>self_ref_</code>, <code>pending_io_</code>, <code>keep_alive</code>로 CQE 지연과 UAF 문제 대응</p>
 </div>
 <div class="summary-card">
-<p><strong>Benchmark</strong></p>
-<p>전체 모듈 동시 빌드, 24개 테스트, dungeon protocol smoke 통과</p>
+<p><strong>Apps</strong></p>
+<p>Web 앱 6종, TCP reverse proxy, dungeon 서버 예제를 실제 실행 단위로 분리</p>
 </div>
 </div>
 </section>
@@ -284,7 +287,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>실제 구현은 하나의 문제 영역이 아니라, 같은 <code>io_uring</code> 런타임을 여러 서버 타입이 공유하는 구조입니다. <code>RuntimeWeb</code>과 <code>RuntimeProxy</code>는 서로 위아래 관계가 아니라 <code>Runtime</code> 위의 병렬 모듈입니다. HTTP 앱 서버 예제는 <code>RuntimeWeb</code>을 사용하고, TCP/TLS reverse proxy 예제는 HTTP 라우팅 계층 없이 <code>RuntimeProxy</code>를 직접 사용합니다. <code>RuntimeGame</code>도 같은 방식으로 공통 게임 서버 구조를 제공하며, 전체 던전 서버는 이 모듈 위에 올라간 예제 애플리케이션입니다.</p>
+<p>실제 구현은 하나의 문제 영역이 아니라, 같은 <code>io_uring</code> 런타임을 여러 서버 타입이 공유하는 구조입니다. <code>RuntimeWeb</code>과 <code>RuntimeProxy</code>는 서로 위아래 관계가 아니라 <code>Runtime</code> 위의 병렬 모듈입니다. HTTP 앱 서버 예제는 <code>RuntimeWeb</code>을 사용하고, TCP/TLS reverse proxy 예제는 HTTP 라우팅 계층 없이 <code>RuntimeProxy</code>를 직접 사용합니다. <code>RuntimeGame</code>도 같은 방식으로 공통 게임 서버 구조를 제공하며, 전체 던전 서버는 이 모듈 위에 올라간 예제 애플리케이션입니다. 따라서 이 문서는 코어 런타임 설명 뒤에 <strong>실제 실행 앱 기준</strong>으로 Web, Proxy, Game 구현을 분리해 설명합니다.</p>
 </section>
 <section id="sec-current-modules" class="level3" data-number="2.4">
 <h3 data-number="2.4" class="anchored" data-anchor-id="sec-current-modules"><span class="header-section-number">2.4</span> 현재 런타임 모듈과 예제</h3>
@@ -341,8 +344,27 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>전체 조합은 <code>BUILD_WEB=ON</code>, <code>BUILD_PROXY=ON</code>, <code>BUILD_GAME=ON</code>, <code>BUILD_TESTS=ON</code>으로 동시에 켜서 검증했습니다. 현재 main 기준으로 모든 예제 서버가 함께 빌드되고, core/web/proxy/game 테스트 24개가 통과합니다. <code>dungeon_full_server</code>는 <code>RuntimeGame</code>을 링크하고 <code>PacketSession</code>, <code>Room</code>, <code>RoomManager</code>를 재사용하므로, 기존 독립 게임 서버 구현을 런타임 위의 예제로 흡수한 상태입니다.</p>
 </section>
-<section id="코어-라이브러리-구조" class="level3" data-number="2.5">
-<h3 data-number="2.5" class="anchored" data-anchor-id="코어-라이브러리-구조"><span class="header-section-number">2.5</span> 코어 라이브러리 구조</h3>
+<section id="sec-app-split" class="level3" data-number="2.5">
+<h3 data-number="2.5" class="anchored" data-anchor-id="sec-app-split"><span class="header-section-number">2.5</span> 실제 앱 기준 분리</h3>
+<p>현재 저장소에서 포트폴리오가 보여주는 서버 구현은 라이브러리 계층과 실행 앱 계층이 분리되어 있습니다. <code>src/runtime</code>은 모든 서버가 공유하는 I/O 기반이고, <code>src/modules/*</code>는 각 서버 타입의 공통 기능입니다. <code>examples/*</code> 아래의 실행 앱은 이 모듈들을 조합해 실제 HTTP 앱, 프록시, 게임 서버로 동작합니다.</p>
+<table class="caption-top table">
+<thead><tr class="header"><th>실행 앱</th><th>위치</th><th>사용하는 모듈</th><th>구현 포인트</th></tr></thead>
+<tbody>
+<tr><td><code>hello_http</code></td><td><code>examples/web/hello_http</code></td><td><code>RuntimeWeb</code></td><td>라우터, path parameter, cookie, private route, payload 응답 검증</td></tr>
+<tr><td><code>status_server</code></td><td><code>examples/web/status_server</code></td><td><code>RuntimeWeb</code></td><td><code>/health</code>, <code>/metrics</code>와 런타임 상태 노출</td></tr>
+<tr><td><code>file_store_server</code></td><td><code>examples/web/file_store_server</code></td><td><code>RuntimeWeb</code></td><td>파일 목록, 다운로드, 삭제, 스트리밍 업로드</td></tr>
+<tr><td><code>speedtest_server</code></td><td><code>examples/web/speedtest_server</code></td><td><code>RuntimeWeb</code></td><td>대용량 다운로드, 업로드 측정, CORS, 정적 파일 서빙</td></tr>
+<tr><td><code>dropapp</code></td><td><code>examples/web/dropapp</code></td><td><code>RuntimeWeb</code> + core write event</td><td>TTL 파일 공유, 비동기 디스크 write, 다운로드 URL 생성</td></tr>
+<tr><td><code>webhook_inbox</code></td><td><code>examples/web/webhook_inbox</code></td><td><code>RuntimeWeb</code></td><td>GitHub/Argo CD/custom webhook 수집, JSONL 저장, 이벤트 조회</td></tr>
+<tr><td><code>tcp_reverse_proxy</code></td><td><code>examples/proxy/tcp_reverse_proxy</code></td><td><code>RuntimeProxy</code></td><td>TLS downstream, upstream route, ACME challenge, metrics 파일</td></tr>
+<tr><td><code>dungeon_packet_echo</code></td><td><code>examples/game/dungeon_packet_echo</code></td><td><code>RuntimeGame</code></td><td>Protobuf packet framing과 Room broadcast 검증</td></tr>
+<tr><td><code>dungeon_full_server</code></td><td><code>examples/game/dungeon_full_server</code></td><td><code>RuntimeGame</code></td><td>인증, 캐릭터, Room, 던전, 전투, 파티, 채팅, DB 경계</td></tr>
+</tbody>
+</table>
+<p>이 분리의 목적은 “하나의 게임 서버”만 보여주는 것이 아니라, 같은 네트워크 런타임이 HTTP 앱 서버, 운영용 webhook 수집기, 파일 전송 앱, TCP reverse proxy, 멀티플레이 게임 서버로 확장되는 과정을 보여주는 것입니다.</p>
+</section>
+<section id="코어-라이브러리-구조" class="level3" data-number="2.6">
+<h3 data-number="2.6" class="anchored" data-anchor-id="코어-라이브러리-구조"><span class="header-section-number">2.6</span> 코어 라이브러리 구조</h3>
 <div class="cell" data-layout-align="default">
 <div class="cell-output-display">
 <div id="fig-architecture-simplified" class="quarto-float quarto-figure quarto-figure-center anchored">
@@ -938,15 +960,60 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>현재 <code>iouring-runtime/examples/game/dungeon_full_server</code> 예제는 배포와 smoke test가 쉬운 형태를 우선해 <code>DbService</code> 인터페이스 뒤에 SQLite와 in-memory 백엔드를 제공합니다. 기본 실행은 <code>gameserver.db</code> SQLite 파일을 사용하고, 자동화 검증은 <code>GAMESERVER_DB=memory</code>로 외부 DB 없이 실행합니다. PostgreSQL 워커 풀 설계는 별도 운영형 백엔드로 확장 가능한 방향을 설명하는 설계 기록이고, 현재 main의 full server 예제에는 SQLite/Memory 백엔드만 포함되어 있습니다.</p>
 </section>
-<section id="sec-client" class="level2" data-number="8">
-<h2 data-number="8" class="anchored" data-anchor-id="sec-client"><span class="header-section-number">8</span> 게임 서버 애플리케이션</h2>
+<section id="sec-web-apps" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="sec-web-apps"><span class="header-section-number">8</span> Web 서버 애플리케이션</h2>
+<p><code>RuntimeWeb</code>은 HTTP 파싱, 라우팅, 정적 파일 응답, chunked/streaming 응답, 요청 타임아웃과 backpressure를 공통으로 제공합니다. 실제 앱은 <code>WebServer</code>에 route를 등록하고, 필요한 경우 <code>PostStream</code>이나 core write event를 이용해 큰 요청을 메모리에 전부 올리지 않고 처리합니다.</p>
+<table class="caption-top table">
+<thead><tr class="header"><th>앱</th><th>주요 라우트</th><th>구현 책임</th></tr></thead>
+<tbody>
+<tr><td><code>hello_http</code></td><td><code>/</code>, <code>/health</code>, <code>/payload/:size</code>, <code>/hello/:name</code>, <code>/cookies</code>, <code>/private</code></td><td>라우터 기능과 HTTP 응답 surface 검증</td></tr>
+<tr><td><code>status_server</code></td><td><code>/</code>, <code>/health</code>, <code>/metrics</code></td><td>운영 상태와 metrics 노출</td></tr>
+<tr><td><code>file_store_server</code></td><td><code>/api/files</code>, <code>/files/*path</code>, <code>DELETE /api/files/*path</code></td><td>파일 목록, 다운로드, 삭제, 비동기 업로드</td></tr>
+<tr><td><code>speedtest_server</code></td><td><code>/downloading</code>, <code>/upload</code>, <code>/*path</code></td><td>다운로드/업로드 측정과 정적 프론트 서빙</td></tr>
+<tr><td><code>dropapp</code></td><td><code>/api/files</code>, <code>/d/:id/*filename</code>, <code>DELETE /api/files/:id</code></td><td>TTL 기반 파일 공유와 다운로드 URL 생성</td></tr>
+<tr><td><code>webhook_inbox</code></td><td><code>/hooks/github</code>, <code>/hooks/argocd</code>, <code>/hook/:inbox</code>, <code>/api/events</code></td><td>webhook 수집, 분류, JSONL 저장, 이벤트 조회</td></tr>
+</tbody>
+</table>
+<section id="sec-dropapp" class="level3" data-number="8.1">
+<h3 data-number="8.1" class="anchored" data-anchor-id="sec-dropapp"><span class="header-section-number">8.1</span> dropapp — TTL 파일 공유 앱</h3>
+<p><code>dropapp</code>은 단순 정적 페이지가 아니라, 파일 업로드와 다운로드 수명주기를 가진 작은 웹 앱입니다. 업로드 요청은 <code>PostStream</code>으로 받고, 파일 본문은 <code>AsyncUploadState</code>가 <code>IoRing::PrepWrite</code>로 디스크에 비동기 write를 제출합니다. 요청이 완료되기 전까지는 <code>.part</code> 임시 파일에 쓰고, 모든 write CQE가 정상 완료되면 최종 object 경로로 rename한 뒤 metadata JSON을 저장합니다.</p>
+<p>파일 metadata는 <code>objects/</code>와 <code>meta/</code> 디렉터리로 분리합니다. <code>/api/files</code>는 아직 만료되지 않은 파일 목록을 반환하고, <code>/d/:id/*filename</code>은 안전한 id 검증 후 다운로드를 제공합니다. TTL이 지난 파일은 cleanup 경로에서 object와 metadata를 함께 제거합니다.</p>
+</section>
+<section id="sec-webhook-inbox" class="level3" data-number="8.2">
+<h3 data-number="8.2" class="anchored" data-anchor-id="sec-webhook-inbox"><span class="header-section-number">8.2</span> webhook_inbox — 운영 이벤트 수집 앱</h3>
+<p><code>webhook_inbox</code>는 GitHub Actions, Argo CD, 기타 custom webhook을 한 곳에 모으는 운영 보조 앱입니다. GitHub 전용 라우트(<code>/hooks/github</code>)는 <code>X-GitHub-Event</code>, <code>X-GitHub-Delivery</code> 헤더와 payload의 <code>action</code>, <code>ref</code>, <code>status</code> 계열 필드를 읽어 이벤트 타입과 상태를 분류합니다. Argo CD 라우트(<code>/hooks/argocd</code>)와 generic 라우트(<code>/hook/:inbox</code>)도 같은 <code>WebhookEvent</code> 모델로 저장합니다.</p>
+<p>저장소는 JSONL append log입니다. 이벤트 삭제도 tombstone line을 남기는 방식이라, 단순 파일 기반이면서도 재시작 시 log를 replay해 현재 상태를 복구할 수 있습니다.</p>
+</section>
+<section id="sec-transfer-apps" class="level3" data-number="8.3">
+<h3 data-number="8.3" class="anchored" data-anchor-id="sec-transfer-apps"><span class="header-section-number">8.3</span> speedtest와 file_store — 전송 경로 검증 앱</h3>
+<p><code>speedtest_server</code>는 <code>/downloading</code>에서 설정된 크기의 payload를 chunk 단위로 보내고, <code>/upload</code>에서 CORS와 streaming upload 경로를 검증합니다. <code>file_store_server</code>는 파일 목록, 다운로드, 삭제 API를 제공하며, streaming upload state를 request id로 추적합니다.</p>
+</section>
+</section>
+<section id="sec-proxy-app" class="level2" data-number="9">
+<h2 data-number="9" class="anchored" data-anchor-id="sec-proxy-app"><span class="header-section-number">9</span> Proxy 서버 애플리케이션</h2>
+<p><code>RuntimeProxy</code>는 HTTP 라우터를 거치지 않고 TCP 연결 자체를 upstream으로 중계하는 모듈입니다. <code>tcp_reverse_proxy</code> 실행 앱은 환경변수로 listen 주소, 기본 upstream, hostname 기반 upstream route, TLS 인증서 경로, certbot challenge 경로, metrics 파일 위치를 설정합니다.</p>
+<table class="caption-top table">
+<thead><tr class="header"><th>기능</th><th>구현</th></tr></thead>
+<tbody>
+<tr><td>기본 upstream</td><td><code>TCP_PROXY_UPSTREAM_HOST</code>, <code>TCP_PROXY_UPSTREAM_PORT</code></td></tr>
+<tr><td>hostname route</td><td><code>TCP_PROXY_UPSTREAM_ROUTES=host=upstream:port,...</code></td></tr>
+<tr><td>downstream TLS</td><td><code>TCP_PROXY_TLS_CERT_FILE</code>, <code>TCP_PROXY_TLS_KEY_FILE</code></td></tr>
+<tr><td>ACME challenge</td><td><code>TCP_PROXY_CERTBOT_CHALLENGE_HOST</code>, <code>TCP_PROXY_CERTBOT_CHALLENGE_WEBROOT</code></td></tr>
+<tr><td>metrics</td><td><code>TCP_PROXY_METRICS_FILE</code>, <code>TCP_PROXY_METRICS_INTERVAL_MS</code></td></tr>
+<tr><td>worker 설정</td><td><code>TCP_PROXY_WORKERS</code>, <code>TCP_PROXY_WORKER_AFFINITY</code></td></tr>
+</tbody>
+</table>
+<p>이 앱은 <code>RuntimeWeb</code>과 달리 request/response 객체를 만들지 않습니다. downstream 세션과 upstream connector를 bridge하고, TLS termination이 필요한 경우 downstream context에서 인증서를 로드합니다.</p>
+</section>
+<section id="sec-game-app" class="level2" data-number="10">
+<h2 data-number="10" class="anchored" data-anchor-id="sec-game-app"><span class="header-section-number">10</span> Game 서버 애플리케이션</h2>
 <p>공통 <code>io_uring</code> 런타임은 web/proxy 계층에서도 사용하지만, 가장 복잡한 검증 대상은 실제 멀티플레이 게임 서버였습니다. 현재 main에서는 공통 게임 서버 구조를 <code>RuntimeGame</code>으로 분리하고, 전체 던전 서버를 <code>dungeon_full_server</code> 예제로 올렸습니다. <code>GameSession</code>은 <code>RuntimeGame::PacketSession</code>을 상속하고, 예제 <code>Room</code>은 <code>RuntimeGame::Room</code>을 상속하며, 예제 <code>RoomManager</code>는 <code>RuntimeGame::RoomManager</code> 위에서 던전 서버 도메인 객체를 관리합니다. 클라이언트 측 구현은 별도의 클라이언트 포트폴리오에서 다루며, 이 장에서는 서버 쪽 게임 시스템만 설명합니다.</p>
-<section id="sec-network-sync" class="level3" data-number="8.1">
-<h3 data-number="8.1" class="anchored" data-anchor-id="sec-network-sync"><span class="header-section-number">8.1</span> 프로토콜과 네트워크 동기화</h3>
+<section id="sec-network-sync" class="level3" data-number="10.1">
+<h3 data-number="10.1" class="anchored" data-anchor-id="sec-network-sync"><span class="header-section-number">10.1</span> 프로토콜과 네트워크 동기화</h3>
 <p>클라이언트와 <code>[size:uint16][msgId:uint16]</code> + Protobuf 3 payload 형식의 바이너리 프로토콜로 통신합니다. <code>PacketBuilder</code>가 직렬화를 담당하고, 세션별 패킷 핸들러 테이블이 <code>msgId</code>를 기준으로 역직렬화와 디스패치를 수행합니다. 이동은 20Hz(<code>kTickInterval = 50ms</code>) 주기로 동기화되며, 서버는 각 플레이어의 위치·회전을 같은 Room에 있는 전체 플레이어에게 브로드캐스트합니다.</p>
 </section>
-<section id="sec-game-systems" class="level3" data-number="8.2">
-<h3 data-number="8.2" class="anchored" data-anchor-id="sec-game-systems"><span class="header-section-number">8.2</span> 게임 시스템</h3>
+<section id="sec-game-systems" class="level3" data-number="10.2">
+<h3 data-number="10.2" class="anchored" data-anchor-id="sec-game-systems"><span class="header-section-number">10.2</span> 게임 시스템</h3>
 <div id="tbl-game-systems" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-game-systems-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -988,8 +1055,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>전투 판정은 모두 서버에서 수행합니다. 클라이언트가 <code>C_ATTACK</code> / <code>C_FIRE</code>를 보내면 서버가 쿨다운, 거리, 데미지 계산을 직접 처리합니다. 각 스킬의 파라미터는 <code>CombatSystem::kSkills</code> 배열에 정의돼 있고, <code>skill_cooldowns</code> 맵에서 클라이언트별 마지막 사용 시각을 검증합니다. 채팅은 채널 타입별로 송신 경로가 다릅니다. 파티/귓속말은 대상 세션을 직접 찾아 전송하고, Zone 채팅과 All 채팅은 같은 Room 내 전체 플레이어에게 브로드캐스트됩니다. 인벤토리와 재화는 <code>DbService</code> 추상 인터페이스를 통해 영속화됩니다.</p>
 </section>
-<section id="sec-dungeon-gen" class="level3" data-number="8.3">
-<h3 data-number="8.3" class="anchored" data-anchor-id="sec-dungeon-gen"><span class="header-section-number">8.3</span> 절차적 던전 생성</h3>
+<section id="sec-dungeon-gen" class="level3" data-number="10.3">
+<h3 data-number="10.3" class="anchored" data-anchor-id="sec-dungeon-gen"><span class="header-section-number">10.3</span> 절차적 던전 생성</h3>
 <p>120×70 그리드 위에 Cellular Automata로 동굴을 생성하고, 모든 방을 통로로 연결하는 절차적 던전 시스템입니다.</p>
 <ol type="1">
 <li><strong>RandomFillMap</strong> — 52% 확률로 벽 배치 (Zone depth에 따라 +2%씩 증가, 최대 62%). 깊은 Zone일수록 좁고 복잡한 동굴이 생성됩니다.</li>
@@ -1045,8 +1112,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </figure>
 </div>
 </section>
-<section id="sec-zone-graph" class="level3" data-number="8.4">
-<h3 data-number="8.4" class="anchored" data-anchor-id="sec-zone-graph"><span class="header-section-number">8.4</span> 그래프 기반 Zone 관리</h3>
+<section id="sec-zone-graph" class="level3" data-number="10.4">
+<h3 data-number="10.4" class="anchored" data-anchor-id="sec-zone-graph"><span class="header-section-number">10.4</span> 그래프 기반 Zone 관리</h3>
 <p>Room 간 연결을 트리가 아닌 <strong>방향 없는 그래프</strong>로 관리합니다. 각 Room은 <code>connections</code> 맵(<code>portal_index → target RoomId</code>)을 보유하며, 포탈 진입 시 양방향 링크가 생성됩니다.</p>
 <div class="cell" data-layout-align="default">
 <div class="cell-output-display">
@@ -1084,8 +1151,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>대상 Room에서 역링크 포탈 좌표 근처(±2m)에 플레이어 스폰 → 공간 연속성</li>
 </ol>
 </section>
-<section id="sec-zone-lifecycle" class="level3" data-number="8.5">
-<h3 data-number="8.5" class="anchored" data-anchor-id="sec-zone-lifecycle"><span class="header-section-number">8.5</span> Zone 생명주기</h3>
+<section id="sec-zone-lifecycle" class="level3" data-number="10.5">
+<h3 data-number="10.5" class="anchored" data-anchor-id="sec-zone-lifecycle"><span class="header-section-number">10.5</span> Zone 생명주기</h3>
 <p>Room은 <code>shared_ptr</code>로 관리되며, <code>empty_since_</code> 타임스탬프로 비어있는 기간을 추적합니다.</p>
 <ul>
 <li><code>AddPlayer</code> 시 <code>ClearEmpty()</code> — 삭제 타이머 초기화</li>
@@ -1096,8 +1163,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
 <p>이 설계로 포탈 전환 중 비동기 <code>AddPlayer</code>가 완료되기 전에 Room이 삭제되는 race condition을 방지합니다.</p>
 </section>
-<section id="sec-sqlite" class="level3" data-number="8.6">
-<h3 data-number="8.6" class="anchored" data-anchor-id="sec-sqlite"><span class="header-section-number">8.6</span> DB 영속화와 백엔드 교체</h3>
+<section id="sec-sqlite" class="level3" data-number="10.6">
+<h3 data-number="10.6" class="anchored" data-anchor-id="sec-sqlite"><span class="header-section-number">10.6</span> DB 영속화와 백엔드 교체</h3>
 <p><code>dungeon_full_server</code>는 <code>DbService</code> 추상 인터페이스를 두고 SQLite와 Memory 구현체가 같은 인터페이스 뒤에 교체 가능하도록 설계했습니다. 어느 쪽을 사용할지는 환경변수 <code>GAMESERVER_DB</code>로 런타임에 결정됩니다.</p>
 <div id="tbl-db-backends" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
@@ -1134,13 +1201,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </figure>
 </div>
-<section id="dbservice-예제-서버의-영속성-경계" class="level4" data-number="8.6.1">
-<h4 data-number="8.6.1" class="anchored" data-anchor-id="dbservice-예제-서버의-영속성-경계"><span class="header-section-number">8.6.1</span> DbService — 예제 서버의 영속성 경계</h4>
+<section id="dbservice-예제-서버의-영속성-경계" class="level4" data-number="10.6.1">
+<h4 data-number="10.6.1" class="anchored" data-anchor-id="dbservice-예제-서버의-영속성-경계"><span class="header-section-number">10.6.1</span> DbService — 예제 서버의 영속성 경계</h4>
 <p><code>DbService</code>는 인증, 캐릭터 목록/생성, 인벤토리, 재화 로딩을 게임 세션에서 분리하는 경계입니다. <code>MemoryDbService</code>는 smoke test에서 deterministic하게 계정과 캐릭터를 만들 수 있게 하고, <code>SqliteDbService</code>는 별도 인프라 없이 실행 가능한 영속 저장소 역할을 합니다. 이 경계 덕분에 PostgreSQL 같은 운영형 백엔드를 추가하더라도 <code>GameSession</code>과 Room 로직은 그대로 유지할 수 있습니다.</p>
 </section>
 </section>
-<section id="sec-dogtag" class="level3" data-number="8.7">
-<h3 data-number="8.7" class="anchored" data-anchor-id="sec-dogtag"><span class="header-section-number">8.7</span> 독텍 루팅 시스템</h3>
+<section id="sec-dogtag" class="level3" data-number="10.7">
+<h3 data-number="10.7" class="anchored" data-anchor-id="sec-dogtag"><span class="header-section-number">10.7</span> 독텍 루팅 시스템</h3>
 <p>사망 시 사망 위치에 독텍(Dog Tag) 아이템이 스폰되어 바닥에 남습니다. 플레이어가 3m 이내에서 <code>C_PICKUP</code> 패킷을 전송하면 서버가 거리 검증 후 인벤토리에 추가합니다.</p>
 <ul>
 <li><code>GroundItem</code> 구조체: ground_id, item_def_id, 위치, 라벨, 15초 수명</li>
@@ -1150,8 +1217,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>플레이어 킬만 독텍 드롭 (봇끼리의 킬은 드롭 없음)</li>
 </ul>
 </section>
-<section id="sec-session-routing" class="level3" data-number="8.8">
-<h3 data-number="8.8" class="anchored" data-anchor-id="sec-session-routing"><span class="header-section-number">8.8</span> 세션 레벨 패킷 라우팅</h3>
+<section id="sec-session-routing" class="level3" data-number="10.8">
+<h3 data-number="10.8" class="anchored" data-anchor-id="sec-session-routing"><span class="header-section-number">10.8</span> 세션 레벨 패킷 라우팅</h3>
 <p><code>C_PORTAL</code>처럼 Room 외부에서 처리해야 하는 패킷을 위해 <code>OnPacket</code>(최상위 라우터)에서 상태와 무관하게 세션 레벨 패킷을 먼저 분기합니다.</p>
 <div class="code-with-filename">
 <div class="code-with-filename-file">
@@ -1169,11 +1236,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>이 구조로 Room의 <code>HandlePacket</code>과 세션 레벨 로직이 깔끔하게 분리되며, 향후 다른 세션 레벨 패킷이 추가될 때 같은 switch에 넣으면 됩니다.</p>
 </section>
 </section>
-<section id="sec-benchmark" class="level2" data-number="9">
-<h2 data-number="9" class="anchored" data-anchor-id="sec-benchmark"><span class="header-section-number">9</span> 벤치마크 — io_uring vs epoll</h2>
+<section id="sec-benchmark" class="level2" data-number="11">
+<h2 data-number="11" class="anchored" data-anchor-id="sec-benchmark"><span class="header-section-number">11</span> 벤치마크 — io_uring vs epoll</h2>
 <p>ServerCore(io_uring)가 기존 epoll 대비 실제로 어떤 차이를 보이는지 검증하기 위해, 동일한 게임 로직을 두 I/O 백엔드로 구현해 비교했습니다.</p>
-<section id="sec-bench-env" class="level3" data-number="9.1">
-<h3 data-number="9.1" class="anchored" data-anchor-id="sec-bench-env"><span class="header-section-number">9.1</span> 테스트 환경</h3>
+<section id="sec-bench-env" class="level3" data-number="11.1">
+<h3 data-number="11.1" class="anchored" data-anchor-id="sec-bench-env"><span class="header-section-number">11.1</span> 테스트 환경</h3>
 <ul>
 <li><strong>환경</strong>: WSL2 Ubuntu 24.04, localhost, Intel i7 (8코어)</li>
 <li><strong>도구</strong>: <code>game_bench</code> / <code>echo_bench</code> (<code>tools/run_bench.sh</code>)</li>
@@ -1215,8 +1282,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </figure>
 </div>
 </section>
-<section id="sec-echo-bench" class="level3" data-number="9.2">
-<h3 data-number="9.2" class="anchored" data-anchor-id="sec-echo-bench"><span class="header-section-number">9.2</span> Echo 벤치마크</h3>
+<section id="sec-echo-bench" class="level3" data-number="11.2">
+<h3 data-number="11.2" class="anchored" data-anchor-id="sec-echo-bench"><span class="header-section-number">11.2</span> Echo 벤치마크</h3>
 <p>게임 로직 없이 io_uring 코어의 순수 I/O 성능만 측정했습니다. 64바이트 페이로드, pipeline=1 조건입니다.</p>
 <div id="tbl-echo-bench" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
@@ -1259,8 +1326,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>100 클라이언트에서 최대 처리량 <strong>327K echo/s</strong>, p50 레이턴시 <strong>293μs</strong>를 기록해 서브 밀리초 수준의 응답성을 확인했습니다.</p>
 </section>
-<section id="sec-bench-latency" class="level3" data-number="9.3">
-<h3 data-number="9.3" class="anchored" data-anchor-id="sec-bench-latency"><span class="header-section-number">9.3</span> 브로드캐스트 지연 — 단일 존</h3>
+<section id="sec-bench-latency" class="level3" data-number="11.3">
+<h3 data-number="11.3" class="anchored" data-anchor-id="sec-bench-latency"><span class="header-section-number">11.3</span> 브로드캐스트 지연 — 단일 존</h3>
 <p><code>C_MOVE</code> 수신 → <code>S_MOVE</code> 브로드캐스트 완료까지의 지연(μs)입니다. 모든 봇이 하나의 존에 몰린 조건입니다.</p>
 <div id="tbl-broadcast-latency" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
@@ -1307,8 +1374,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>400봇</strong>: io_uring은 여전히 3ms 수준을 유지, Epoll은 서버 포화로 측정 불가</li>
 </ul>
 </section>
-<section id="sec-bench-tail" class="level3" data-number="9.4">
-<h3 data-number="9.4" class="anchored" data-anchor-id="sec-bench-tail"><span class="header-section-number">9.4</span> Tail Latency — p99</h3>
+<section id="sec-bench-tail" class="level3" data-number="11.4">
+<h3 data-number="11.4" class="anchored" data-anchor-id="sec-bench-tail"><span class="header-section-number">11.4</span> Tail Latency — p99</h3>
 <div id="tbl-tail-latency" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-tail-latency-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -1344,8 +1411,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>200봇 p99 기준, io_uring은 24ms 수준을 유지한 반면 Epoll은 11.8초까지 증가했습니다.</p>
 </section>
-<section id="sec-bench-throughput" class="level3" data-number="9.5">
-<h3 data-number="9.5" class="anchored" data-anchor-id="sec-bench-throughput"><span class="header-section-number">9.5</span> 처리량</h3>
+<section id="sec-bench-throughput" class="level3" data-number="11.5">
+<h3 data-number="11.5" class="anchored" data-anchor-id="sec-bench-throughput"><span class="header-section-number">11.5</span> 처리량</h3>
 <p><code>S_MOVE + S_ATTACK + S_DAMAGE</code> 수신 메시지/초 기준입니다.</p>
 <div id="tbl-throughput" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
@@ -1385,8 +1452,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>소규모(40봇)에서는 차이가 없지만, 200봇부터 Epoll이 뮤텍스 경합으로 처리량이 제한되기 시작합니다.</p>
 </section>
-<section id="sec-bench-rooms" class="level3" data-number="9.6">
-<h3 data-number="9.6" class="anchored" data-anchor-id="sec-bench-rooms"><span class="header-section-number">9.6</span> 멀티 Room — Room 샤딩 효과</h3>
+<section id="sec-bench-rooms" class="level3" data-number="11.6">
+<h3 data-number="11.6" class="anchored" data-anchor-id="sec-bench-rooms"><span class="header-section-number">11.6</span> 멀티 Room — Room 샤딩 효과</h3>
 <p>봇을 여러 Room으로 분산하면 Room당 약 20명이 되어, 단일 존의 O(N²) 브로드캐스트 병목이 해소됩니다.</p>
 <div id="tbl-room-sharding" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-tbl figure">
@@ -1423,8 +1490,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>Room 샤딩을 적용하면 두 서버 모두 <strong>서브 밀리초</strong> 수준으로 수렴합니다. 실제 게임에서는 Room 분산이 기본이므로, io_uring의 이점은 대규모 단일 존에서 두드러지게 드러납니다.</p>
 </section>
-<section id="sec-bench-conclusion" class="level3" data-number="9.7">
-<h3 data-number="9.7" class="anchored" data-anchor-id="sec-bench-conclusion"><span class="header-section-number">9.7</span> 결론</h3>
+<section id="sec-bench-conclusion" class="level3" data-number="11.7">
+<h3 data-number="11.7" class="anchored" data-anchor-id="sec-bench-conclusion"><span class="header-section-number">11.7</span> 결론</h3>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 26%">
@@ -1454,8 +1521,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>두 백엔드의 차이는 단일 존에 봇이 몰릴수록 뚜렷해집니다. 40봇 구간에서는 차이가 크지 않지만, 200봇을 넘어서면 epoll은 브로드캐스트 경로의 뮤텍스 경합으로 p99가 초 단위까지 벌어지는 반면, io_uring 쪽은 400봇까지도 밀리초대를 유지합니다. 반대로 Room 샤딩으로 부하를 분산하면 두 서버 모두 서브 밀리초로 수렴해 차이가 사라지는데, 이는 io_uring의 이점이 “작은 방이 많은” 상황이 아니라 “한 방에 사람이 많은” 상황에서 드러난다는 것을 보여줍니다.</p>
 </section>
 </section>
-<section id="관련-레포" class="level2" data-number="10">
-<h2 data-number="10" class="anchored" data-anchor-id="관련-레포"><span class="header-section-number">10</span> 관련 레포</h2>
+<section id="관련-레포" class="level2" data-number="12">
+<h2 data-number="12" class="anchored" data-anchor-id="관련-레포"><span class="header-section-number">12</span> 관련 레포</h2>
 <div class="repo-links">
 <table class="caption-top table">
 <thead>
@@ -1467,19 +1534,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><a href="https://github.com/mint-cocoa/iouring-runtime">iouring-runtime</a></td>
-<td>최신 <code>io_uring</code> 런타임과 web/proxy 모듈</td>
+<td>현재 기준 메인 구현. <code>Runtime</code>, <code>RuntimeWeb</code>, <code>RuntimeProxy</code>, <code>RuntimeGame</code>, web/proxy/game 실행 앱 포함</td>
 </tr>
 <tr class="even">
 <td><a href="https://github.com/mint-cocoa/libiouring-core">libiouring-core</a></td>
-<td>분리 전후의 <code>io_uring</code> 기반 코어 런타임</td>
+<td>통합 이전 <code>io_uring</code> 코어 런타임 히스토리</td>
 </tr>
 <tr class="odd">
 <td><a href="https://github.com/mint-cocoa/libiouringweb">libiouringweb</a></td>
-<td>HTTP/web layer</td>
+<td>통합 이전 HTTP/web layer 히스토리</td>
 </tr>
 <tr class="even">
 <td><a href="https://github.com/mint-cocoa/multiplayer-dungeon-rpg-server">multiplayer-dungeon-rpg-server</a></td>
-<td>실제 멀티플레이 던전 RPG 서버</td>
+<td><code>dungeon_full_server</code>로 흡수된 멀티플레이 던전 RPG 서버 히스토리</td>
 </tr>
 <tr class="odd">
 <td><a href="https://github.com/mint-cocoa/game-client">game-client</a></td>
@@ -1489,8 +1556,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 </div>
 </section>
-<section id="다음-문서" class="level2" data-number="11">
-<h2 data-number="11" class="anchored" data-anchor-id="다음-문서"><span class="header-section-number">11</span> 다음 문서</h2>
+<section id="다음-문서" class="level2" data-number="13">
+<h2 data-number="13" class="anchored" data-anchor-id="다음-문서"><span class="header-section-number">13</span> 다음 문서</h2>
 <div class="next-docs">
 <p><a href="../index.html">포트폴리오 문서 인덱스</a> · <a href="../client/ClientPortfolio.html">클라이언트 구현 포트폴리오</a> · <a href="../devops/DevOpsPortfolio.html">홈랩 DevOps 포트폴리오</a></p>
 </div>

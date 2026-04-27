@@ -36,9 +36,9 @@ Multishot Accept/Recv, Provided Buffer, MSG_RING 기반 이벤트 처리
 :::
 
 ::: {.summary-card}
-**Benchmark**
+**Apps**
 
-전체 모듈 동시 빌드, 24개 테스트, dungeon protocol smoke 통과
+Web 앱 6종, TCP reverse proxy, dungeon 서버 예제를 실제 실행 단위로 분리
 :::
 :::
 
@@ -81,17 +81,21 @@ graph TD
     Web["RuntimeWeb<br/>Router · HttpSession · SendFile · middleware"]:::app
     Proxy["RuntimeProxy<br/>TcpProxyServer · TLS · upstream forwarding"]:::app
     GameRuntime["RuntimeGame<br/>PacketSession · PlayerRegistry · Room · RoomManager"]:::app
+    WebApps["web apps<br/>dropapp · webhook_inbox · speedtest · file_store · status · hello"]:::app
+    ProxyApp["tcp_reverse_proxy"]:::app
     GameServer["dungeon_full_server<br/>auth · DB · combat · dungeon · party/chat"]:::app
     Client["DirectX 11 game client"]:::external
 
     Runtime --> Web
     Runtime --> Proxy
     Runtime --> GameRuntime
+    Web --> WebApps
+    Proxy --> ProxyApp
     GameRuntime --> GameServer
     Client --> GameServer
 ```
 
-실제 구현은 하나의 문제 영역이 아니라, 같은 `io_uring` 런타임을 여러 서버 타입이 공유하는 구조입니다. `RuntimeWeb`과 `RuntimeProxy`는 서로 위아래 관계가 아니라 `Runtime` 위의 병렬 모듈입니다. HTTP 앱 서버 예제는 `RuntimeWeb`을 사용하고, TCP/TLS reverse proxy 예제는 HTTP 라우팅 계층 없이 `RuntimeProxy`를 직접 사용합니다. `RuntimeGame`도 같은 방식으로 공통 게임 서버 구조를 제공하며, 전체 던전 서버는 이 모듈 위에 올라간 예제 애플리케이션입니다.
+실제 구현은 하나의 문제 영역이 아니라, 같은 `io_uring` 런타임을 여러 서버 타입이 공유하는 구조입니다. `RuntimeWeb`과 `RuntimeProxy`는 서로 위아래 관계가 아니라 `Runtime` 위의 병렬 모듈입니다. HTTP 앱 서버 예제는 `RuntimeWeb`을 사용하고, TCP/TLS reverse proxy 예제는 HTTP 라우팅 계층 없이 `RuntimeProxy`를 직접 사용합니다. `RuntimeGame`도 같은 방식으로 공통 게임 서버 구조를 제공하며, 전체 던전 서버는 이 모듈 위에 올라간 예제 애플리케이션입니다. 따라서 이 문서는 코어 런타임 설명 뒤에 **실제 실행 앱 기준**으로 Web, Proxy, Game 구현을 분리해 설명합니다.
 
 ### 현재 런타임 모듈과 예제 {#sec-current-modules}
 
@@ -105,6 +109,26 @@ graph TD
 : 현재 모듈 분리와 예제 {#tbl-runtime-modules}
 
 전체 조합은 `BUILD_WEB=ON`, `BUILD_PROXY=ON`, `BUILD_GAME=ON`, `BUILD_TESTS=ON`으로 동시에 켜서 검증했습니다. 현재 main 기준으로 모든 예제 서버가 함께 빌드되고, core/web/proxy/game 테스트 24개가 통과합니다. `dungeon_full_server`는 `RuntimeGame`을 링크하고 `PacketSession`, `Room`, `RoomManager`를 재사용하므로, 기존 독립 게임 서버 구현을 런타임 위의 예제로 흡수한 상태입니다.
+
+### 실제 앱 기준 분리 {#sec-app-split}
+
+현재 저장소에서 포트폴리오가 보여주는 서버 구현은 라이브러리 계층과 실행 앱 계층이 분리되어 있습니다. `src/runtime`은 모든 서버가 공유하는 I/O 기반이고, `src/modules/*`는 각 서버 타입의 공통 기능입니다. `examples/*` 아래의 실행 앱은 이 모듈들을 조합해 실제 HTTP 앱, 프록시, 게임 서버로 동작합니다.
+
+| 실행 앱 | 위치 | 사용하는 모듈 | 구현 포인트 |
+|---------|------|---------------|-------------|
+| `hello_http` | `examples/web/hello_http` | `RuntimeWeb` | 라우터, path parameter, cookie, private route, payload 응답 검증 |
+| `status_server` | `examples/web/status_server` | `RuntimeWeb` | `/health`, `/metrics`와 런타임 상태 노출 |
+| `file_store_server` | `examples/web/file_store_server` | `RuntimeWeb` | 파일 목록, 다운로드, 삭제, 스트리밍 업로드 |
+| `speedtest_server` | `examples/web/speedtest_server` | `RuntimeWeb` | 대용량 다운로드, 업로드 측정, CORS, 정적 파일 서빙 |
+| `dropapp` | `examples/web/dropapp` | `RuntimeWeb` + core write event | TTL 파일 공유, 비동기 디스크 write, 다운로드 URL 생성 |
+| `webhook_inbox` | `examples/web/webhook_inbox` | `RuntimeWeb` | GitHub/Argo CD/custom webhook 수집, JSONL 저장, 이벤트 조회 |
+| `tcp_reverse_proxy` | `examples/proxy/tcp_reverse_proxy` | `RuntimeProxy` | TLS downstream, upstream route, ACME challenge, metrics 파일 |
+| `dungeon_packet_echo` | `examples/game/dungeon_packet_echo` | `RuntimeGame` | Protobuf packet framing과 Room broadcast 검증 |
+| `dungeon_full_server` | `examples/game/dungeon_full_server` | `RuntimeGame` | 인증, 캐릭터, Room, 던전, 전투, 파티, 채팅, DB 경계 |
+
+: 실제 실행 앱 기준 서버 분리 {#tbl-app-split}
+
+이 분리의 목적은 “하나의 게임 서버”만 보여주는 것이 아니라, 같은 네트워크 런타임이 HTTP 앱 서버, 운영용 webhook 수집기, 파일 전송 앱, TCP reverse proxy, 멀티플레이 게임 서버로 확장되는 과정을 보여주는 것입니다. 아래 본문도 이 기준에 맞춰 `Runtime` 공통 구현, `RuntimeWeb` 앱 구현, `RuntimeProxy` 앱 구현, `RuntimeGame`/던전 서버 구현 순서로 나눕니다.
 
 ### 코어 라이브러리 구조
 
@@ -558,7 +582,57 @@ sequenceDiagram
 
 현재 `iouring-runtime/examples/game/dungeon_full_server` 예제는 배포와 smoke test가 쉬운 형태를 우선해 `DbService` 인터페이스 뒤에 SQLite와 in-memory 백엔드를 제공합니다. 기본 실행은 `gameserver.db` SQLite 파일을 사용하고, 자동화 검증은 `GAMESERVER_DB=memory`로 외부 DB 없이 실행합니다. PostgreSQL 워커 풀 설계는 별도 운영형 백엔드로 확장 가능한 방향을 설명하는 설계 기록이고, 현재 main의 full server 예제에는 SQLite/Memory 백엔드만 포함되어 있습니다.
 
-## 게임 서버 애플리케이션 {#sec-client}
+## Web 서버 애플리케이션 {#sec-web-apps}
+
+`RuntimeWeb`은 HTTP 파싱, 라우팅, 정적 파일 응답, chunked/streaming 응답, 요청 타임아웃과 backpressure를 공통으로 제공합니다. 실제 앱은 `WebServer`에 route를 등록하고, 필요한 경우 `PostStream`이나 core write event를 이용해 큰 요청을 메모리에 전부 올리지 않고 처리합니다.
+
+| 앱 | 주요 라우트 | 구현 책임 |
+|----|-------------|-----------|
+| `hello_http` | `/`, `/health`, `/payload/:size`, `/hello/:name`, `/cookies`, `/private` | 라우터 기능과 HTTP 응답 surface 검증 |
+| `status_server` | `/`, `/health`, `/metrics` | 운영 상태와 metrics 노출 |
+| `file_store_server` | `/api/files`, `/files/*path`, `DELETE /api/files/*path` | 파일 목록, 다운로드, 삭제, 비동기 업로드 |
+| `speedtest_server` | `/downloading`, `/upload`, `/*path` | 다운로드/업로드 측정과 정적 프론트 서빙 |
+| `dropapp` | `/api/files`, `/d/:id/*filename`, `DELETE /api/files/:id` | TTL 기반 파일 공유와 다운로드 URL 생성 |
+| `webhook_inbox` | `/hooks/github`, `/hooks/argocd`, `/hook/:inbox`, `/api/events` | webhook 수집, 분류, JSONL 저장, 이벤트 조회 |
+
+: RuntimeWeb 기반 앱 구현 분리 {#tbl-web-apps}
+
+### dropapp — TTL 파일 공유 앱 {#sec-dropapp}
+
+`dropapp`은 단순 정적 페이지가 아니라, 파일 업로드와 다운로드 수명주기를 가진 작은 웹 앱입니다. 업로드 요청은 `PostStream`으로 받고, 파일 본문은 `AsyncUploadState`가 `IoRing::PrepWrite`로 디스크에 비동기 write를 제출합니다. 요청이 완료되기 전까지는 `.part` 임시 파일에 쓰고, 모든 write CQE가 정상 완료되면 최종 object 경로로 rename한 뒤 metadata JSON을 저장합니다.
+
+파일 metadata는 `objects/`와 `meta/` 디렉터리로 분리합니다. `/api/files`는 아직 만료되지 않은 파일 목록을 반환하고, `/d/:id/*filename`은 안전한 id 검증 후 다운로드를 제공합니다. TTL이 지난 파일은 cleanup 경로에서 object와 metadata를 함께 제거하므로, 포트폴리오 데모나 홈랩 내부 임시 파일 공유처럼 “짧게 올리고 자동 정리되는” 용도에 맞춰져 있습니다.
+
+### webhook_inbox — 운영 이벤트 수집 앱 {#sec-webhook-inbox}
+
+`webhook_inbox`는 GitHub Actions, Argo CD, 기타 custom webhook을 한 곳에 모으는 운영 보조 앱입니다. GitHub 전용 라우트(`/hooks/github`)는 `X-GitHub-Event`, `X-GitHub-Delivery` 헤더와 payload의 `action`, `ref`, `status` 계열 필드를 읽어 이벤트 타입과 상태를 분류합니다. Argo CD 라우트(`/hooks/argocd`)는 sync/health/status 계열 필드를 읽고, generic 라우트(`/hook/:inbox`)는 임의 서비스 이벤트를 같은 `WebhookEvent` 모델로 저장합니다.
+
+저장소는 JSONL append log입니다. 이벤트 삭제도 별도 tombstone line을 남기는 방식이라, 단순 파일 기반이면서도 재시작 시 log를 replay해 현재 상태를 복구할 수 있습니다. `/api/events`와 `/api/events/:id`는 최근 이벤트 조회와 상세 payload 확인을 담당합니다.
+
+### speedtest와 file_store — 전송 경로 검증 앱 {#sec-transfer-apps}
+
+`speedtest_server`는 `/downloading`에서 설정된 크기의 payload를 chunk 단위로 보내고, `/upload`에서 CORS와 streaming upload 경로를 검증합니다. send buffer 고갈, chunk 크기, request timeout, inactivity timeout 같은 `RuntimeWeb`의 실제 운영 파라미터를 노출하기 때문에 웹 서버 계층의 성능과 backpressure를 확인하기 좋습니다.
+
+`file_store_server`는 파일 목록, 다운로드, 삭제 API를 제공하며, streaming upload state를 request id로 추적합니다. `dropapp`이 사용자-facing 임시 공유 앱이라면, `file_store_server`는 파일 업로드/다운로드 서버의 최소 구현 표면을 확인하는 예제입니다.
+
+## Proxy 서버 애플리케이션 {#sec-proxy-app}
+
+`RuntimeProxy`는 HTTP 라우터를 거치지 않고 TCP 연결 자체를 upstream으로 중계하는 모듈입니다. `tcp_reverse_proxy` 실행 앱은 환경변수로 listen 주소, 기본 upstream, hostname 기반 upstream route, TLS 인증서 경로, certbot challenge 경로, metrics 파일 위치를 설정합니다.
+
+| 기능 | 구현 |
+|------|------|
+| 기본 upstream | `TCP_PROXY_UPSTREAM_HOST`, `TCP_PROXY_UPSTREAM_PORT` |
+| hostname route | `TCP_PROXY_UPSTREAM_ROUTES=host=upstream:port,...` |
+| downstream TLS | `TCP_PROXY_TLS_CERT_FILE`, `TCP_PROXY_TLS_KEY_FILE` |
+| ACME challenge | `TCP_PROXY_CERTBOT_CHALLENGE_HOST`, `TCP_PROXY_CERTBOT_CHALLENGE_WEBROOT` |
+| metrics | `TCP_PROXY_METRICS_FILE`, `TCP_PROXY_METRICS_INTERVAL_MS` |
+| worker 설정 | `TCP_PROXY_WORKERS`, `TCP_PROXY_WORKER_AFFINITY` |
+
+: tcp_reverse_proxy 설정 표면 {#tbl-proxy-config}
+
+이 앱은 `RuntimeWeb`과 달리 request/response 객체를 만들지 않습니다. downstream 세션과 upstream connector를 bridge하고, TLS termination이 필요한 경우 downstream context에서 인증서를 로드합니다. 따라서 웹 앱 서버와 같은 `Runtime`을 공유하면서도, HTTP 앱 계층을 거치지 않는 별도 서버 타입으로 분리됩니다.
+
+## Game 서버 애플리케이션 {#sec-game-app}
 
 공통 `io_uring` 런타임은 web/proxy 계층에서도 사용하지만, 가장 복잡한 검증 대상은 실제 멀티플레이 게임 서버였습니다. 현재 main에서는 공통 게임 서버 구조를 `RuntimeGame`으로 분리하고, 전체 던전 서버를 `dungeon_full_server` 예제로 올렸습니다. `GameSession`은 `RuntimeGame::PacketSession`을 상속하고, 예제 `Room`은 `RuntimeGame::Room`을 상속하며, 예제 `RoomManager`는 `RuntimeGame::RoomManager` 위에서 던전 서버 도메인 객체를 관리합니다. 클라이언트 측 구현은 별도의 클라이언트 포트폴리오에서 다루며, 이 장에서는 서버 쪽 게임 시스템만 설명합니다.
 
@@ -781,10 +855,10 @@ Room 샤딩을 적용하면 두 서버 모두 **서브 밀리초** 수준으로 
 ::: {.repo-links}
 | 레포 | 역할 |
 |---|---|
-| [iouring-runtime](https://github.com/mint-cocoa/iouring-runtime) | 최신 `io_uring` 런타임과 web/proxy 모듈 |
-| [libiouring-core](https://github.com/mint-cocoa/libiouring-core) | 분리 전후의 `io_uring` 기반 코어 런타임 |
-| [libiouringweb](https://github.com/mint-cocoa/libiouringweb) | HTTP/web layer |
-| [multiplayer-dungeon-rpg-server](https://github.com/mint-cocoa/multiplayer-dungeon-rpg-server) | 실제 멀티플레이 던전 RPG 서버 |
+| [iouring-runtime](https://github.com/mint-cocoa/iouring-runtime) | 현재 기준 메인 구현. `Runtime`, `RuntimeWeb`, `RuntimeProxy`, `RuntimeGame`, web/proxy/game 실행 앱 포함 |
+| [libiouring-core](https://github.com/mint-cocoa/libiouring-core) | 통합 이전 `io_uring` 코어 런타임 히스토리 |
+| [libiouringweb](https://github.com/mint-cocoa/libiouringweb) | 통합 이전 HTTP/web layer 히스토리 |
+| [multiplayer-dungeon-rpg-server](https://github.com/mint-cocoa/multiplayer-dungeon-rpg-server) | `dungeon_full_server`로 흡수된 멀티플레이 던전 RPG 서버 히스토리 |
 | [game-client](https://github.com/mint-cocoa/game-client) | 연동 DirectX 11 클라이언트 |
 :::
 
