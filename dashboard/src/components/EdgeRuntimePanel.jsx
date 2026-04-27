@@ -1,4 +1,4 @@
-import { Cpu, Globe, Network, Route, Server, ShieldCheck } from 'lucide-react';
+import { Cpu, ExternalLink, Globe, Network, Route, Server, ShieldCheck } from 'lucide-react';
 
 const destinationLabels = {
   'cxx-web': 'C++ RuntimeWeb',
@@ -27,6 +27,11 @@ const formatDuration = (seconds) => {
 const StatusDot = ({ ok }) => (
   <span className={`h-2 w-2 rounded-full ${ok ? 'bg-green-500' : 'bg-red-500'}`} />
 );
+
+const routeHref = (hostname) => {
+  if (!hostname || hostname === 'default' || hostname.includes(':')) return null;
+  return `https://${hostname}`;
+};
 
 const MetricCard = ({ label, value, detail, icon: Icon, tone = 'slate' }) => {
   const tones = {
@@ -148,7 +153,19 @@ export const EdgeRuntimePanel = ({ edgeRuntime }) => {
             {routes.map((route) => (
               <div key={`${route.hostname}-${route.upstream}`} className="grid grid-cols-[1.15fr_0.9fr_auto] gap-2 border-b border-slate-100 px-3 py-2 text-xs last:border-b-0">
                 <div className="min-w-0 font-semibold text-slate-800">
-                  <span className="block truncate">{route.hostname}</span>
+                  {routeHref(route.hostname) ? (
+                    <a
+                      className="flex min-w-0 items-center gap-1 text-blue-700 hover:text-blue-800 hover:underline"
+                      href={routeHref(route.hostname)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <span className="block truncate">{route.hostname}</span>
+                      <ExternalLink size={12} className="shrink-0" />
+                    </a>
+                  ) : (
+                    <span className="block truncate">{route.hostname}</span>
+                  )}
                 </div>
                 <div className="truncate text-slate-500">{route.upstream}</div>
                 <div className={`rounded-full border px-2 py-0.5 ${destinationClasses[route.destination] ?? destinationClasses.external}`}>

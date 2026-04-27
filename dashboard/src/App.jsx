@@ -41,8 +41,8 @@ const StatCard = ({ label, value, detail, icon: Icon, tone = 'blue' }) => {
   );
 };
 
-const DetailSection = ({ eyebrow, title, summary, children }) => (
-  <details className="group rounded-xl border border-slate-200 bg-white shadow-sm">
+const DetailSection = ({ eyebrow, title, summary, children, defaultOpen = false }) => (
+  <details className="group rounded-xl border border-slate-200 bg-white shadow-sm" open={defaultOpen}>
     <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 px-4 py-3">
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{eyebrow}</p>
@@ -320,6 +320,7 @@ function App() {
               eyebrow="Runtime details"
               title="C++ edge runtime routes"
               summary="RuntimeProxy, RuntimeWeb probes, SNI routes, and route destination counts."
+              defaultOpen
             >
               <EdgeRuntimePanel edgeRuntime={edgeRuntime} />
             </DetailSection>
