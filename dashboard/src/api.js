@@ -26,6 +26,7 @@ export const fetchHealth = async () => {
 };
 
 export const fetchSummary = () => getJson('/ops/summary');
+export const fetchEdgeRuntime = () => getJson('/edge-runtime');
 export const fetchPrometheusSummary = () => getJson('/prometheus/summary');
 
 export const fetchPrometheusTargets = async () => {

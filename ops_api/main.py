@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import time
 from dataclasses import dataclass
@@ -40,6 +41,23 @@ class Settings:
         if origin.strip()
     )
     stream_interval_seconds: float = float(os.getenv("OPS_API_STREAM_INTERVAL_SECONDS", "5"))
+    edge_proxy_metrics_file: str = os.getenv(
+        "OPS_API_EDGE_PROXY_METRICS_FILE",
+        "/run/iouring-runtime/tcp_reverse_proxy.metrics.json",
+    )
+    edge_runtime_services: tuple[str, ...] = tuple(
+        service.strip()
+        for service in os.getenv(
+            "OPS_API_EDGE_RUNTIME_SERVICES",
+            "tcp_reverse_proxy.service,file_store_server.service,speedtest_server.service",
+        ).split(",")
+        if service.strip()
+    )
+    edge_kubernetes_upstream: str = os.getenv(
+        "OPS_API_EDGE_KUBERNETES_UPSTREAM",
+        "172.30.1.240:80",
+    )
+    edge_probe_timeout: float = float(os.getenv("OPS_API_EDGE_PROBE_TIMEOUT", "2"))
 
 
 settings = Settings()
@@ -203,6 +221,232 @@ def _target_view(target: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _parse_key_value_lines(text: str) -> dict[str, str]:
+    values: dict[str, str] = {}
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        values[key.strip()] = value.strip().strip('"').strip("'")
+    return values
+
+
+async def _run_command(*args: str, timeout: float = 2.0) -> tuple[int, str, str]:
+    process = await asyncio.create_subprocess_exec(
+        *args,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    try:
+        stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
+    except TimeoutError:
+        process.kill()
+        await process.communicate()
+        return 124, "", "command timed out"
+    return (
+        process.returncode,
+        stdout.decode(errors="replace"),
+        stderr.decode(errors="replace"),
+    )
+
+
+async def _systemd_unit_view(unit: str) -> dict[str, Any]:
+    rc, stdout, stderr = await _run_command(
+        "systemctl",
+        "show",
+        unit,
+        "--no-pager",
+        "-p",
+        "ActiveState",
+        "-p",
+        "SubState",
+        "-p",
+        "MainPID",
+        "-p",
+        "Description",
+        "-p",
+        "FragmentPath",
+        "-p",
+        "EnvironmentFiles",
+        timeout=2.0,
+    )
+    if rc != 0:
+        return {
+            "unit": unit,
+            "activeState": "unknown",
+            "subState": "unknown",
+            "mainPid": 0,
+            "description": stderr.strip() or "systemctl show failed",
+            "environmentFiles": [],
+        }
+
+    fields = _parse_key_value_lines(stdout)
+    environment_files = []
+    for item in fields.get("EnvironmentFiles", "").split():
+        if item.startswith("/"):
+            environment_files.append(item)
+
+    return {
+        "unit": unit,
+        "activeState": fields.get("ActiveState", "unknown"),
+        "subState": fields.get("SubState", "unknown"),
+        "mainPid": int(fields.get("MainPID") or 0),
+        "description": fields.get("Description") or unit,
+        "fragmentPath": fields.get("FragmentPath"),
+        "environmentFiles": environment_files,
+    }
+
+
+async def _read_text_file(path: str) -> str | None:
+    try:
+        return await asyncio.to_thread(lambda: open(path, encoding="utf-8").read())
+    except OSError:
+        return None
+
+
+async def _read_json_file(path: str) -> dict[str, Any] | None:
+    text = await _read_text_file(path)
+    if not text:
+        return None
+    try:
+        value = json.loads(text)
+    except json.JSONDecodeError:
+        return None
+    return value if isinstance(value, dict) else None
+
+
+def _first_host_port_from_env(env: dict[str, str]) -> tuple[str, int] | None:
+    for key, host in env.items():
+        if not key.endswith("_HOST") or not host:
+            continue
+        port_key = f"{key[:-5]}_PORT"
+        port = env.get(port_key)
+        if not port:
+            continue
+        try:
+            return host, int(port)
+        except ValueError:
+            continue
+    return None
+
+
+async def _probe_http(host: str, port: int) -> dict[str, Any]:
+    url = f"http://{host}:{port}/"
+    try:
+        async with httpx.AsyncClient(timeout=settings.edge_probe_timeout) as client:
+            response = await client.head(url, follow_redirects=False)
+            return {
+                "ok": True,
+                "url": url,
+                "statusCode": response.status_code,
+                "server": response.headers.get("server"),
+                "contentType": response.headers.get("content-type"),
+            }
+    except httpx.HTTPError as exc:
+        return {"ok": False, "url": url, "error": str(exc)}
+
+
+def _normalize_upstream(host: str, port: int) -> str:
+    if host in {"0.0.0.0", "::"}:
+        host = "127.0.0.1"
+    return f"{host}:{port}"
+
+
+def _route_destination(upstream: str, cxx_web_upstreams: set[str]) -> str:
+    if upstream in cxx_web_upstreams:
+        return "cxx-web"
+    if upstream == settings.edge_kubernetes_upstream:
+        return "kubernetes"
+    if upstream.startswith("127.0.0.1:") or upstream.startswith("localhost:"):
+        return "docker-or-local"
+    return "external"
+
+
+async def edge_runtime_snapshot() -> dict[str, Any]:
+    proxy_metrics = await _read_json_file(settings.edge_proxy_metrics_file)
+    unit_results = await asyncio.gather(
+        *(_systemd_unit_view(unit) for unit in settings.edge_runtime_services),
+        return_exceptions=True,
+    )
+
+    services: list[dict[str, Any]] = []
+    cxx_web_upstreams: set[str] = set()
+    for unit_result in unit_results:
+        if isinstance(unit_result, Exception):
+            continue
+        service = dict(unit_result)
+        env: dict[str, str] = {}
+        for env_file in service.get("environmentFiles", []):
+            text = await _read_text_file(env_file)
+            if text:
+                env.update(_parse_key_value_lines(text))
+
+        is_proxy = service["unit"] == "tcp_reverse_proxy.service"
+        endpoint = None if is_proxy else _first_host_port_from_env(env)
+        probe = None
+        upstream = None
+        runtime = "RuntimeProxy" if is_proxy else None
+        if endpoint:
+            host, port = endpoint
+            upstream = _normalize_upstream(host, port)
+            probe = await _probe_http(host, port)
+            if probe.get("server") == "iouring_runtime_web":
+                runtime = "RuntimeWeb"
+                cxx_web_upstreams.add(upstream)
+
+        services.append(
+            {
+                **service,
+                "runtime": runtime,
+                "upstream": upstream,
+                "probe": probe,
+            }
+        )
+
+    routes = []
+    if proxy_metrics:
+        seen_routes: set[tuple[str, str]] = set()
+        for route in proxy_metrics.get("configured_routes", []):
+            upstream = route.get("upstream")
+            hostname = route.get("hostname")
+            if not hostname or not upstream:
+                continue
+            route_key = (hostname, upstream)
+            if route_key in seen_routes:
+                continue
+            seen_routes.add(route_key)
+            routes.append(
+                {
+                    **route,
+                    "destination": _route_destination(upstream, cxx_web_upstreams),
+                }
+            )
+        default_upstream = proxy_metrics.get("default_upstream")
+        if default_upstream:
+            routes.insert(
+                0,
+                {
+                    "hostname": "default",
+                    "upstream": default_upstream,
+                    "destination": _route_destination(default_upstream, cxx_web_upstreams),
+                },
+            )
+
+    destination_counts: dict[str, int] = {}
+    for route in routes:
+        destination = route["destination"]
+        destination_counts[destination] = destination_counts.get(destination, 0) + 1
+
+    return {
+        "generatedAt": int(time.time()),
+        "proxy": proxy_metrics,
+        "services": services,
+        "routes": routes,
+        "destinationCounts": destination_counts,
+    }
+
+
 async def prom_query(query: str) -> list[dict[str, Any]]:
     payload = await prometheus_get("/api/v1/query", {"query": query})
     if payload.get("status") != "success":
@@ -334,6 +578,11 @@ async def ops_summary() -> dict[str, Any]:
     }
 
 
+@app.get("/api/edge-runtime")
+async def edge_runtime() -> dict[str, Any]:
+    return await edge_runtime_snapshot()
+
+
 async def ops_snapshot() -> dict[str, Any]:
     health_task = asyncio.create_task(health())
     targets_task = asyncio.create_task(prometheus_targets())
@@ -341,6 +590,7 @@ async def ops_snapshot() -> dict[str, Any]:
     argocd_task = asyncio.create_task(prometheus_query(query="argocd_app_info"))
     pve_nodes_task = asyncio.create_task(proxmox_nodes())
     pve_resources_task = asyncio.create_task(proxmox_resources(type="vm"))
+    edge_runtime_task = asyncio.create_task(edge_runtime_snapshot())
 
     (
         health_result,
@@ -349,6 +599,7 @@ async def ops_snapshot() -> dict[str, Any]:
         argocd_result,
         pve_nodes_result,
         pve_resources_result,
+        edge_runtime_result,
     ) = await asyncio.gather(
         health_task,
         targets_task,
@@ -356,6 +607,7 @@ async def ops_snapshot() -> dict[str, Any]:
         argocd_task,
         pve_nodes_task,
         pve_resources_task,
+        edge_runtime_task,
         return_exceptions=True,
     )
 
@@ -368,6 +620,7 @@ async def ops_snapshot() -> dict[str, Any]:
         "argocdAppInfo": _pack_result(argocd_result),
         "proxmoxNodes": _pack_result(pve_nodes_result),
         "proxmoxVMs": _pack_result(pve_resources_result),
+        "edgeRuntime": _pack_result(edge_runtime_result),
     }
 
 

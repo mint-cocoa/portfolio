@@ -4,8 +4,10 @@ import { GlobalStatusBar } from './components/GlobalStatusBar';
 import { ProxmoxWidget } from './components/ProxmoxWidget';
 import { KubernetesWidget } from './components/KubernetesWidget';
 import { ArchitectureView } from './components/ArchitectureView';
+import { EdgeRuntimePanel } from './components/EdgeRuntimePanel';
 import {
   createOpsStream,
+  fetchEdgeRuntime,
   fetchHealth,
   fetchProxmoxNodes,
   fetchProxmoxResources,
@@ -45,6 +47,7 @@ function App() {
   const [targets, setTargets] = useState(null);
   const [prometheusSummary, setPrometheusSummary] = useState(null);
   const [argocdMetrics, setArgocdMetrics] = useState([]);
+  const [edgeRuntime, setEdgeRuntime] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -89,6 +92,9 @@ function App() {
     if (snapshot.argocdAppInfo?.ok) {
       setArgocdMetrics(snapshot.argocdAppInfo.data.data?.result ?? []);
     }
+    if (snapshot.edgeRuntime?.ok) {
+      setEdgeRuntime(snapshot.edgeRuntime.data);
+    }
 
     const failed = [
       snapshot.health,
@@ -97,6 +103,7 @@ function App() {
       snapshot.prometheusTargets,
       snapshot.prometheusSummary,
       snapshot.argocdAppInfo,
+      snapshot.edgeRuntime,
     ].filter((result) => result && !result.ok);
 
     setError(failed.length ? failed.map((result) => result.error).join(' · ') : null);
@@ -108,13 +115,14 @@ function App() {
     setLoading(true);
     setError(null);
     try {
-      const [h, n, r, t, p, a] = await Promise.all([
+      const [h, n, r, t, p, a, e] = await Promise.all([
         fetchHealth(),
         fetchProxmoxNodes(),
         fetchProxmoxResources('vm'),
         fetchPrometheusTargets(),
         fetchPrometheusSummary(),
         fetchPrometheusQuery('argocd_app_info').catch(() => ({ data: { result: [] } })),
+        fetchEdgeRuntime(),
       ]);
 
       setHealth(h);
@@ -123,6 +131,7 @@ function App() {
       setTargets(t);
       setPrometheusSummary(p);
       setArgocdMetrics(a.data?.result ?? []);
+      setEdgeRuntime(e);
 
       setLastUpdated(new Date());
     } catch (err) {
@@ -246,6 +255,7 @@ function App() {
               </div>
             </div>
             <ArchitectureView vms={vms} targets={targets} argocdMetrics={argocdMetrics} />
+            <EdgeRuntimePanel edgeRuntime={edgeRuntime} />
 
             <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-300 pb-3 pt-4">
               <div>
