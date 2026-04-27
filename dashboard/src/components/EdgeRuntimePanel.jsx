@@ -33,6 +33,12 @@ const routeHref = (hostname) => {
   return `https://${hostname}`;
 };
 
+const publicKubernetesHosts = new Set(['portfolio.mintcocoa.cc']);
+
+const isVisibleRoute = (route) => (
+  route.destination !== 'kubernetes' || publicKubernetesHosts.has(route.hostname)
+);
+
 const MetricCard = ({ label, value, detail, icon: Icon, tone = 'slate' }) => {
   const tones = {
     slate: 'border-slate-200 bg-slate-50 text-slate-700',
@@ -63,7 +69,11 @@ export const EdgeRuntimePanel = ({ edgeRuntime }) => {
   const proxy = edgeRuntime.proxy ?? {};
   const services = edgeRuntime.services ?? [];
   const routes = edgeRuntime.routes ?? [];
-  const destinationCounts = edgeRuntime.destinationCounts ?? {};
+  const visibleRoutes = routes.filter(isVisibleRoute);
+  const destinationCounts = visibleRoutes.reduce((counts, route) => ({
+    ...counts,
+    [route.destination]: (counts[route.destination] ?? 0) + 1,
+  }), {});
   const proxyService = services.find((service) => service.runtime === 'RuntimeProxy');
   const webServices = services.filter((service) => service.runtime === 'RuntimeWeb');
   const tlsLoaded = proxy.tls?.enabled && proxy.tls?.context_loaded;
@@ -106,7 +116,7 @@ export const EdgeRuntimePanel = ({ edgeRuntime }) => {
         />
         <MetricCard
           label="Routes"
-          value={routes.length}
+          value={visibleRoutes.length}
           detail={`default upstream ${proxy.default_upstream ?? '-'}`}
           icon={Route}
           tone="green"
@@ -150,7 +160,7 @@ export const EdgeRuntimePanel = ({ edgeRuntime }) => {
             <div className="text-xs text-slate-500">from proxy metrics</div>
           </div>
           <div className="max-h-72 overflow-auto">
-            {routes.map((route) => (
+            {visibleRoutes.map((route) => (
               <div key={`${route.hostname}-${route.upstream}`} className="grid grid-cols-[1.15fr_0.9fr_auto] gap-2 border-b border-slate-100 px-3 py-2 text-xs last:border-b-0">
                 <div className="min-w-0 font-semibold text-slate-800">
                   {routeHref(route.hostname) ? (
@@ -173,6 +183,11 @@ export const EdgeRuntimePanel = ({ edgeRuntime }) => {
                 </div>
               </div>
             ))}
+            {visibleRoutes.length === 0 && (
+              <div className="px-3 py-6 text-center text-xs text-slate-500">
+                No public live routes are currently reported.
+              </div>
+            )}
           </div>
         </div>
 

@@ -17,10 +17,14 @@ import {
 
 const ingressRules = [
   { name: 'portfolio', domain: 'portfolio.mintcocoa.cc', service: 'portfolio', note: 'portfolio' },
-  { name: 'dropapp', domain: 'dropapp.mintcocoa.cc', service: 'dropapp', note: 'app route' },
-  { name: 'webhook', domain: 'webhook.mintcocoa.cc', service: 'webhook', note: 'webhook' },
   { name: 'argocd', domain: 'argocd.homelab.local', service: 'argocd-server', note: 'private UI' },
 ];
+
+const publicKubernetesHosts = new Set(['portfolio.mintcocoa.cc']);
+
+const isVisibleEdgeRoute = (route) => (
+  route.destination !== 'kubernetes' || publicKubernetesHosts.has(route.hostname)
+);
 
 const findIngressTarget = (targetData, rule) => (
   targetData?.activeTargets?.find((target) => {
@@ -209,8 +213,9 @@ export const ArchitectureView = ({ vms = [], targets = {}, argocdMetrics = [], e
   const runningVms = vms.filter((vm) => vm.status === 'running').length;
   const isAllSynced = argocdMetrics.length > 0 && argocdMetrics.every((metric) => metric.metric?.sync_status === 'Synced');
   const edgeRoutes = edgeRuntime?.routes ?? [];
+  const visibleEdgeRoutes = edgeRoutes.filter(isVisibleEdgeRoute);
   const proxy = edgeRuntime?.proxy ?? {};
-  const kubernetesRoutes = edgeRoutes.filter((route) => route.destination === 'kubernetes').length;
+  const kubernetesRoutes = visibleEdgeRoutes.filter((route) => route.destination === 'kubernetes').length;
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -246,7 +251,7 @@ export const ArchitectureView = ({ vms = [], targets = {}, argocdMetrics = [], e
             </div>
             <div className="rounded-lg border border-slate-200 bg-white px-3">
               {ingressRules.map((rule) => (
-                <RouteRow key={rule.domain} rule={rule} targetData={targets} edgeRoutes={edgeRoutes} />
+                <RouteRow key={rule.domain} rule={rule} targetData={targets} edgeRoutes={visibleEdgeRoutes} />
               ))}
             </div>
           </div>
@@ -277,7 +282,7 @@ export const ArchitectureView = ({ vms = [], targets = {}, argocdMetrics = [], e
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <SummaryMetric label="routes" value={edgeRoutes.length || '-'} />
+            <SummaryMetric label="routes" value={visibleEdgeRoutes.length || '-'} />
             <SummaryMetric label="workers" value={`${proxy.running_worker_count ?? '-'} / ${proxy.configured_worker_count ?? '-'}`} />
           </div>
         </section>
