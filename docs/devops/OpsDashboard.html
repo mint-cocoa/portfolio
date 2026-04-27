@@ -146,28 +146,9 @@ ul.task-list li input[type="checkbox"] {
   margin-bottom: 0.25rem;
 }
 
-.ops-map {
-  display: grid;
-  grid-template-columns: minmax(180px, 0.8fr) minmax(220px, 1fr) minmax(260px, 1.2fr) minmax(280px, 1.35fr);
-  gap: 0.75rem;
-  align-items: stretch;
-}
-
-.ops-lane {
-  display: grid;
-  gap: 0.65rem;
-  align-content: start;
-}
-
-.ops-lane-title {
-  color: #5d667a;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0;
-  text-transform: uppercase;
-}
-
-.ops-node {
+.ops-node,
+.ops-diagram-node,
+.ops-mini-card {
   width: 100%;
   min-height: 5.4rem;
   padding: 0.8rem;
@@ -178,14 +159,20 @@ ul.task-list li input[type="checkbox"] {
 }
 
 .ops-node:hover,
-.ops-node:focus {
+.ops-node:focus,
+.ops-diagram-node:hover,
+.ops-diagram-node:focus,
+.ops-mini-card:hover,
+.ops-mini-card:focus {
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
   outline: none;
   transform: translateY(-1px);
 }
 
-.ops-node.active {
+.ops-node.active,
+.ops-diagram-node.active,
+.ops-mini-card.active {
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
 }
@@ -226,6 +213,303 @@ ul.task-list li input[type="checkbox"] {
   flex-wrap: wrap;
   gap: 0.35rem;
   margin-top: 0.45rem;
+}
+
+.ops-architecture {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(9rem, 0.65fr) minmax(16rem, 1.1fr) minmax(18rem, 1.25fr) minmax(24rem, 1.65fr);
+  grid-template-rows: auto auto auto;
+  gap: 0.78rem;
+  min-width: 980px;
+  padding: 0.9rem;
+  border: 1px solid #d9dee8;
+  border-radius: 10px;
+  background:
+    linear-gradient(90deg, rgba(37, 99, 235, 0.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(37, 99, 235, 0.035) 1px, transparent 1px),
+    #fbfcff;
+  background-size: 32px 32px;
+  overflow: hidden;
+}
+
+.ops-architecture-scroll {
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+}
+
+.ops-flow-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.ops-plane {
+  position: relative;
+  z-index: 1;
+  border: 1.5px solid #d9dee8;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 0.8rem;
+}
+
+.ops-plane.edge-plane {
+  grid-column: 2 / 4;
+  grid-row: 1;
+  border-color: #d98b21;
+  background: linear-gradient(135deg, #fffaf0, #ffffff);
+}
+
+.ops-plane.k8s-plane {
+  grid-column: 2 / 4;
+  grid-row: 2;
+  border-color: #6aa84f;
+  background: linear-gradient(135deg, #f6fff4, #ffffff);
+}
+
+.ops-plane.api-plane {
+  grid-column: 3;
+  grid-row: 2;
+  align-self: center;
+  border-color: #2563eb;
+  background: linear-gradient(135deg, #f4f8ff, #ffffff);
+  margin: 1.2rem 0;
+}
+
+.ops-plane.proxmox-plane {
+  grid-column: 4;
+  grid-row: 1 / 3;
+  border-color: #c47b50;
+  background: linear-gradient(135deg, #fff8f4, #ffffff);
+}
+
+.ops-plane.management-plane {
+  grid-column: 1 / 2;
+  grid-row: 3;
+  border-color: #8b5cf6;
+  background: linear-gradient(135deg, #faf7ff, #ffffff);
+}
+
+.ops-plane.storage-plane {
+  grid-column: 2 / 3;
+  grid-row: 3;
+  border-color: #8b5cf6;
+  background: linear-gradient(135deg, #fbf8ff, #ffffff);
+}
+
+.ops-plane.gitops-plane {
+  grid-column: 3 / 5;
+  grid-row: 3;
+  border-color: #8b5cf6;
+  background: linear-gradient(135deg, #fbf8ff, #ffffff);
+}
+
+.ops-plane-title {
+  margin: 0 0 0.52rem;
+  color: #7c3f10;
+  font-size: 0.98rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.k8s-plane .ops-plane-title {
+  color: #246b1f;
+}
+
+.api-plane .ops-plane-title {
+  color: #1d4ed8;
+}
+
+.management-plane .ops-plane-title,
+.storage-plane .ops-plane-title,
+.gitops-plane .ops-plane-title {
+  color: #6d3fad;
+}
+
+.ops-diagram-node,
+.ops-mini-card {
+  position: relative;
+  z-index: 1;
+  display: block;
+  border: 1px solid #d9dee8;
+  border-radius: 8px;
+  background: #fff;
+  appearance: none;
+  font: inherit;
+}
+
+.ops-diagram-node {
+  min-height: 5.2rem;
+}
+
+.ops-mini-card {
+  min-height: auto;
+  padding: 0.58rem 0.64rem;
+}
+
+.ops-icon-node {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.35rem;
+  min-height: 6.4rem;
+  text-align: center;
+}
+
+.ops-icon {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 999px;
+  background: #eaf1ff;
+  color: #1d4ed8;
+  font-size: 1.45rem;
+  font-weight: 800;
+}
+
+.ops-icon.green {
+  background: #e8f6ef;
+  color: #166044;
+}
+
+.ops-icon.orange {
+  background: #fff3df;
+  color: #9a4e08;
+}
+
+.ops-icon.purple {
+  background: #f1e9ff;
+  color: #6d3fad;
+}
+
+.ops-entry {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  display: grid;
+  gap: 0.8rem;
+  align-content: center;
+}
+
+.ops-edge-content {
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.9fr) minmax(14rem, 1fr);
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.ops-edge-list {
+  display: grid;
+  gap: 0.45rem;
+  align-content: center;
+  color: #172033;
+  font-size: 0.9rem;
+}
+
+.ops-k8s-content {
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.7fr) minmax(10rem, 0.7fr) minmax(16rem, 1fr);
+  gap: 0.62rem;
+  align-items: stretch;
+}
+
+.ops-ingress-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(8.8rem, 1fr));
+  gap: 0.52rem;
+  margin-top: 0.6rem;
+}
+
+.ops-api-list {
+  display: grid;
+  gap: 0.38rem;
+  margin-top: 0.45rem;
+}
+
+.ops-api-list div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: #172033;
+  font-size: 0.86rem;
+}
+
+.ops-vm-list {
+  display: grid;
+  gap: 0.48rem;
+}
+
+.ops-vm-row {
+  display: grid;
+  grid-template-columns: 3.2rem minmax(7rem, 1fr) minmax(7rem, 1fr) 2.6rem;
+  gap: 0.52rem;
+  align-items: center;
+  min-height: auto;
+  padding: 0.48rem 0.56rem;
+}
+
+.ops-vm-badge {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2rem;
+  border-radius: 5px;
+  background: #1f5fbf;
+  color: #fff;
+  font-weight: 800;
+}
+
+.ops-vm-badge.green {
+  background: #2f7d32;
+}
+
+.ops-vm-badge.purple {
+  background: #7c3fad;
+}
+
+.ops-node-name {
+  font-weight: 750;
+}
+
+.ops-node-address {
+  color: #1d4ed8;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.ops-node-address.green {
+  color: #2f7d32;
+}
+
+.ops-node-address.purple {
+  color: #6d3fad;
+}
+
+.ops-bottom-path {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(5.6rem, 1fr);
+  gap: 0.45rem;
+  align-items: stretch;
+}
+
+.ops-path-item {
+  display: grid;
+  place-items: center;
+  min-height: 4.6rem;
+  border: 1px solid #d9dee8;
+  border-radius: 8px;
+  background: #fff;
+  color: #172033;
+  font-size: 0.78rem;
+  text-align: center;
+  padding: 0.45rem;
+}
+
+.ops-path-item strong {
+  font-size: 0.84rem;
 }
 
 .ops-endpoint-grid {
@@ -351,14 +635,18 @@ ul.task-list li input[type="checkbox"] {
 }
 
 @media (max-width: 1180px) {
-  .ops-map {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .ops-architecture {
+    min-width: 940px;
   }
 }
 
 @media (max-width: 720px) {
-  .ops-map {
-    grid-template-columns: 1fr;
+  .ops-response-header {
+    align-items: flex-start;
+  }
+
+  .ops-response-actions {
+    width: 100%;
   }
 }
 </style>
@@ -454,101 +742,186 @@ running / total
 <div class="bslib-grid" style="display: grid; grid-template-columns: minmax(3em, 1fr) minmax(3em, 1fr);
 grid-auto-rows: minmax(0, 1fr);">
 <div class="card bslib-card html-fill-container" title="Interactive Homelab Flow" data-bslib-card-init="" data-require-bs-caller="card()" data-full-screen="false">
-<div class="ops-map" aria-label="Homelab architecture API map">
-  <div class="ops-lane">
-    <div class="ops-lane-title">Entry</div>
-    <button class="ops-node edge" data-endpoint="/api/health" data-title="Public Ops API Health">
-      <strong>ops-api.mintcocoa.cc</strong>
-      <span class="ops-subtle">외부에서 접근하는 read-only 운영 API</span>
-      <div class="ops-node-meta">
-        <span class="ops-pill" id="map-api-status">checking</span>
-      </div>
+<div class="ops-architecture-scroll">
+<div class="ops-architecture" aria-label="Homelab architecture API map">
+  <svg class="ops-flow-lines" viewbox="0 0 1200 620" preserveaspectratio="none" aria-hidden="true">
+    <defs>
+      <marker id="ops-arrow-green" markerwidth="10" markerheight="8" refx="9" refy="4" orient="auto">
+        <path d="M0,0 L10,4 L0,8 Z" fill="#2f7d32"></path>
+      </marker>
+      <marker id="ops-arrow-blue" markerwidth="10" markerheight="8" refx="9" refy="4" orient="auto">
+        <path d="M0,0 L10,4 L0,8 Z" fill="#2563eb"></path>
+      </marker>
+      <marker id="ops-arrow-purple" markerwidth="10" markerheight="8" refx="9" refy="4" orient="auto">
+        <path d="M0,0 L10,4 L0,8 Z" fill="#7c3fad"></path>
+      </marker>
+    </defs>
+    <path d="M110 105 H195" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#ops-arrow-blue)"></path>
+    <path d="M280 105 H405" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#ops-arrow-blue)"></path>
+    <path d="M500 160 V238" stroke="#2f7d32" stroke-width="2" fill="none" marker-end="url(#ops-arrow-green)"></path>
+    <path d="M685 150 V230" stroke="#2563eb" stroke-width="2" fill="none" stroke-dasharray="6 5" marker-end="url(#ops-arrow-blue)"></path>
+    <path d="M760 275 H835" stroke="#2563eb" stroke-width="2" fill="none" marker-end="url(#ops-arrow-blue)"></path>
+    <path d="M535 384 V447" stroke="#2f7d32" stroke-width="2" fill="none" marker-end="url(#ops-arrow-green)"></path>
+    <path d="M285 505 H385" stroke="#7c3fad" stroke-width="2" fill="none" marker-end="url(#ops-arrow-purple)"></path>
+    <path d="M670 515 H830" stroke="#7c3fad" stroke-width="2" fill="none" stroke-dasharray="6 5" marker-end="url(#ops-arrow-purple)"></path>
+  </svg>
+
+  <div class="ops-entry">
+    <button class="ops-diagram-node ops-icon-node" data-endpoint="/api/health" data-title="Public Ops API Health">
+      <span class="ops-icon">◎</span>
+      <strong>Internet</strong>
+      <span class="ops-pill" id="map-api-status">checking</span>
+      <span class="ops-subtle">80/443 public entry</span>
     </button>
-    <button class="ops-node edge" data-endpoint="/api/ops/summary" data-title="Dashboard Summary">
-      <strong>Edge Plane</strong>
-      <span class="ops-subtle">172.30.1.27 reverse proxy / HAProxy</span>
-      <div class="ops-node-meta">
-        <code>/api/ops/summary</code>
-      </div>
+    <button class="ops-diagram-node ops-icon-node" data-endpoint="/api/ops/summary" data-title="Dashboard Summary">
+      <span class="ops-icon orange">▰</span>
+      <strong>Home Router</strong>
+      <span class="ops-subtle">port-forward to edge</span>
     </button>
   </div>
 
-  <div class="ops-lane">
-    <div class="ops-lane-title">Kubernetes / Prometheus</div>
-    <button class="ops-node k8s" data-endpoint="/api/prometheus/summary" data-title="Prometheus Summary">
-      <strong>Prometheus</strong>
-      <span class="ops-subtle">targets, pods, deployments, PVC metric series</span>
-      <div class="ops-node-meta">
+  <section class="ops-plane edge-plane">
+    <h3 class="ops-plane-title">Edge Plane</h3>
+    <div class="ops-edge-content">
+      <button class="ops-diagram-node edge" data-endpoint="/api/ops/summary" data-title="Edge Summary">
+        <span class="ops-icon orange">▣</span>
+        <strong>Mini PC / Edge Proxy</strong>
+        <span class="ops-subtle">172.30.1.27</span>
+        <div class="ops-node-meta">
+          <code>/api/ops/summary</code>
+        </div>
+      </button>
+      <div class="ops-edge-list">
+        <div>• HTTPS reverse proxy</div>
+        <div>• Kubernetes API HAProxy <strong>:6443</strong></div>
+        <div>• Public API tunnel <strong>ops-api.mintcocoa.cc</strong></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ops-plane k8s-plane">
+    <h3 class="ops-plane-title">Workload Entry + Kubernetes Ingress Rules</h3>
+    <div class="ops-k8s-content">
+      <button class="ops-diagram-node k8s" data-endpoint="/api/prometheus/summary" data-title="Prometheus Summary">
+        <span class="ops-icon green">◇</span>
+        <strong>MetalLB VIP</strong>
+        <span class="ops-subtle">172.30.1.240</span>
         <span class="ops-pill" id="map-prom-status">checking</span>
-        <code>/api/prometheus/summary</code>
-      </div>
-    </button>
-    <button class="ops-node k8s" data-endpoint="/api/prometheus/targets" data-title="Scrape Targets">
-      <strong>Scrape Targets</strong>
-      <span class="ops-subtle">Prometheus active target 상태</span>
-      <div class="ops-node-meta">
-        <code>/api/prometheus/targets</code>
-      </div>
-    </button>
-    <button class="ops-node k8s" data-endpoint="/api/prometheus/query?query=count(kube_pod_info)" data-title="Pod Metric Query">
-      <strong>Kubernetes Workloads</strong>
-      <span class="ops-subtle">kube-state-metrics 기반 workload 수치</span>
-      <div class="ops-node-meta">
-        <code>/api/prometheus/query</code>
-      </div>
-    </button>
-  </div>
+      </button>
+      <button class="ops-diagram-node k8s" data-endpoint="/api/prometheus/targets" data-title="Scrape Targets">
+        <span class="ops-icon green">N</span>
+        <strong>ingress-nginx</strong>
+        <span class="ops-subtle">172.30.1.240:80/443</span>
+        <div class="ops-node-meta">
+          <code>/api/prometheus/targets</code>
+        </div>
+      </button>
+      <button class="ops-diagram-node k8s" data-endpoint="/api/prometheus/query?query=count(kube_pod_info)" data-title="Pod Metric Query">
+        <span class="ops-icon">K</span>
+        <strong>Kubernetes Workloads</strong>
+        <span class="ops-subtle">pods, deployments, PVC metric series</span>
+        <div class="ops-node-meta">
+          <code>/api/prometheus/query</code>
+        </div>
+      </button>
+    </div>
+    <div class="ops-ingress-grid">
+      <button class="ops-mini-card" data-endpoint="/api/prometheus/query?query=count(kube_pod_info)" data-title="Portfolio Pods">
+        <strong>portfolio.mintcocoa.cc</strong>
+        <span class="ops-subtle">service/portfolio → pod/portfolio</span>
+      </button>
+      <button class="ops-mini-card" data-endpoint="/api/prometheus/query?query=count(kube_pod_info)" data-title="Demo Pods">
+        <strong>demo.mintcocoa.cc</strong>
+        <span class="ops-subtle">service/demo-whoami → pod/demo-whoami</span>
+      </button>
+      <button class="ops-mini-card" data-endpoint="/api/prometheus/query?query=count(kube_deployment_status_replicas_available)" data-title="Grafana Deployment">
+        <strong>grafana.homelab.local</strong>
+        <span class="ops-subtle">service/grafana → pod/grafana</span>
+      </button>
+      <button class="ops-mini-card" data-endpoint="/api/prometheus/query?query=count(kube_deployment_status_replicas_available)" data-title="Argo CD Deployment">
+        <strong>argocd.homelab.local</strong>
+        <span class="ops-subtle">service/argocd-server → pod/argocd-server</span>
+      </button>
+    </div>
+  </section>
 
-  <div class="ops-lane">
-    <div class="ops-lane-title">Proxmox VE</div>
-    <button class="ops-node proxmox" data-endpoint="/api/proxmox/version" data-title="Proxmox Version">
-      <strong>Proxmox VE</strong>
-      <span class="ops-subtle">172.30.1.12 API / auth mode</span>
-      <div class="ops-node-meta">
-        <span class="ops-pill" id="map-pve-status">checking</span>
-        <code>/api/proxmox/version</code>
+  <section class="ops-plane api-plane">
+    <button class="ops-diagram-node proxmox" data-endpoint="/api/proxmox/nodes" data-title="Kubernetes API and Proxmox Node">
+      <span class="ops-icon">K</span>
+      <strong>Kubernetes API</strong>
+      <span class="ops-subtle">172.30.1.27:6443</span>
+      <div class="ops-api-list">
+        <div><span>k8s-cp-1</span><strong>172.30.1.231:6443</strong></div>
+        <div><span>k8s-cp-2</span><strong>172.30.1.232:6443</strong></div>
+        <div><span>k8s-cp-3</span><strong>172.30.1.233:6443</strong></div>
       </div>
     </button>
-    <button class="ops-node proxmox" data-endpoint="/api/proxmox/resources?type=vm" data-title="VM Resources">
-      <strong>Kubernetes VMs</strong>
-      <span class="ops-subtle">control-plane, worker, OMV VM inventory</span>
-      <div class="ops-node-meta">
-        <code>/api/proxmox/resources?type=vm</code>
-      </div>
-    </button>
-    <button class="ops-node proxmox" data-endpoint="/api/proxmox/nodes" data-title="Proxmox Nodes">
-      <strong>Physical Node</strong>
-      <span class="ops-subtle">CPU, memory, uptime summary</span>
-      <div class="ops-node-meta">
-        <code>/api/proxmox/nodes</code>
-      </div>
-    </button>
-  </div>
+  </section>
 
-  <div class="ops-lane">
-    <div class="ops-lane-title">Storage / Network Resources</div>
-    <button class="ops-node storage" data-endpoint="/api/proxmox/resources?type=storage" data-title="Storage Resources">
-      <strong>OMV / NFS Storage Path</strong>
-      <span class="ops-subtle">PVC backing storage and Proxmox storage resources</span>
+  <section class="ops-plane proxmox-plane">
+    <h3 class="ops-plane-title">Proxmox VE 172.30.1.12</h3>
+    <div class="ops-node-meta" style="justify-content:center; margin-bottom:0.55rem;">
+      <span class="ops-pill" id="map-pve-status">checking</span>
+      <code>/api/proxmox/resources?type=vm</code>
+    </div>
+    <div class="ops-vm-list">
+      <button class="ops-mini-card ops-vm-row" data-endpoint="/api/proxmox/resources?type=vm" data-title="k8s-cp-1 VM">
+        <span class="ops-vm-badge">VM</span><span><span class="ops-node-name">k8s-cp-1</span><br><span class="ops-node-address">172.30.1.231</span></span><span>control-plane / etcd</span><span class="ops-icon">K</span>
+      </button>
+      <button class="ops-mini-card ops-vm-row" data-endpoint="/api/proxmox/resources?type=vm" data-title="k8s-cp-2 VM">
+        <span class="ops-vm-badge">VM</span><span><span class="ops-node-name">k8s-cp-2</span><br><span class="ops-node-address">172.30.1.232</span></span><span>control-plane / etcd</span><span class="ops-icon">K</span>
+      </button>
+      <button class="ops-mini-card ops-vm-row" data-endpoint="/api/proxmox/resources?type=vm" data-title="k8s-cp-3 VM">
+        <span class="ops-vm-badge">VM</span><span><span class="ops-node-name">k8s-cp-3</span><br><span class="ops-node-address">172.30.1.233</span></span><span>control-plane / etcd</span><span class="ops-icon">K</span>
+      </button>
+      <button class="ops-mini-card ops-vm-row" data-endpoint="/api/proxmox/resources?type=vm" data-title="k8s-worker-1 VM">
+        <span class="ops-vm-badge green">VM</span><span><span class="ops-node-name">k8s-worker-1</span><br><span class="ops-node-address green">172.30.1.234</span></span><span>workloads</span><span class="ops-icon green">□</span>
+      </button>
+      <button class="ops-mini-card ops-vm-row" data-endpoint="/api/proxmox/resources?type=vm" data-title="k8s-worker-2 VM">
+        <span class="ops-vm-badge green">VM</span><span><span class="ops-node-name">k8s-worker-2</span><br><span class="ops-node-address green">172.30.1.235</span></span><span>workloads</span><span class="ops-icon green">□</span>
+      </button>
+      <button class="ops-mini-card ops-vm-row" data-endpoint="/api/proxmox/resources?type=storage" data-title="OMV NAS Storage">
+        <span class="ops-vm-badge purple">VM</span><span><span class="ops-node-name">OMV / NAS VM</span><br><span class="ops-node-address purple">172.30.1.52</span></span><span>NFS storage</span><span class="ops-icon purple">▣</span>
+      </button>
+    </div>
+  </section>
+
+  <section class="ops-plane management-plane">
+    <h3 class="ops-plane-title">Management Plane</h3>
+    <button class="ops-diagram-node storage" data-endpoint="/api/proxmox/version" data-title="Management Access">
+      <span class="ops-icon purple">O</span>
+      <strong>Odroid Management Node</strong>
+      <span class="ops-subtle">172.30.1.83</span>
       <div class="ops-node-meta">
-        <code>/api/proxmox/resources?type=storage</code>
+        <code>Terraform</code><code>Ansible</code><code>kubectl</code><code>Helm</code>
       </div>
     </button>
-    <button class="ops-node storage" data-endpoint="/api/proxmox/resources?type=pool" data-title="Proxmox Pools">
-      <strong>Resource Pools</strong>
-      <span class="ops-subtle">Proxmox pool inventory</span>
-      <div class="ops-node-meta">
-        <code>/api/proxmox/resources?type=pool</code>
-      </div>
-    </button>
-    <button class="ops-node storage" data-endpoint="/api/proxmox/resources?type=sdn" data-title="Proxmox SDN">
-      <strong>SDN Resources</strong>
-      <span class="ops-subtle">Proxmox SDN resource view</span>
-      <div class="ops-node-meta">
-        <code>/api/proxmox/resources?type=sdn</code>
-      </div>
-    </button>
-  </div>
+  </section>
+
+  <section class="ops-plane storage-plane">
+    <h3 class="ops-plane-title">Storage Path</h3>
+    <div class="ops-bottom-path">
+      <button class="ops-path-item" data-endpoint="/api/prometheus/query?query=count(kube_persistentvolumeclaim_status_phase)" data-title="PVC Metrics"><strong>Pod</strong><span>PVC</span></button>
+      <button class="ops-path-item" data-endpoint="/api/prometheus/query?query=count(kube_persistentvolumeclaim_status_phase)" data-title="PVC Phases"><strong>PVC</strong><span>phase</span></button>
+      <button class="ops-path-item" data-endpoint="/api/proxmox/resources?type=storage" data-title="Proxmox Storage"><strong>StorageClass</strong><span>nfs-client</span></button>
+      <button class="ops-path-item" data-endpoint="/api/proxmox/resources?type=storage" data-title="NFS Storage"><strong>OMV / NAS</strong><span>/export/k8s_pv</span></button>
+    </div>
+  </section>
+
+  <section class="ops-plane gitops-plane">
+    <h3 class="ops-plane-title">GitOps Deployment Path</h3>
+    <div class="ops-bottom-path">
+      <button class="ops-path-item" data-endpoint="/api/ops/summary" data-title="Developer to Summary"><strong>Developer PC</strong><span>push</span></button>
+      <button class="ops-path-item" data-endpoint="/api/ops/summary" data-title="GitHub Repository"><strong>GitHub</strong><span>repo</span></button>
+      <button class="ops-path-item" data-endpoint="/api/ops/summary" data-title="GitHub Actions"><strong>Actions</strong><span>build</span></button>
+      <button class="ops-path-item" data-endpoint="/api/ops/summary" data-title="GHCR Image"><strong>GHCR</strong><span>image</span></button>
+      <button class="ops-path-item" data-endpoint="/api/ops/summary" data-title="GitOps Repository"><strong>GitOps</strong><span>home-k8s-gitops</span></button>
+      <button class="ops-path-item" data-endpoint="/api/prometheus/query?query=count(kube_deployment_status_replicas_available)" data-title="Argo CD Deployment"><strong>Argo CD</strong><span>sync</span></button>
+      <button class="ops-path-item" data-endpoint="/api/prometheus/summary" data-title="Kubernetes Deployment"><strong>Kubernetes</strong><span>cluster</span></button>
+      <button class="ops-path-item" data-endpoint="/api/prometheus/targets" data-title="Ingress Targets"><strong>Ingress</strong><span>nginx + MetalLB</span></button>
+    </div>
+  </section>
+</div>
 </div>
 <bslib-tooltip placement="auto" bsoptions="[]" data-require-bs-version="5" data-require-bs-caller="tooltip()">
     <template>Expand</template>
