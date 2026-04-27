@@ -1,4 +1,4 @@
-import { Server, Database, Globe, Network, HardDrive, Box, Cloud, ArrowRight, Shield, Settings, GitBranch } from 'lucide-react';
+import { Server, Database, Globe, Network, HardDrive, Box, Cloud, ArrowRight, Shield, Settings, GitBranch, Route, ShieldCheck, CircleDashed } from 'lucide-react';
 
 const VmCard = ({ vm, type }) => {
   if (!vm) return null;
@@ -38,23 +38,63 @@ const VmCard = ({ vm, type }) => {
   );
 };
 
-const IngressRule = ({ name, domain, targetData }) => {
-  // 실제 프로메테우스 타겟 중에서 해당 서비스와 연관된 것이 있는지 판별 (단순화)
-  const isHealthy = targetData?.activeTargets?.some(t => t.health === 'up' && t.discoveredLabels?.['__meta_kubernetes_pod_name']?.includes(name)) ?? true;
+const ingressRules = [
+  { name: 'portfolio', domain: 'portfolio.mintcocoa.cc', service: 'portfolio', note: 'public portfolio site' },
+  { name: 'dropapp', domain: 'dropapp.mintcocoa.cc', service: 'dropapp', note: 'public app route' },
+  { name: 'webhook', domain: 'webhook.mintcocoa.cc', service: 'webhook', note: 'public webhook route' },
+  { name: 'argocd', domain: 'argocd.homelab.local', service: 'argocd-server', note: 'private management UI' },
+];
+
+const findIngressTarget = (targetData, rule) => (
+  targetData?.activeTargets?.find((target) => {
+    const labels = target.discoveredLabels ?? target.labels ?? {};
+    return [
+      labels.__meta_kubernetes_pod_name,
+      labels.__meta_kubernetes_service_name,
+      labels.job,
+      labels.instance,
+    ].some((value) => value?.includes(rule.service) || value?.includes(rule.name));
+  })
+);
+
+const IngressRule = ({ rule, targetData, edgeRoutes }) => {
+  const route = edgeRoutes.find((item) => item.hostname === rule.domain);
+  const target = findIngressTarget(targetData, rule);
+  const isKubernetesRoute = route?.destination === 'kubernetes';
+  const isPublicEdge = Boolean(route);
+  const isObserved = target?.health === 'up';
+  const status = isPublicEdge ? 'Public edge' : isObserved ? 'Observed' : 'Cluster only';
+  const statusClass = isPublicEdge
+    ? 'border-green-200 bg-green-50 text-green-700'
+    : isObserved
+      ? 'border-blue-200 bg-blue-50 text-blue-700'
+      : 'border-slate-200 bg-slate-50 text-slate-600';
+  const Icon = isPublicEdge ? ShieldCheck : isObserved ? Route : CircleDashed;
 
   return (
-    <div className="border border-green-300 bg-white rounded-md p-2 text-center text-xs shadow-sm">
-      <Globe className="mx-auto text-green-600 mb-1" size={16} />
-      <div className="font-semibold text-gray-800 break-words">{domain}</div>
-      <div className="text-green-600 mt-1 flex items-center justify-center gap-1">
-        <div className={`w-2 h-2 rounded-full ${isHealthy ? 'bg-green-500' : 'bg-red-500'}`}></div>
-        {isHealthy ? 'Healthy' : 'Down'}
+    <div className="rounded-lg border border-slate-200 bg-white p-3 text-xs shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="truncate font-bold text-slate-900">{rule.domain}</div>
+          <div className="mt-1 text-[11px] text-slate-500">{rule.note}</div>
+        </div>
+        <div className={`shrink-0 rounded-md border p-1.5 ${statusClass}`}>
+          <Icon size={15} />
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-[70px_1fr] gap-x-2 gap-y-1 text-[11px]">
+        <div className="text-slate-400">status</div>
+        <div className={`w-fit rounded-full border px-2 py-0.5 font-semibold ${statusClass}`}>{status}</div>
+        <div className="text-slate-400">edge</div>
+        <div className="min-w-0 truncate text-slate-700">{route?.upstream ?? 'not published by SNI proxy'}</div>
+        <div className="text-slate-400">ingress</div>
+        <div className="min-w-0 truncate text-slate-700">{isKubernetesRoute ? 'MetalLB 172.30.1.240' : target?.scrapeUrl ?? target?.labels?.instance ?? '-'}</div>
       </div>
     </div>
   );
 };
 
-export const ArchitectureView = ({ vms = [], targets = {}, argocdMetrics = [], className = '' }) => {
+export const ArchitectureView = ({ vms = [], targets = {}, argocdMetrics = [], edgeRuntime = null, className = '' }) => {
   // VM들을 역할에 따라 분류
   const cpVms = vms.filter(vm => vm.name?.includes('cp')).sort((a,b)=> a.name.localeCompare(b.name));
   const workerVms = vms.filter(vm => vm.name?.includes('worker')).sort((a,b)=> a.name.localeCompare(b.name));
@@ -64,6 +104,8 @@ export const ArchitectureView = ({ vms = [], targets = {}, argocdMetrics = [], c
   const totalApps = argocdMetrics.length;
   const syncedApps = argocdMetrics.filter(m => m.metric?.sync_status === 'Synced').length;
   const isAllSynced = totalApps > 0 && syncedApps === totalApps;
+  const edgeRoutes = edgeRuntime?.routes ?? [];
+  const kubernetesRoutes = edgeRoutes.filter((route) => route.destination === 'kubernetes').length;
 
   return (
     <div className={`flex flex-col gap-6 ${className}`}>
@@ -119,13 +161,21 @@ export const ArchitectureView = ({ vms = [], targets = {}, argocdMetrics = [], c
              </div>
           </div>
 
-          <div className="border-2 border-green-300 bg-white rounded-xl p-4 mt-2">
-             <div className="text-sm font-bold text-green-700 mb-3 text-center">Kubernetes Ingress Rules</div>
-             <div className="grid grid-cols-2 shadow-sm gap-2">
-               <IngressRule name="portfolio" domain="portfolio.mintcocoa.cc" targetData={targets} />
-               <IngressRule name="demo" domain="demo.mintcocoa.cc" targetData={targets} />
-               <IngressRule name="grafana" domain="grafana.homelab.local" targetData={targets} />
-               <IngressRule name="argocd" domain="argocd.homelab.local" targetData={targets} />
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+             <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+               <div>
+                 <div className="text-sm font-bold text-slate-900">Kubernetes ingress exposure</div>
+                 <div className="mt-1 text-xs text-slate-500">SNI routes from the C++ proxy mapped to the MetalLB ingress VIP.</div>
+               </div>
+               <div className="flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                 <Globe size={14} />
+                 {kubernetesRoutes} edge routes
+               </div>
+             </div>
+             <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+               {ingressRules.map((rule) => (
+                 <IngressRule key={rule.domain} rule={rule} targetData={targets} edgeRoutes={edgeRoutes} />
+               ))}
              </div>
           </div>
         </div>

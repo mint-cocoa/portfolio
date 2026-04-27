@@ -254,7 +254,7 @@ function App() {
                 ops-api.mintcocoa.cc · {streamStatus}
               </div>
             </div>
-            <ArchitectureView vms={vms} targets={targets} argocdMetrics={argocdMetrics} />
+            <ArchitectureView vms={vms} targets={targets} argocdMetrics={argocdMetrics} edgeRuntime={edgeRuntime} />
             <EdgeRuntimePanel edgeRuntime={edgeRuntime} />
 
             <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-300 pb-3 pt-4">
