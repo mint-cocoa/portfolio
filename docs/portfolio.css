@@ -101,6 +101,60 @@ body {
   background: var(--portfolio-soft);
 }
 
+.serve-path {
+  display: grid;
+  gap: 0.38rem;
+  margin: 0.15rem 0 0.2rem;
+  padding: 0.75rem;
+  border: 1px solid var(--portfolio-line);
+  border-radius: 8px;
+  background: var(--portfolio-soft);
+  color: var(--portfolio-muted);
+  font-size: 0.9rem;
+}
+
+.serve-path strong {
+  margin: 0;
+  color: var(--portfolio-ink);
+  font-size: 0.82rem;
+}
+
+.serve-path code {
+  color: var(--portfolio-blue);
+  background: #fff;
+  white-space: normal;
+}
+
+.serve-path.runtime-example {
+  border-left: 4px solid var(--portfolio-blue);
+  background: #fff;
+}
+
+.serve-path.runtime-example a {
+  font-weight: 650;
+}
+
+.exposure-map {
+  margin: 0.5rem 0 2rem;
+  padding: 1rem;
+  border: 1px solid var(--portfolio-line);
+  border-left: 5px solid var(--portfolio-green);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.exposure-map strong {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: var(--portfolio-green);
+}
+
+.exposure-map code {
+  color: var(--portfolio-muted);
+  background: var(--portfolio-soft);
+  white-space: normal;
+}
+
 .evidence-block,
 .repo-links,
 .next-docs {
