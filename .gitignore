@@ -5,6 +5,7 @@ _plans/
 _site/
 _freeze/
 .venv/
+.node/
 __pycache__/
 *.py[cod]
 

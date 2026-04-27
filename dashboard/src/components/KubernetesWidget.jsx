@@ -1,9 +1,9 @@
-import React from 'react';
 import { Box, Network, CloudRain } from 'lucide-react';
 
 export const KubernetesWidget = ({ summary, targets }) => {
-  const activeTargets = targets?.activeTargets || [];
+  const activeTargets = targets?.activeTargets || targets?.targets || [];
   const downTargets = activeTargets.filter(t => t.health !== 'up');
+  const series = summary?.series ?? {};
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col gap-4">
@@ -27,6 +27,20 @@ export const KubernetesWidget = ({ summary, targets }) => {
             </div>
             <CloudRain className="text-green-300" size={32} />
         </div>
+        <div className="p-4 border rounded-lg bg-purple-50 flex items-center justify-between">
+            <div>
+                <p className="text-sm text-gray-500 font-medium">Pods</p>
+                <p className="text-2xl font-bold text-purple-700">{series.pods ?? '-'}</p>
+            </div>
+            <Box className="text-purple-300" size={32} />
+        </div>
+        <div className="p-4 border rounded-lg bg-amber-50 flex items-center justify-between">
+            <div>
+                <p className="text-sm text-gray-500 font-medium">Deployments</p>
+                <p className="text-2xl font-bold text-amber-700">{series.deployments ?? '-'}</p>
+            </div>
+            <Network className="text-amber-300" size={32} />
+        </div>
       </div>
 
       {downTargets.length > 0 && (
@@ -34,7 +48,7 @@ export const KubernetesWidget = ({ summary, targets }) => {
              <h4 className="font-semibold text-red-800 mb-1">Down Targets</h4>
              <ul className="list-disc list-inside text-red-600">
                  {downTargets.map((t, idx) => (
-                     <li key={idx}>{t.labels?.job || 'Unknown Job'} : {t.labels?.instance || 'Unknown Instance'}</li>
+                     <li key={idx}>{t.job || t.labels?.job || 'Unknown Job'} : {t.instance || t.labels?.instance || 'Unknown Instance'}</li>
                  ))}
              </ul>
           </div>

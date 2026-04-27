@@ -1,5 +1,4 @@
-import React from 'react';
-import { Server, Database, Globe, Network, HardDrive, Cpu, Box, Cloud, ArrowRight, ArrowDown, Shield, Settings, GitBranch } from 'lucide-react';
+import { Server, Database, Globe, Network, HardDrive, Box, Cloud, ArrowRight, Shield, Settings, GitBranch } from 'lucide-react';
 
 const VmCard = ({ vm, type }) => {
   if (!vm) return null;

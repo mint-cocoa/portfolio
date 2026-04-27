@@ -19,8 +19,22 @@ jobs:
       - name: Setup Quarto
         uses: quarto-dev/quarto-actions/setup@v2
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '25.9.0'
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+
       - name: Render portfolio documents
         run: ./scripts/render-docs.sh
+
+      - name: Build Ops Dashboard
+        working-directory: dashboard
+        run: |
+          npm ci --no-audit --no-fund
+          npm run lint
+          npm run build
 
       - name: Login to GHCR
         uses: docker/login-action@v3

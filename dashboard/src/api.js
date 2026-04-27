@@ -1,10 +1,52 @@
 const API_BASE = 'https://ops-api.mintcocoa.cc/api';
 
-export const fetchHealth = () => fetch(`${API_BASE}/health`).then(r => r.json());
-export const fetchSummary = () => fetch(`${API_BASE}/ops/summary`).then(r => r.json());
-export const fetchPrometheusSummary = () => fetch(`${API_BASE}/prometheus/summary`).then(r => r.json());
-export const fetchPrometheusTargets = () => fetch(`${API_BASE}/prometheus/targets`).then(r => r.json());
-export const fetchPrometheusQuery = (query) => fetch(`${API_BASE}/prometheus/query?query=${encodeURIComponent(query)}`).then(r => r.json());
-export const fetchProxmoxNodes = () => fetch(`${API_BASE}/proxmox/nodes`).then(r => r.json());
-export const fetchProxmoxVersion = () => fetch(`${API_BASE}/proxmox/version`).then(r => r.json());
-export const fetchProxmoxResources = (type) => fetch(`${API_BASE}/proxmox/resources${type ? `?type=${type}` : ''}`).then(r => r.json());
+const getJson = async (path) => {
+  const response = await fetch(`${API_BASE}${path}`, { cache: 'no-store' });
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const detail = payload.detail ?? `${response.status} ${response.statusText}`;
+    throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
+  }
+
+  return payload;
+};
+
+export const fetchHealth = async () => {
+  const payload = await getJson('/health');
+  return {
+    ...payload,
+    status: payload.ok ? 'ok' : 'error',
+    details: {
+      prometheus: { status: payload.prometheus === 'ok' ? 'ok' : 'error', value: payload.prometheus },
+      proxmox: { status: payload.proxmox === 'ok' ? 'ok' : 'error', value: payload.proxmox },
+    },
+  };
+};
+
+export const fetchSummary = () => getJson('/ops/summary');
+export const fetchPrometheusSummary = () => getJson('/prometheus/summary');
+
+export const fetchPrometheusTargets = async () => {
+  const payload = await getJson('/prometheus/targets');
+  const activeTargets = payload.targets ?? payload.data?.activeTargets ?? [];
+  return {
+    ...payload,
+    activeTargets,
+    data: { ...(payload.data ?? {}), activeTargets },
+  };
+};
+
+export const fetchPrometheusQuery = (query) => getJson(`/prometheus/query?query=${encodeURIComponent(query)}`);
+
+export const fetchProxmoxNodes = async () => {
+  const payload = await getJson('/proxmox/nodes');
+  return payload.nodes ?? payload.data ?? [];
+};
+
+export const fetchProxmoxVersion = () => getJson('/proxmox/version');
+
+export const fetchProxmoxResources = async (type) => {
+  const payload = await getJson(`/proxmox/resources${type ? `?type=${type}` : ''}`);
+  return payload.resources ?? payload.data ?? [];
+};
