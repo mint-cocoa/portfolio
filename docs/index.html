@@ -95,12 +95,17 @@ ul.task-list li input[type="checkbox"] {
 </div>
 <section id="문서-서빙-위치" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="문서-서빙-위치"><span class="header-section-number">1</span> 문서 서빙 위치</h2>
+<div class="exposure-map pages-note">
+<p><strong>현재 보고 있는 GitHub Pages 미러</strong></p>
+<p><code>https://mint-cocoa.github.io/portfolio/</code>는 이 저장소의 <code>master:/docs</code>를 그대로 서빙하는 정적 문서 미러입니다. 문서 내용 확인과 공유는 이 경로에서 바로 가능하고, 실제 운영 배포 경로는 아래의 <code>portfolio.mintcocoa.cc</code> 항목처럼 C++ <code>RuntimeWeb</code> 기반 정적 파일 서버와 Kubernetes를 거칩니다.</p>
+</div>
 <div class="doc-grid">
 <section id="서버-구현-포트폴리오" class="level3 doc-card" data-number="1.1">
 <h3 data-number="1.1" class="anchored" data-anchor-id="서버-구현-포트폴리오"><span class="header-section-number">1.1</span> <a href="server/ServerCorePortfolio.html">서버 구현 포트폴리오</a></h3>
 <p><code>iouring-runtime</code>의 core Runtime 위에 <code>RuntimeWeb</code>, <code>RuntimeProxy</code>, <code>RuntimeGame</code>을 분리하고 예제 서버들을 올린 C++ 서버 런타임 구현 문서입니다.</p>
 <div class="serve-path">
 <p><strong>서빙 경로</strong></p>
+<p><code>mint-cocoa.github.io/portfolio/server/ServerCorePortfolio.html</code></p>
 <p><code>portfolio.mintcocoa.cc/server/ServerCorePortfolio.html</code></p>
 <p><code>Ingress portfolio</code> → <code>service/portfolio</code> → <code>pod/portfolio</code> → <code>C++ static file server</code></p>
 </div>
@@ -120,6 +125,7 @@ ul.task-list li input[type="checkbox"] {
 <p>DirectX 11 렌더링, 씬 전환, TCP 패킷 처리, 게임 UI를 직접 구현한 클라이언트 문서입니다.</p>
 <div class="serve-path">
 <p><strong>서빙 경로</strong></p>
+<p><code>mint-cocoa.github.io/portfolio/client/ClientPortfolio.html</code></p>
 <p><code>portfolio.mintcocoa.cc/client/ClientPortfolio.html</code></p>
 <p><code>Ingress portfolio</code> → <code>service/portfolio</code> → <code>pod/portfolio</code> → <code>C++ static file server</code></p>
 </div>
@@ -132,6 +138,7 @@ ul.task-list li input[type="checkbox"] {
 <p>C++ 웹 런타임으로 만든 앱을 컨테이너 이미지, GitOps, Argo CD, Kubernetes로 배포한 운영 문서입니다.</p>
 <div class="serve-path">
 <p><strong>서빙 경로</strong></p>
+<p><code>mint-cocoa.github.io/portfolio/devops/DevOpsPortfolio.html</code></p>
 <p><code>portfolio.mintcocoa.cc/devops/DevOpsPortfolio.html</code></p>
 <p><code>GitHub Actions</code> → <code>GHCR</code> → <code>GitOps</code> → <code>Argo CD</code> → <code>Kubernetes Ingress</code></p>
 </div>
@@ -144,6 +151,7 @@ ul.task-list li input[type="checkbox"] {
 <p><code>ops-api.mintcocoa.cc</code>를 통해 Prometheus target, Kubernetes workload, Proxmox node/VM 상태를 실시간으로 읽는 대시보드입니다.</p>
 <div class="serve-path">
 <p><strong>서빙/조회 경로</strong></p>
+<p><code>mint-cocoa.github.io/portfolio/devops/OpsDashboard.html</code></p>
 <p><code>portfolio.mintcocoa.cc/devops/OpsDashboard.html</code></p>
 <p><code>browser</code> → <code>portfolio static page</code> → <code>https://ops-api.mintcocoa.cc/api/*</code></p>
 </div>
@@ -155,7 +163,7 @@ ul.task-list li input[type="checkbox"] {
 <div class="exposure-map">
 <p><strong>공개 문서 노출 경로</strong></p>
 <p><code>Internet</code> → <code>Home Router :80/:443</code> → <code>Edge Proxy 172.30.1.27</code> → <code>MetalLB VIP 172.30.1.240</code> → <code>ingress-nginx</code> → <code>service/portfolio</code> → <code>pod/portfolio</code></p>
-<p>문서 HTML은 모두 <code>iouring-runtime</code> 웹 서버 계열로 만든 <code>portfolio</code> workload의 정적 파일로 서빙되고, Live Ops Dashboard만 브라우저에서 별도 Ops API 도메인을 호출해 Prometheus와 Proxmox 상태를 읽습니다.</p>
+<p>GitHub Pages는 정적 미러 역할을 하고, <code>portfolio.mintcocoa.cc</code>는 <code>iouring-runtime</code> 웹 서버 계열로 만든 <code>portfolio</code> workload가 같은 <code>docs/</code> 산출물을 서빙합니다. Live Ops Dashboard만 브라우저에서 별도 Ops API 도메인을 호출해 Prometheus와 Proxmox 상태를 읽습니다.</p>
 </div>
 </section>
 <section id="관련-레포" class="level2" data-number="2">

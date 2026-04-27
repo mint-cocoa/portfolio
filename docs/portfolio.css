@@ -155,6 +155,15 @@ body {
   white-space: normal;
 }
 
+.pages-note {
+  border-left-color: var(--portfolio-blue);
+  background: var(--portfolio-soft);
+}
+
+.pages-note strong {
+  color: var(--portfolio-blue);
+}
+
 .evidence-block,
 .repo-links,
 .next-docs {

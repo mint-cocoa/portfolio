@@ -36,6 +36,11 @@ DevOps 포트폴리오 문서는 Quarto 소스에서 렌더링합니다.
 컨테이너 이미지는 `ghcr.io/mint-cocoa/portfolio:${GITHUB_SHA}`로 빌드되며,
 GitHub Actions가 `home-k8s-gitops`의 `apps/portfolio/values.yaml` tag를 갱신합니다.
 
+GitHub Pages는 `master:/docs`를 정적 미러로 서빙합니다.
+
+- Pages: `https://mint-cocoa.github.io/portfolio/`
+- Live C++ server path: `https://portfolio.mintcocoa.cc/`
+
 로컬 컨테이너 확인:
 
 ```bash
