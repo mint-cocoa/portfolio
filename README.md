@@ -71,7 +71,7 @@ docker run --rm --security-opt seccomp=unconfined --ulimit memlock=-1:-1 \
 
 ### 프로젝트 요약
 
-io_uring 기반 비동기 I/O 서버 프레임워크와 그 위에 구현한 web/proxy/game 서버 포트폴리오입니다. 현재 main의 중심은 `iouring-runtime`이며, core `Runtime` 위에 `RuntimeWeb`, `RuntimeProxy`, `RuntimeGame`을 선택형 모듈로 분리했습니다. 기존 독립 게임 서버는 `examples/game/dungeon_full_server`가 `RuntimeGame`을 재사용하는 형태로 흡수했습니다.
+io_uring 기반 C++ 서버 런타임 포트폴리오입니다. 현재 main의 중심은 `iouring-runtime`의 기본 `Runtime`이며, `IoRing`, `Listener`, `Session`, `JobQueue`, `JobTimer` 같은 공통 런타임 기능 위에 `RuntimeWeb`, `RuntimeProxy`, `RuntimeGame`을 선택형 모듈로 분리했습니다. 예제 앱은 `app/examples` 아래에서 모듈별 실행 검증을 담당하며, 기존 독립 게임 서버는 `app/examples/game/dungeon_full_server`가 `RuntimeGame`을 재사용하는 형태로 흡수했습니다.
 
 **핵심 성과**:
 - 전체 모듈 동시 빌드: `BUILD_WEB=ON`, `BUILD_PROXY=ON`, `BUILD_GAME=ON`, `BUILD_TESTS=ON`
