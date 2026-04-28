@@ -33,10 +33,16 @@ const routeHref = (hostname) => {
   return `https://${hostname}`;
 };
 
-const publicKubernetesHosts = new Set(['portfolio.mintcocoa.cc']);
+const publicKubernetesHosts = new Set([
+  'k8s.mintcocoa.cc',
+  'dropapp.mintcocoa.cc',
+  'portfolio.mintcocoa.cc',
+]);
+const hiddenPublicRouteHosts = new Set(['webhook.mintcocoa.cc']);
 
 const isVisibleRoute = (route) => (
-  route.destination !== 'kubernetes' || publicKubernetesHosts.has(route.hostname)
+  !hiddenPublicRouteHosts.has(route.hostname)
+  && (route.destination !== 'kubernetes' || publicKubernetesHosts.has(route.hostname))
 );
 
 const MetricCard = ({ label, value, detail, icon: Icon, tone = 'slate' }) => {

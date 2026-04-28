@@ -66,7 +66,7 @@ Cloudflare Tunnel 뒤의 Ops API로 Prometheus와 Proxmox 상태 표시
 
 [`iouring-runtime/examples/web`](https://github.com/mint-cocoa/iouring-runtime/tree/main/examples/web)
 
-`hello_http`, `status_server`, `file_store_server`, `speedtest_server`, `dropapp`, `webhook_inbox`
+`hello_http`, `status_server`, `file_store_server`, `speedtest_server`, `dropapp`
 
 [`iouring-runtime/examples/proxy/tcp_reverse_proxy`](https://github.com/mint-cocoa/iouring-runtime/tree/main/examples/proxy/tcp_reverse_proxy)
 

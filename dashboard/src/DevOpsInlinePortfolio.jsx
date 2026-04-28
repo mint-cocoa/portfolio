@@ -89,6 +89,9 @@ const destinationLabels = {
 
 const OPS_DASHBOARD_PATH = './OpsDashboard.html';
 const LIVE_OPS_DASHBOARD_URL = 'https://portfolio.mintcocoa.cc/devops/OpsDashboard.html';
+const hiddenPublicRouteHosts = new Set(['webhook.mintcocoa.cc']);
+
+const visiblePortfolioRoute = (route) => !hiddenPublicRouteHosts.has(route?.hostname);
 
 const localUpstreamPort = (upstream = '') => {
   const match = upstream.match(/^(?:127\.0\.0\.1|localhost):(\d+)$/);
@@ -114,6 +117,10 @@ const publicRouteHref = (route) => {
   if (!hostname || hostname === 'default' || hostname.includes(':') || !hostname.includes('.')) return null;
   return `https://${hostname}`;
 };
+
+const countVisibleKubernetesRoutes = (routes = []) => (
+  routes.filter((route) => visiblePortfolioRoute(route) && routeTreeDestination(route) === 'kubernetes').length
+);
 
 const apiReads = [
   { key: 'health', label: 'health', load: fetchHealth, fallback: null },
@@ -222,7 +229,7 @@ const RuntimePlatformVisual = ({ data }) => {
         <VisualStat icon={Server} label="Proxmox node" value={proxmoxNode?.node} detail={`${fallback(proxmoxNode?.maxcpu)} CPU / ${formatGiB(proxmoxNode?.maxmem)}`} status={proxmoxNode?.status} />
         <VisualStat icon={Boxes} label="Kubernetes VMs" value={`${k8sRunning}/${data.k8sVms.length || '-'}`} detail={`${fallback(data.controlPlanes)} control-plane + ${fallback(data.workers)} worker`} status={k8sRunning === data.k8sVms.length && data.k8sVms.length ? 'ready' : 'check'} />
         <VisualStat icon={ShieldCheck} label="GitOps state" value={`${fallback(data.deploy?.argocd?.syncStatus)} / ${fallback(data.deploy?.argocd?.healthStatus)}`} detail={data.deploy?.argocd?.shortRevision} status={data.deploy?.argocd?.healthStatus ?? data.deploy?.argocd?.syncStatus} />
-        <VisualStat icon={Network} label="Edge ingress" value={data.edge?.proxy?.service} detail={`${fallback(data.edge?.destinationCounts?.kubernetes)} Kubernetes routes`} status={data.edge?.proxy?.running_worker_count ? 'running' : 'check'} />
+        <VisualStat icon={Network} label="Edge ingress" value={data.edge?.proxy?.service} detail={`${fallback(countVisibleKubernetesRoutes(data.edge?.routes))} public Kubernetes routes`} status={data.edge?.proxy?.running_worker_count ? 'running' : 'check'} />
       </div>
 
       <div className="platform-map">
@@ -344,7 +351,9 @@ const HeroDashboardPreview = ({ data }) => (
 );
 
 const NetworkTopologyMap = ({ data }) => {
-  const routes = data.edge?.routes ?? [];
+  const allRoutes = data.edge?.routes ?? [];
+  const routes = allRoutes.filter(visiblePortfolioRoute);
+  const hiddenRouteCount = allRoutes.length - routes.length;
   const proxyListen = data.edge?.proxy?.listen;
   const proxyListenLabel = proxyListen
     ? `${proxyListen.host ?? '0.0.0.0'}:${proxyListen.port ?? 443}`
@@ -488,7 +497,10 @@ const NetworkTopologyMap = ({ data }) => {
             <div>
               <p>Actual route tree</p>
               <h4>{fallback(data.edge?.proxy?.service, 'edge proxy')}</h4>
-              <span>{routes.length || '-'} live routes from edge-runtime</span>
+              <span>
+                {routes.length || '-'} published routes from edge-runtime
+                {hiddenRouteCount > 0 ? ` · ${hiddenRouteCount} private` : ''}
+              </span>
             </div>
           </div>
 
@@ -682,7 +694,7 @@ export const DevOpsInlinePortfolio = () => {
       },
     ];
     const preparedApps = (snapshot.edge?.routes ?? [])
-      .filter((route) => ['dropapp.mintcocoa.cc', 'webhook.mintcocoa.cc'].includes(route.hostname))
+      .filter((route) => ['dropapp.mintcocoa.cc'].includes(route.hostname))
       .map((route) => ({
         name: route.hostname.replace('.mintcocoa.cc', ''),
         upstream: route.upstream,
