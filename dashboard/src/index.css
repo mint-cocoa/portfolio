@@ -245,6 +245,10 @@ body:has(.devops-app) {
   gap: 1rem;
 }
 
+.devops-app .devops-content-grid-wide {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .devops-app .section {
   padding-top: clamp(2.5rem, 5vw, 3.8rem);
   padding-bottom: clamp(2.5rem, 5vw, 3.8rem);
@@ -327,6 +331,75 @@ body:has(.devops-app) {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 750;
+}
+
+.devops-app .mini-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.42rem;
+}
+
+.devops-app .mini-flow-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  min-width: 0;
+}
+
+.devops-app .mini-flow span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  max-width: 100%;
+  padding: 0.38rem 0.62rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 850;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  box-shadow: 0 6px 14px rgba(24, 32, 51, 0.05);
+}
+
+.devops-app .mini-flow i {
+  position: relative;
+  display: inline-block;
+  width: 1.6rem;
+  height: 1px;
+  background: #b8c4d7;
+}
+
+.devops-app .mini-flow i::after {
+  position: absolute;
+  top: -4px;
+  right: -1px;
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 6px solid #b8c4d7;
+  content: "";
+}
+
+.devops-app .mini-flow.delivery span {
+  border-color: #c7d2fe;
+  color: #1d4ed8;
+  background: #f4f8ff;
+}
+
+.devops-app .mini-flow.runtime span {
+  border-color: #99f6e4;
+  color: #0f766e;
+  background: #f2fcfd;
+}
+
+.devops-app .mini-flow.traffic span {
+  border-color: #bbf7d0;
+  color: #16815b;
+  background: #f4fbf7;
 }
 
 .devops-app .timeline-work-card {

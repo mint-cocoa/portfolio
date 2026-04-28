@@ -57,6 +57,19 @@ class Settings:
         "OPS_API_EDGE_KUBERNETES_UPSTREAM",
         "172.30.1.240:80",
     )
+    edge_node_address: str = os.getenv("OPS_API_EDGE_NODE_ADDRESS", "172.30.1.27")
+    edge_public_entry: str = os.getenv("OPS_API_EDGE_PUBLIC_ENTRY", "WAN :80 / :443")
+    edge_public_listen: str = os.getenv("OPS_API_EDGE_PUBLIC_LISTEN", "0.0.0.0:80 / 443")
+    edge_kubernetes_label: str = os.getenv("OPS_API_EDGE_KUBERNETES_LABEL", "MetalLB VIP 172.30.1.240")
+    kubernetes_api_endpoint: str = os.getenv("OPS_API_KUBERNETES_API_ENDPOINT", "172.30.1.27:6443")
+    kubernetes_control_plane_endpoints: tuple[str, ...] = tuple(
+        endpoint.strip()
+        for endpoint in os.getenv(
+            "OPS_API_KUBERNETES_CONTROL_PLANE_ENDPOINTS",
+            "172.30.1.231:6443,172.30.1.232:6443,172.30.1.233:6443",
+        ).split(",")
+        if endpoint.strip()
+    )
     edge_probe_timeout: float = float(os.getenv("OPS_API_EDGE_PROBE_TIMEOUT", "2"))
     github_api_url: str = os.getenv("OPS_API_GITHUB_API_URL", "https://api.github.com").rstrip("/")
     github_token: str | None = os.getenv("OPS_API_GITHUB_TOKEN") or os.getenv("GITHUB_TOKEN")
@@ -211,6 +224,15 @@ def _pack_result(value: Any) -> dict[str, Any]:
     if isinstance(value, Exception):
         return {"ok": False, "error": str(value)}
     return {"ok": True, "data": value}
+
+
+def _evidence_card(label: str, value: Any, detail: str = "", status: str | None = None) -> dict[str, Any]:
+    return {
+        "label": label,
+        "value": "-" if value is None or value == "" else str(value),
+        "detail": detail,
+        "status": status,
+    }
 
 
 def _pve_resource_view(resource: dict[str, Any]) -> dict[str, Any]:
@@ -521,6 +543,15 @@ async def edge_runtime_snapshot() -> dict[str, Any]:
         "services": services,
         "routes": routes,
         "destinationCounts": destination_counts,
+        "topology": {
+            "edgeNode": settings.edge_node_address,
+            "publicEntry": settings.edge_public_entry,
+            "publicListen": settings.edge_public_listen,
+            "kubernetesUpstream": settings.edge_kubernetes_upstream,
+            "kubernetesLabel": settings.edge_kubernetes_label,
+            "kubernetesApiEndpoint": settings.kubernetes_api_endpoint,
+            "controlPlaneEndpoints": settings.kubernetes_control_plane_endpoints,
+        },
     }
 
 
@@ -1036,6 +1067,164 @@ async def edge_runtime() -> dict[str, Any]:
 @app.get("/api/deploy-pipeline")
 async def deploy_pipeline() -> dict[str, Any]:
     return await deploy_pipeline_snapshot()
+
+
+@app.get("/api/portfolio/evidence")
+async def portfolio_evidence(
+    section: str = Query(
+        default="overview",
+        pattern="^(overview|deploy|infra|edge|apps|observability)$",
+    ),
+) -> dict[str, Any]:
+    if section in {"deploy", "apps"}:
+        deploy_result, summary_result = await asyncio.gather(
+            deploy_pipeline_snapshot(),
+            ops_summary(),
+            return_exceptions=True,
+        )
+        deploy = deploy_result if isinstance(deploy_result, dict) else {}
+        steps = deploy.get("steps", [])
+        rollout = next((step for step in steps if step.get("id") == "rollout"), {})
+        argocd = next((step for step in steps if step.get("id") == "argocd"), {})
+        ok_steps = sum(1 for step in steps if step.get("status") in {"ok", "success"})
+        cards = [
+            _evidence_card("Pipeline", f"{ok_steps}/{len(steps) or '-'}", "ok steps"),
+            _evidence_card("Rollout", rollout.get("primary"), rollout.get("secondary", "")),
+            _evidence_card("Argo CD", argocd.get("primary"), argocd.get("secondary", "")),
+            _evidence_card("Commit", _short_sha(deploy.get("commit", {}).get("sha")), deploy.get("commit", {}).get("branch", "")),
+        ]
+        return {
+            "section": section,
+            "generatedAt": int(time.time()),
+            "title": "Deploy Pipeline" if section == "deploy" else "Prepared Workloads",
+            "summary": "GitHub Actions, GHCR image, GitOps promotion, Argo CD sync, rollout evidence.",
+            "endpoints": ["/deploy-pipeline"] if section == "deploy" else ["/deploy-pipeline", "/ops/summary"],
+            "cards": cards,
+            "sources": {
+                "deployPipeline": _pack_result(deploy_result),
+                "opsSummary": _pack_result(summary_result),
+            },
+        }
+
+    if section == "edge":
+        edge_result, health_result = await asyncio.gather(
+            edge_runtime_snapshot(),
+            health(),
+            return_exceptions=True,
+        )
+        edge = edge_result if isinstance(edge_result, dict) else {}
+        health_data = health_result if isinstance(health_result, dict) else {}
+        services = edge.get("services", [])
+        routes = edge.get("routes", [])
+        cards = [
+            _evidence_card("Runtime Services", len(services), ", ".join(filter(None, (service.get("runtime") or service.get("unit") for service in services)))),
+            _evidence_card("Routes", len(routes), " · ".join(f"{key}:{value}" for key, value in edge.get("destinationCounts", {}).items())),
+            _evidence_card("API", "ok" if health_data.get("ok") else "check", f"Prometheus {health_data.get('prometheus', '-')}"),
+            _evidence_card("Proxy", edge.get("proxy", {}).get("default_upstream"), "default upstream"),
+        ]
+        return {
+            "section": section,
+            "generatedAt": int(time.time()),
+            "title": "Edge Runtime",
+            "summary": "C++ RuntimeProxy/RuntimeWeb route, upstream, service health evidence.",
+            "endpoints": ["/edge-runtime", "/health"],
+            "cards": cards,
+            "sources": {
+                "edgeRuntime": _pack_result(edge_result),
+                "health": _pack_result(health_result),
+            },
+        }
+
+    if section == "infra":
+        nodes_result, resources_result, prom_result, targets_result = await asyncio.gather(
+            proxmox_nodes(),
+            proxmox_resources(type="vm"),
+            prometheus_summary(),
+            prometheus_targets(),
+            return_exceptions=True,
+        )
+        nodes = nodes_result.get("nodes", []) if isinstance(nodes_result, dict) else []
+        resources = resources_result.get("resources", []) if isinstance(resources_result, dict) else []
+        prom = prom_result if isinstance(prom_result, dict) else {}
+        targets = targets_result.get("targets", []) if isinstance(targets_result, dict) else []
+        cards = [
+            _evidence_card("PVE Nodes", len(nodes), nodes[0].get("node", "Proxmox API") if nodes else "Proxmox API"),
+            _evidence_card("Running VMs", sum(1 for vm in resources if vm.get("status") == "running"), f"{len(resources)} qemu resources"),
+            _evidence_card("Pods", prom.get("series", {}).get("pods"), f"{prom.get('series', {}).get('deployments', '-')} deployments"),
+            _evidence_card("Targets", f"{sum(1 for target in targets if target.get('health') == 'up')}/{len(targets)}", "healthy scrape targets"),
+        ]
+        return {
+            "section": section,
+            "generatedAt": int(time.time()),
+            "title": "Cluster Runtime",
+            "summary": "Proxmox VM inventory and Prometheus-observed Kubernetes runtime evidence.",
+            "endpoints": ["/proxmox/nodes", "/proxmox/resources?type=vm", "/prometheus/summary", "/prometheus/targets"],
+            "cards": cards,
+            "sources": {
+                "proxmoxNodes": _pack_result(nodes_result),
+                "proxmoxVMs": _pack_result(resources_result),
+                "prometheusSummary": _pack_result(prom_result),
+                "prometheusTargets": _pack_result(targets_result),
+            },
+        }
+
+    if section == "observability":
+        prom_result, targets_result, health_result = await asyncio.gather(
+            prometheus_summary(),
+            prometheus_targets(),
+            health(),
+            return_exceptions=True,
+        )
+        prom = prom_result if isinstance(prom_result, dict) else {}
+        targets = targets_result.get("targets", []) if isinstance(targets_result, dict) else []
+        health_data = health_result if isinstance(health_result, dict) else {}
+        cards = [
+            _evidence_card("Prometheus", health_data.get("prometheus"), "readiness"),
+            _evidence_card("Targets Up", f"{sum(1 for target in targets if target.get('health') == 'up')}/{len(targets)}", "scrape health"),
+            _evidence_card("Pods", prom.get("series", {}).get("pods"), "observed series"),
+            _evidence_card("Deployments", prom.get("series", {}).get("deployments"), "kube-state-metrics"),
+        ]
+        return {
+            "section": section,
+            "generatedAt": int(time.time()),
+            "title": "Observability",
+            "summary": "Prometheus readiness, scrape target, pod, deployment evidence.",
+            "endpoints": ["/prometheus/summary", "/prometheus/targets", "/health"],
+            "cards": cards,
+            "sources": {
+                "prometheusSummary": _pack_result(prom_result),
+                "prometheusTargets": _pack_result(targets_result),
+                "health": _pack_result(health_result),
+            },
+        }
+
+    health_result, summary_result = await asyncio.gather(
+        health(),
+        ops_summary(),
+        return_exceptions=True,
+    )
+    health_data = health_result if isinstance(health_result, dict) else {}
+    summary = summary_result if isinstance(summary_result, dict) else {}
+    nodes = summary.get("proxmoxNodes", {}).get("data", {}).get("nodes", [])
+    vms = summary.get("proxmoxVMs", {}).get("data", {}).get("resources", [])
+    cards = [
+        _evidence_card("Ops API", "ok" if health_data.get("ok") else "-", f"generated {summary.get('generatedAt', '-')}"),
+        _evidence_card("Prometheus", health_data.get("prometheus"), "readiness"),
+        _evidence_card("Proxmox", health_data.get("proxmox"), nodes[0].get("node", "node view") if nodes else "node view"),
+        _evidence_card("VMs", sum(1 for vm in vms if vm.get("status") == "running"), f"{len(vms)} observed"),
+    ]
+    return {
+        "section": section,
+        "generatedAt": int(time.time()),
+        "title": "Portfolio Health",
+        "summary": "Compact health evidence for the current portfolio operations surface.",
+        "endpoints": ["/health", "/ops/summary"],
+        "cards": cards,
+        "sources": {
+            "health": _pack_result(health_result),
+            "opsSummary": _pack_result(summary_result),
+        },
+    }
 
 
 async def ops_snapshot() -> dict[str, Any]:

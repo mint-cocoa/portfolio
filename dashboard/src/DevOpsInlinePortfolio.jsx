@@ -8,13 +8,14 @@ import {
   ExternalLink,
   GitBranch,
   GitCommit,
-  HardDrive,
+  Globe,
   Network,
   Package,
   PlayCircle,
   RefreshCw,
-  Rocket,
+  Route,
   Server,
+  Split,
   ShieldCheck,
 } from 'lucide-react';
 import {
@@ -73,6 +74,20 @@ const timelineIcons = {
   argocd: ShieldCheck,
   rollout: Boxes,
   live: Cloud,
+  client: Globe,
+  edge: Network,
+  route: Route,
+  ingress: ShieldCheck,
+  service: Server,
+  pod: Boxes,
+  split: Split,
+};
+
+const destinationLabels = {
+  'cxx-web': 'C++ RuntimeWeb',
+  'docker-or-local': 'Docker / local',
+  kubernetes: 'Kubernetes ingress',
+  external: 'External upstream',
 };
 
 const fallbackSteps = [
@@ -269,10 +284,151 @@ const Timeline = ({ steps }) => (
   </div>
 );
 
-const Chain = ({ items }) => (
-  <div className="tag-row">
+const NetworkTopologyMap = ({ data }) => {
+  const routes = data.edge?.routes ?? [];
+  const topology = data.edge?.topology ?? {};
+  const route = routes.find((item) => item.hostname === data.liveHost)
+    ?? routes.find((item) => item.destination === 'kubernetes');
+  const visibleRoutes = [
+    ...(route ? [route] : []),
+    ...routes.filter((item) => item !== route && item.hostname !== 'default'),
+    ...routes.filter((item) => item !== route && item.hostname === 'default'),
+  ].slice(0, 6);
+  const readyReplicas = fallback(data.deploy?.kubernetes?.readyReplicas, 0);
+  const replicas = fallback(data.deploy?.kubernetes?.replicas, 0);
+  const entryPath = [
+    ['Client', data.liveHost, 'public HTTPS request', data.deploy?.live?.ok ? 'live' : 'check', Globe],
+    ['Home Router', topology.publicEntry, 'port-forward to edge mini PC', data.deploy?.live?.ok ? 'live' : 'observed', Route],
+    ['Edge Mini PC', topology.edgeNode, 'branches by protocol and port', data.edge?.proxy?.running_worker_count ? 'running' : 'observed', Network],
+  ];
+  const publicBranch = [
+    ['RuntimeProxy', data.edge?.proxy?.service ?? 'tcp_reverse_proxy', topology.publicListen],
+    ['SNI route', route?.hostname ?? data.liveHost, route?.upstream ?? data.edge?.proxy?.default_upstream ?? 'portfolio upstream'],
+    ['Ingress / upstream', route?.destination === 'kubernetes' ? topology.kubernetesLabel : destinationLabels[route?.destination] ?? 'selected upstream', route?.destination === 'kubernetes' ? 'ingress-nginx -> service -> pod' : route?.upstream],
+    ['Workload', data.deploy?.kubernetes?.name ?? 'portfolio', `${readyReplicas}/${replicas} ready`],
+  ];
+  const apiBranch = [
+    ['HAProxy', topology.kubernetesApiEndpoint, 'Kubernetes API virtual endpoint'],
+    ['Control planes', topology.controlPlaneEndpoints?.join(' / '), 'control-plane API backends'],
+  ];
+
+  return (
+    <div className="work-card">
+      <div className="work-card-body">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 text-sm font-black text-zinc-500">
+              <Split size={16} />
+              Network topology
+            </div>
+            <h3 className="mt-2 text-xl font-black text-zinc-950">{fallback(topology.edgeNode, 'Edge node')}에서 갈라지는 실제 경로</h3>
+          </div>
+          <StatusPill value={route?.destination ?? 'observed'} />
+        </div>
+
+        <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)]">
+          <div className="grid gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+            {entryPath.map(([label, primary, secondary, status, Icon], index) => (
+              <div key={label}>
+                <div className={`grid grid-cols-[40px_1fr] gap-3 border bg-white p-3 ${tone[statusTone(status)]}`}>
+                  <div className="flex h-10 w-10 items-center justify-center border border-current/20 bg-white/75">
+                    <Icon size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-black uppercase text-current/70">{label}</span>
+                      <span className="text-xs font-black">{fallback(status)}</span>
+                    </div>
+                    <div className="mt-1 break-words text-base font-black">{fallback(primary)}</div>
+                    <div className="mt-1 break-words text-xs leading-5 opacity-80">{fallback(secondary)}</div>
+                  </div>
+                </div>
+                {index < entryPath.length - 1 && <div className="ml-5 h-4 w-px bg-zinc-300" aria-hidden="true" />}
+              </div>
+            ))}
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            {[
+              ['Public HTTP/S', route?.destination === 'kubernetes' ? 'kubernetes' : route?.destination ?? 'observed', publicBranch],
+              ['Kubernetes API HA', 'ready', apiBranch],
+            ].map(([title, status, rows]) => (
+              <div key={title} className="border border-zinc-200 bg-white p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h4 className="text-base font-black text-zinc-950">{title}</h4>
+                  <StatusPill value={status} />
+                </div>
+                <div className="grid gap-3">
+                  {rows.map(([label, primary, secondary]) => (
+                    <div key={label} className="grid gap-1 border-l-2 border-zinc-200 pl-3 text-sm">
+                      <div className="font-black uppercase text-zinc-400">{label}</div>
+                      <div className="min-w-0 break-words font-black text-zinc-900">{fallback(primary)}</div>
+                      <div className="min-w-0 break-words font-semibold leading-5 text-zinc-500">{fallback(secondary)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(240px,0.6fr)]">
+          <div className="grid gap-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-black uppercase text-zinc-500">Actual route table</span>
+              <span className="font-bold text-zinc-500">{routes.length || '-'} routes</span>
+            </div>
+            <div className="grid gap-2 md:grid-cols-2">
+              {(visibleRoutes.length ? visibleRoutes : [{ hostname: data.liveHost, upstream: '-', destination: 'observed' }]).map((item) => {
+                const selected = item === route;
+                return (
+                  <div
+                    key={`${item.hostname}-${item.upstream}`}
+                    className={`grid gap-1 border p-3 text-xs ${selected ? 'border-zinc-950 bg-white shadow-sm' : 'border-zinc-200 bg-white'}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="min-w-0 break-words font-black text-zinc-900">{fallback(item.hostname)}</span>
+                      <StatusPill value={item.destination ?? 'observed'} />
+                    </div>
+                    <div className="grid grid-cols-[58px_1fr] gap-2 text-zinc-600">
+                      <span className="font-bold text-zinc-400">to</span>
+                      <span className="min-w-0 break-words font-semibold">{fallback(item.upstream)}</span>
+                    </div>
+                    <div className="grid grid-cols-[58px_1fr] gap-2 text-zinc-600">
+                      <span className="font-bold text-zinc-400">type</span>
+                      <span className="min-w-0 break-words font-semibold">{destinationLabels[item.destination] ?? fallback(item.destination)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid content-start gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+            <div className="text-xs font-black uppercase text-zinc-500">Destination counts</div>
+            {Object.entries(data.edge?.destinationCounts ?? {}).map(([destination, count]) => (
+              <div key={destination} className="flex items-center justify-between gap-3 border border-zinc-100 bg-white px-3 py-2 text-xs">
+                <span className="font-semibold text-zinc-700">{destinationLabels[destination] ?? destination}</span>
+                <StatusPill value={count} />
+              </div>
+            ))}
+            {Object.keys(data.edge?.destinationCounts ?? {}).length === 0 && (
+              <div className="text-xs font-semibold text-zinc-500">waiting for edge-runtime routes</div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Chain = ({ items, tone = 'delivery' }) => (
+  <div className={`mini-flow ${tone}`}>
     {items.map((item, index) => (
-      <span key={`${item}-${index}`}>{item}</span>
+      <div className="mini-flow-step" key={`${item}-${index}`}>
+        <span>{item}</span>
+        {index < items.length - 1 && <i aria-hidden="true" />}
+      </div>
     ))}
   </div>
 );
@@ -470,7 +626,7 @@ export const DevOpsInlinePortfolio = () => {
         <LivePanel data={data} loading={loading} error={error} updatedAt={updatedAt} onRefresh={load} />
       </section>
 
-      <div className="devops-content-grid">
+      <div className="devops-content-grid devops-content-grid-wide">
         <div>
           <Section number="1 Overview" title="Commit에서 Live까지 이어지는 홈랩 DevOps 경로">
             <div className="work-grid overview-work-grid">
@@ -482,9 +638,9 @@ export const DevOpsInlinePortfolio = () => {
                   GitOps desired state로 승격되고, Kubernetes에 배포되고, 외부 트래픽과 관측 시스템까지 연결되는 전체 DevOps 흐름을 정리합니다.
                 </p>
                 <div className="mt-4">
-                  <Chain items={['Commit', 'Actions', 'Image', 'GitOps', 'Argo CD']} />
+                  <Chain items={['Commit', 'Actions', 'Image', 'GitOps', 'Argo CD']} tone="delivery" />
                   <div className="mt-2">
-                    <Chain items={['Rollout', 'Service', 'Ingress', 'Ops API', 'Live']} />
+                    <Chain items={['Rollout', 'Service', 'Ingress', 'Ops API', 'Live']} tone="runtime" />
                   </div>
                 </div>
                 </div>
@@ -511,7 +667,7 @@ export const DevOpsInlinePortfolio = () => {
           </Section>
 
           <Section number="4 Networking And Exposure" title="Edge proxy에서 Pod까지 이어지는 외부 트래픽 경로">
-            <Chain items={['Internet', data.edge?.proxy?.service ?? 'edge proxy', data.edge?.routes?.find((route) => route.hostname === 'portfolio.mintcocoa.cc')?.upstream ?? 'portfolio upstream', 'ingress-nginx', data.deploy?.kubernetes?.name ?? 'portfolio']} />
+            <NetworkTopologyMap data={data} />
             <div className="mt-4">
               <DataTable headers={['Hostname', 'Upstream', 'Destination']} rows={data.edgeRows} />
             </div>
@@ -534,7 +690,7 @@ export const DevOpsInlinePortfolio = () => {
           <Section number="7 Observability" title="Prometheus, Grafana, Ops API, split dashboard">
             <DataTable headers={['Metric', 'Live value', 'Source']} rows={data.observabilityRows} />
             <div className="mt-4">
-              <Chain items={['DevOpsPortfolio.html', API_LABEL, 'FastAPI 127.0.0.1:18081', 'Prometheus', 'Proxmox API']} />
+              <Chain tone="runtime" items={['DevOpsPortfolio.html', API_LABEL, 'FastAPI 127.0.0.1:18081', 'Prometheus', 'Proxmox API']} />
             </div>
             <p className="mt-4 text-sm leading-7 text-zinc-700">
               Live dashboard는 브라우저에서 Ops API를 호출해 Prometheus, Proxmox, GitOps rollout, C++ edge runtime 요약 상태를 읽습니다.
@@ -566,26 +722,6 @@ export const DevOpsInlinePortfolio = () => {
             ]} />
           </Section>
         </div>
-
-        <aside className="devops-side-rail">
-          <section className="work-card">
-            <div className="work-card-body">
-            <div className="flex items-center gap-2 text-sm font-black text-zinc-500">
-              <Activity size={16} />
-              Evidence
-            </div>
-            <h2 className="mt-2 text-xl font-black text-zinc-950">Live API 값</h2>
-            <p className="mt-2 text-sm leading-6 text-zinc-600">
-              본문 표와 오른쪽 패널은 현재 Ops API 응답으로 최신 상태를 덧씌웁니다.
-            </p>
-            <div className="mt-4 grid gap-3">
-              <Metric icon={Rocket} label="Live deploy" value={data.deploy?.kubernetes?.name ?? 'portfolio'} detail={data.deploy?.kubernetes?.image ?? 'C++ static server'} valueStatus="running" />
-              <Metric icon={Network} label="Public route" value={data.liveHost} detail="portfolio HTTPS route" valueStatus={data.deploy?.live?.ok ? 'live' : 'check'} />
-              <Metric icon={HardDrive} label="Proxmox VMs" value={data.vms?.length || '-'} detail="VM resources observed through Ops API" valueStatus="observed" />
-            </div>
-            </div>
-          </section>
-        </aside>
       </div>
     </Shell>
   );
