@@ -1,1 +1,386 @@
-@import "tailwindcss";body { margin: 0; background-color: #f3f4f6; }
+@import "tailwindcss";
+
+body:has(> #root:only-child),
+body:has(> #devops-root:only-child) {
+  margin: 0;
+  background-color: #f3f4f6;
+}
+
+body:has(.devops-app) {
+  color: #182033;
+  background:
+    linear-gradient(180deg, #eef3f8 0, #ffffff 31rem),
+    #ffffff;
+}
+
+.devops-app {
+  min-height: 100vh;
+  color: #182033;
+  --ink: #182033;
+  --muted: #616b7f;
+  --line: #dce2ec;
+  --paper: #ffffff;
+  --wash: #f6f8fb;
+  --blue: #2563eb;
+  --teal: #087f7a;
+  --dark: #101828;
+  --shadow: 0 20px 50px rgba(24, 32, 51, 0.12);
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+.devops-app a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.devops-app .site-header,
+.devops-app .hero {
+  padding-left: max(1.25rem, calc((100vw - 1180px) / 2));
+  padding-right: max(1.25rem, calc((100vw - 1180px) / 2));
+}
+
+.devops-app .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  min-height: 4.25rem;
+  border-bottom: 1px solid rgba(220, 226, 236, 0.78);
+  background: rgba(255, 255, 255, 0.84);
+  backdrop-filter: blur(18px);
+}
+
+.devops-app .brand,
+.devops-app .icon-link,
+.devops-app .site-header nav a,
+.devops-app .button {
+  display: inline-flex;
+  align-items: center;
+}
+
+.devops-app .brand {
+  gap: 0.62rem;
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+.devops-app .brand span {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 7px;
+  background: var(--dark);
+  color: #ffffff;
+  font-size: 0.82rem;
+}
+
+.devops-app .site-header nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
+.devops-app .site-header nav a,
+.devops-app .icon-link {
+  min-height: 2.25rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 750;
+}
+
+.devops-app .site-header nav a:hover,
+.devops-app .icon-link:hover {
+  color: var(--ink);
+  background: var(--wash);
+}
+
+.devops-app .hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: clamp(1.75rem, 4vw, 3rem);
+  align-items: start;
+  padding-top: clamp(3rem, 6vw, 5rem);
+  padding-bottom: clamp(2.75rem, 5.5vw, 4.75rem);
+}
+
+.devops-app .hero-copy {
+  max-width: 760px;
+}
+
+.devops-app .eyebrow,
+.devops-app .card-eyebrow,
+.devops-app .section-title p {
+  margin: 0;
+  color: var(--teal);
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.devops-app h1,
+.devops-app h2,
+.devops-app h3,
+.devops-app p,
+.devops-app figure {
+  margin-top: 0;
+}
+
+.devops-app h1 {
+  max-width: 760px;
+  margin-bottom: 1.05rem;
+  font-size: clamp(1.95rem, 3.45vw, 3rem);
+  line-height: 1.1;
+  letter-spacing: 0;
+}
+
+.devops-app .lead {
+  max-width: 760px;
+  margin-bottom: 1.35rem;
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.78;
+}
+
+.devops-app .hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  max-width: 760px;
+}
+
+.devops-app .button {
+  justify-content: center;
+  gap: 0.48rem;
+  min-height: 2.8rem;
+  padding: 0.58rem 0.95rem;
+  border: 1px solid #aeb8c9;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--ink);
+  font-weight: 850;
+  box-shadow: 0 1px 0 rgba(24, 32, 51, 0.04);
+}
+
+.devops-app .button.primary {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #ffffff;
+}
+
+.devops-app .hero-devops,
+.devops-app .work-card,
+.devops-app .serving-root-grid article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: 0 10px 26px rgba(24, 32, 51, 0.06);
+}
+
+.devops-app .hero-devops {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.9rem;
+}
+
+.devops-app .live-panel {
+  align-self: start;
+}
+
+.devops-app .live-panel-list {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.devops-app .summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin: 1.5rem 0 0;
+}
+
+.devops-app .summary-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 1rem;
+}
+
+.devops-app .summary-card strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--blue);
+  font-size: 0.86rem;
+}
+
+.devops-app .summary-card p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.devops-app .devops-content-grid {
+  display: grid;
+  width: min(1180px, calc(100vw - 2.5rem));
+  margin: 0 auto;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.devops-app .devops-side-rail {
+  position: sticky;
+  top: 5.25rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.devops-app .section {
+  padding-top: clamp(2.5rem, 5vw, 3.8rem);
+  padding-bottom: clamp(2.5rem, 5vw, 3.8rem);
+  padding-left: 0;
+  padding-right: 0;
+  min-width: 0;
+}
+
+.devops-app .section-title {
+  max-width: 100%;
+  margin-bottom: 1.35rem;
+}
+
+.devops-app .section-title h2,
+.devops-app .section p,
+.devops-app .work-card,
+.devops-app table {
+  min-width: 0;
+}
+
+.devops-app .section-title h2 {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.45rem, 2.6vw, 2.15rem);
+  line-height: 1.14;
+  letter-spacing: 0;
+}
+
+.devops-app .work-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.devops-app .overview-work-grid {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+}
+
+.devops-app .work-card {
+  overflow: hidden;
+}
+
+.devops-app .work-card-body {
+  display: flex;
+  flex-direction: column;
+  min-height: auto;
+  padding: 1.15rem;
+}
+
+.devops-app .serving-root-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.devops-app .serving-root-grid article {
+  display: grid;
+  gap: 0.42rem;
+  padding: 1rem;
+}
+
+.devops-app .serving-root-grid strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.devops-app .tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.devops-app .tag-row span {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.devops-app .timeline-work-card {
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.devops-app .timeline-work-card:hover {
+  transform: translateY(-2px);
+  border-color: #b8c4d7;
+  box-shadow: 0 18px 42px rgba(24, 32, 51, 0.12);
+}
+
+@media (max-width: 980px) {
+  .devops-app .site-header {
+    grid-template-columns: 1fr auto;
+  }
+
+  .devops-app .site-header nav {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    padding-bottom: 0.65rem;
+  }
+
+  .devops-app .hero,
+  .devops-app .devops-content-grid,
+  .devops-app .overview-work-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .devops-app .devops-side-rail {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .devops-app .site-header,
+  .devops-app .hero {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .devops-app .devops-content-grid {
+    width: calc(100vw - 2rem);
+  }
+
+  .devops-app .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .devops-app .hero-actions,
+  .devops-app .button {
+    width: 100%;
+  }
+}
