@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Activity,
-  BookOpen,
   Boxes,
   CheckCircle2,
   Cloud,
@@ -40,6 +39,11 @@ const formatTime = (date) => (date ? date.toLocaleTimeString('ko-KR', { hour12: 
 const formatGiB = (bytes) => {
   if (!Number.isFinite(bytes)) return '-';
   return `${Math.round(bytes / 1024 / 1024 / 1024)} GiB`;
+};
+
+const formatReady = (ready, total) => {
+  if (ready === null || ready === undefined || total === null || total === undefined) return '-';
+  return `${ready}/${total} ready`;
 };
 
 const vmRole = (name = '') => {
@@ -90,71 +94,12 @@ const destinationLabels = {
   external: 'External upstream',
 };
 
-const fallbackSteps = [
-  {
-    id: 'commit',
-    label: 'Commit',
-    status: 'observed',
-    primary: '<GITHUB_SHA>',
-    secondary: 'Developer commit enters the app repository',
-  },
-  {
-    id: 'actions',
-    label: 'Actions',
-    status: 'success',
-    primary: 'GitHub Actions',
-    secondary: 'Docker multi-stage build and C++ server compile',
-  },
-  {
-    id: 'image',
-    label: 'Image',
-    status: 'ok',
-    primary: 'ghcr.io/mint-cocoa/portfolio:<GITHUB_SHA>',
-    secondary: 'Runtime image contains the server binary and static docs only',
-  },
-  {
-    id: 'gitops',
-    label: 'GitOps',
-    status: 'ok',
-    primary: 'apps/portfolio/values.yaml',
-    secondary: 'Helm image tag is promoted by commit',
-  },
-  {
-    id: 'argocd',
-    label: 'Argo CD',
-    status: 'Synced',
-    primary: 'Automated sync',
-    secondary: 'prune, self-heal, CreateNamespace',
-  },
-  {
-    id: 'rollout',
-    label: 'Rollout',
-    status: 'running',
-    primary: 'Kubernetes Deployment',
-    secondary: 'Ready replicas, Service, Ingress',
-  },
-  {
-    id: 'live',
-    label: 'Live',
-    status: 'live',
-    primary: 'portfolio.mintcocoa.cc',
-    secondary: 'HTTPS route and Ops API dashboard verification',
-  },
-];
-
 const ciRows = [
-  ['Source', '앱 repository commit', '배포 이미지 tag와 commit SHA 연결'],
-  ['CI', 'Docker build, C++ server build, image push', 'GitHub Actions 성공, GHCR image 존재'],
-  ['Promotion', 'GitOps repo values 변경', 'apps/portfolio/values.yaml tag 갱신'],
-  ['CD', 'Argo CD sync/self-heal', 'Application Synced / Healthy'],
-  ['Runtime verification', 'Kubernetes rollout, Service, Ingress', 'ready replicas, live HTTPS 응답'],
-];
-
-const nextSteps = [
-  'Edge proxy routing을 정리해 demo.mintcocoa.cc, grafana.homelab.local, argocd.homelab.local도 172.30.1.240 ingress backend로 라우팅',
-  'dropapp과 webhook-inbox Argo CD Application 활성화 후 live cluster 검증',
-  'repository와 Terraform path에 남은 k3s 명칭을 Kubespray 기반 native Kubernetes HA cluster 기준으로 정리',
-  'Edge proxy virtual host 정리 후 public DNS와 home router forwarding을 외부 네트워크에서 재검증',
+  ['Source', '앱 repository commit', '배포 이미지 tag와 commit SHA 연결.'],
+  ['CI', 'Docker multi-stage build로 C++ 서버를 빌드 및 GHCR에 이미지를 푸시.'],
+  ['Promotion', 'GitOps repository의 Helm values에서 image tag만 갱신.'],
+  ['CD', 'Argo CD가 GitOps 변경을 감지해 cluster state를 수렴.'],
+  ['Runtime verification', 'Deployment, Service, Ingress, live HTTPS 응답을 확인.'],
 ];
 
 const StatusPill = ({ value }) => (
@@ -222,17 +167,6 @@ const DataTable = ({ headers, rows }) => (
   </div>
 );
 
-const FactGrid = ({ rows }) => (
-  <div className="serving-root-grid">
-    {rows.map(([label, value]) => (
-      <article key={label}>
-        <p className="card-eyebrow">{label}</p>
-        <strong>{value}</strong>
-      </article>
-    ))}
-  </div>
-);
-
 const Metric = ({ icon: Icon, label, value, detail, valueStatus }) => (
   <div className="summary-card">
     <div className="flex items-start justify-between gap-3">
@@ -249,36 +183,79 @@ const Metric = ({ icon: Icon, label, value, detail, valueStatus }) => (
 );
 
 const Timeline = ({ steps }) => (
-  <div className="relative grid gap-0">
+  <div className="timeline-scroll" aria-label="배포 흐름 단계">
+    {steps.length === 0 ? (
+      <div className="work-card timeline-empty-card">
+        <div className="work-card-body">
+          <StatusPill value="API unavailable" />
+          <h3>Ops API 연결 필요</h3>
+          <p>
+            배포 흐름은 <code>/api/deploy-pipeline</code> 응답으로만 표시합니다.
+            로컬 preview에서 CORS나 네트워크 제한으로 API를 읽지 못하면 실제 단계 데이터를 표시하지 않습니다.
+          </p>
+        </div>
+      </div>
+    ) : (
+      <div className="timeline-horizontal" style={{ '--step-count': steps.length }}>
     {steps.map((step, index) => {
       const Icon = timelineIcons[step.id] ?? CheckCircle2;
-      const isLast = index === steps.length - 1;
       return (
-        <div key={step.id} className="relative grid grid-cols-[56px_1fr] gap-4 pb-5 last:pb-0">
-          {!isLast && <div className="absolute left-[27px] top-14 h-[calc(100%-44px)] w-px bg-zinc-300" aria-hidden="true" />}
-          <div className={`relative z-10 flex h-14 w-14 items-center justify-center rounded-full border-2 bg-white ${tone[statusTone(step.status)]}`}>
-            <Icon size={23} />
+        <div key={step.id} className="timeline-step">
+          <div className="timeline-icon-wrap">
+            <div className={`timeline-icon ${tone[statusTone(step.status)]}`}>
+              <Icon size={21} />
+            </div>
           </div>
           <div className="work-card timeline-work-card">
             <div className="work-card-body">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-xs font-black text-zinc-500">Step {index + 1}</div>
-                <h3 className="mt-1 text-xl font-black leading-tight text-zinc-950">{step.label}</h3>
+              <div className="timeline-card-head">
+                <div className="min-w-0">
+                  <div className="text-xs font-black text-zinc-500">Step {index + 1}</div>
+                  <h3>{step.label}</h3>
+                </div>
+                <StatusPill value={step.status ?? step.primary} />
               </div>
-              <StatusPill value={step.status ?? step.primary} />
-            </div>
-            <div className="mt-3 break-words text-base font-black text-zinc-900">{fallback(step.primary)}</div>
-            <p className="mt-1 break-words text-sm leading-6 text-zinc-600">{fallback(step.secondary)}</p>
-            {step.href && (
-              <a className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-sky-700 hover:text-sky-900" href={step.href} target="_blank" rel="noreferrer">
-                evidence 열기
-                <ExternalLink size={15} />
-              </a>
-            )}
+              <div className="timeline-primary">{fallback(step.primary)}</div>
+              <p>{fallback(step.secondary)}</p>
+              {step.href && (
+                <a className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-sky-700 hover:text-sky-900" href={step.href} target="_blank" rel="noreferrer">
+                  evidence 열기
+                  <ExternalLink size={15} />
+                </a>
+              )}
             </div>
           </div>
         </div>
+      );
+    })}
+      </div>
+    )}
+  </div>
+);
+
+const PipelineOverview = ({ steps }) => (
+  <div className="pipeline-overview" aria-label="RuntimeWeb 배포 파이프라인 요약">
+    {steps.map((step, index) => {
+      const Icon = step.icon;
+      return (
+        <article className="pipeline-overview-step" key={step.id}>
+          <div className="pipeline-step-head">
+            <div className={`pipeline-step-icon ${tone[statusTone(step.status)]}`}>
+              <Icon size={18} />
+            </div>
+            <StatusPill value={step.status} />
+          </div>
+          <div className="pipeline-step-number">0{index + 1}</div>
+          <h3>{step.label}</h3>
+          <div className="pipeline-step-value">{fallback(step.value, 'Ops API 연결 시 표시')}</div>
+          <p>{fallback(step.detail)}</p>
+          {step.href && (
+            <a href={step.href} target="_blank" rel="noreferrer">
+              evidence
+              <ExternalLink size={14} />
+            </a>
+          )}
+        </article>
       );
     })}
   </div>
@@ -287,6 +264,19 @@ const Timeline = ({ steps }) => (
 const NetworkTopologyMap = ({ data }) => {
   const routes = data.edge?.routes ?? [];
   const topology = data.edge?.topology ?? {};
+  if (!data.edge) {
+    return (
+      <div className="work-card">
+        <div className="work-card-body">
+          <StatusPill value="API unavailable" />
+          <h3 className="mt-2 text-xl font-black text-zinc-950">Ops API 연결 필요</h3>
+          <p className="mt-2 text-sm leading-7 text-zinc-600">
+            외부 트래픽 경로는 <code>/api/edge-runtime</code> 응답을 받은 뒤 표시합니다.
+          </p>
+        </div>
+      </div>
+    );
+  }
   const route = routes.find((item) => item.hostname === data.liveHost)
     ?? routes.find((item) => item.destination === 'kubernetes');
   const visibleRoutes = [
@@ -294,18 +284,17 @@ const NetworkTopologyMap = ({ data }) => {
     ...routes.filter((item) => item !== route && item.hostname !== 'default'),
     ...routes.filter((item) => item !== route && item.hostname === 'default'),
   ].slice(0, 6);
-  const readyReplicas = fallback(data.deploy?.kubernetes?.readyReplicas, 0);
-  const replicas = fallback(data.deploy?.kubernetes?.replicas, 0);
+  const rolloutStatus = formatReady(data.deploy?.kubernetes?.readyReplicas, data.deploy?.kubernetes?.replicas);
   const entryPath = [
     ['Client', data.liveHost, 'public HTTPS request', data.deploy?.live?.ok ? 'live' : 'check', Globe],
-    ['Home Router', topology.publicEntry, 'port-forward to edge mini PC', data.deploy?.live?.ok ? 'live' : 'observed', Route],
-    ['Edge Mini PC', topology.edgeNode, 'branches by protocol and port', data.edge?.proxy?.running_worker_count ? 'running' : 'observed', Network],
+    ['Home Router', topology.publicEntry, 'port-forward to edge mini PC', data.deploy?.live?.ok ? 'live' : 'check', Route],
+    ['Edge Mini PC', topology.edgeNode, 'branches by protocol and port', data.edge?.proxy?.running_worker_count ? 'running' : 'check', Network],
   ];
   const publicBranch = [
     ['RuntimeProxy', data.edge?.proxy?.service ?? 'tcp_reverse_proxy', topology.publicListen],
-    ['SNI route', route?.hostname ?? data.liveHost, route?.upstream ?? data.edge?.proxy?.default_upstream ?? 'portfolio upstream'],
+    ['SNI route', route?.hostname ?? data.liveHost, route?.upstream ?? data.edge?.proxy?.default_upstream],
     ['Ingress / upstream', route?.destination === 'kubernetes' ? topology.kubernetesLabel : destinationLabels[route?.destination] ?? 'selected upstream', route?.destination === 'kubernetes' ? 'ingress-nginx -> service -> pod' : route?.upstream],
-    ['Workload', data.deploy?.kubernetes?.name ?? 'portfolio', `${readyReplicas}/${replicas} ready`],
+    ['Workload', data.deploy?.kubernetes?.name, rolloutStatus],
   ];
   const apiBranch = [
     ['HAProxy', topology.kubernetesApiEndpoint, 'Kubernetes API virtual endpoint'],
@@ -323,7 +312,7 @@ const NetworkTopologyMap = ({ data }) => {
             </div>
             <h3 className="mt-2 text-xl font-black text-zinc-950">{fallback(topology.edgeNode, 'Edge node')}에서 갈라지는 실제 경로</h3>
           </div>
-          <StatusPill value={route?.destination ?? 'observed'} />
+          <StatusPill value={route?.destination ?? 'check'} />
         </div>
 
         <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)]">
@@ -350,8 +339,8 @@ const NetworkTopologyMap = ({ data }) => {
 
           <div className="grid gap-3 md:grid-cols-2">
             {[
-              ['Public HTTP/S', route?.destination === 'kubernetes' ? 'kubernetes' : route?.destination ?? 'observed', publicBranch],
-              ['Kubernetes API HA', 'ready', apiBranch],
+              ['Public HTTP/S', route?.destination === 'kubernetes' ? 'kubernetes' : route?.destination ?? 'check', publicBranch],
+              ['Kubernetes API HA', topology.kubernetesApiEndpoint ? 'ready' : 'check', apiBranch],
             ].map(([title, status, rows]) => (
               <div key={title} className="border border-zinc-200 bg-white p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
@@ -379,7 +368,7 @@ const NetworkTopologyMap = ({ data }) => {
               <span className="font-bold text-zinc-500">{routes.length || '-'} routes</span>
             </div>
             <div className="grid gap-2 md:grid-cols-2">
-              {(visibleRoutes.length ? visibleRoutes : [{ hostname: data.liveHost, upstream: '-', destination: 'observed' }]).map((item) => {
+              {(visibleRoutes.length ? visibleRoutes : [{ hostname: data.liveHost, upstream: '-', destination: 'check' }]).map((item) => {
                 const selected = item === route;
                 return (
                   <div
@@ -388,7 +377,7 @@ const NetworkTopologyMap = ({ data }) => {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <span className="min-w-0 break-words font-black text-zinc-900">{fallback(item.hostname)}</span>
-                      <StatusPill value={item.destination ?? 'observed'} />
+                      <StatusPill value={item.destination ?? 'check'} />
                     </div>
                     <div className="grid grid-cols-[58px_1fr] gap-2 text-zinc-600">
                       <span className="font-bold text-zinc-400">to</span>
@@ -437,8 +426,8 @@ const LivePanel = ({ data, loading, error, updatedAt, onRefresh }) => (
   <aside className="hero-devops live-panel">
     <div className="flex items-start justify-between gap-3">
       <div>
-        <div className="text-sm font-black text-zinc-500">Live Companion</div>
-        <h2 className="mt-1 text-xl font-black text-zinc-950">현재 관측값</h2>
+        <div className="text-sm font-bold text-zinc-500">운영 관측값</div>
+        <h2 className="mt-1 text-xl font-bold text-zinc-950">Live 상태</h2>
       </div>
       <button
         type="button"
@@ -459,8 +448,8 @@ const LivePanel = ({ data, loading, error, updatedAt, onRefresh }) => (
         ['Commit', data.deploy?.commit?.shortSha],
         ['Image', data.deploy?.image?.shortTag],
         ['Argo CD', `${fallback(data.deploy?.argocd?.syncStatus)} / ${fallback(data.deploy?.argocd?.healthStatus)}`],
-        ['Rollout', `${fallback(data.deploy?.kubernetes?.readyReplicas)}/${fallback(data.deploy?.kubernetes?.replicas)} ready`],
-        ['Live', data.deploy?.live?.url ?? 'https://portfolio.mintcocoa.cc'],
+        ['Rollout', formatReady(data.deploy?.kubernetes?.readyReplicas, data.deploy?.kubernetes?.replicas)],
+        ['Live 경로', data.deploy?.live?.url],
         ['Prometheus', `${fallback(data.prometheus?.targets?.up)}/${fallback(data.prometheus?.targets?.total)} targets up`],
         ['Edge routes', fallback(data.edge?.routes?.length)],
       ].map(([label, value]) => (
@@ -490,8 +479,9 @@ export const DevOpsInlinePortfolio = () => {
 
   const load = useCallback(async () => {
     setError(null);
+    const read = (result, fallbackValue) => (result.status === 'fulfilled' ? result.value : fallbackValue);
     try {
-      const [health, summary, deploy, edge, prometheus, targets, nodes, vms] = await Promise.all([
+      const results = await Promise.allSettled([
         fetchHealth(),
         fetchSummary(),
         fetchDeployPipeline(),
@@ -501,8 +491,22 @@ export const DevOpsInlinePortfolio = () => {
         fetchProxmoxNodes(),
         fetchProxmoxResources('vm'),
       ]);
-      setSnapshot({ health, summary, deploy, edge, prometheus, targets, nodes, vms });
+      const [health, summary, deploy, edge, prometheus, targets, nodes, vms] = results;
+      const failures = results.filter((result) => result.status === 'rejected');
+      setSnapshot({
+        health: read(health, null),
+        summary: read(summary, null),
+        deploy: read(deploy, null),
+        edge: read(edge, null),
+        prometheus: read(prometheus, null),
+        targets: read(targets, null),
+        nodes: read(nodes, []),
+        vms: read(vms, []),
+      });
       setUpdatedAt(new Date());
+      if (failures.length) {
+        setError(`일부 API 응답 실패: ${failures[0].reason?.message ?? 'unknown error'}`);
+      }
     } catch (nextError) {
       setError(nextError.message);
     } finally {
@@ -524,9 +528,15 @@ export const DevOpsInlinePortfolio = () => {
     const vms = snapshot.vms ?? [];
     const k8sVms = vms.filter((vm) => vm.name?.startsWith('k8s-'));
     const runningVms = vms.filter((vm) => vm.status === 'running').length;
-    const controlPlanes = k8sVms.filter((vm) => vm.name?.includes('cp')).length || 3;
-    const workers = k8sVms.filter((vm) => vm.name?.includes('worker')).length || 2;
-    const deploySteps = snapshot.deploy?.steps?.length ? snapshot.deploy.steps : fallbackSteps;
+    const controlPlaneCount = k8sVms.filter((vm) => vm.name?.includes('cp')).length;
+    const workerCount = k8sVms.filter((vm) => vm.name?.includes('worker')).length;
+    const controlPlanes = k8sVms.length ? controlPlaneCount : null;
+    const workers = k8sVms.length ? workerCount : null;
+    const platformSummary = controlPlanes === null || workers === null ? '-' : `${controlPlanes} + ${workers}`;
+    const platformDetail = controlPlanes === null || workers === null
+      ? 'Ops API 연결 필요'
+      : 'control-plane + worker native Kubernetes';
+    const deploySteps = snapshot.deploy?.steps ?? [];
     const vmRows = k8sVms.map((vm) => [
       vm.name,
       vm.vmid,
@@ -536,11 +546,11 @@ export const DevOpsInlinePortfolio = () => {
     ]);
     const proxmoxNode = nodes[0];
     const layerRows = [
-      ['Virtualization', proxmoxNode?.node ?? 'Proxmox', proxmoxNode?.status ?? '-', `${fallback(proxmoxNode?.maxcpu)} CPU / ${formatGiB(proxmoxNode?.maxmem)}`],
-      ['Workload VMs', `${k8sVms.length || '-'} Kubernetes VMs`, `${runningVms}/${vms.length || '-'} VMs running`, `${controlPlanes} control-plane + ${workers} worker`],
-      ['Delivery', snapshot.deploy?.actions?.workflowName ?? 'GitHub Actions', snapshot.deploy?.actions?.status ?? '-', snapshot.deploy?.image?.repository ?? '-'],
-      ['GitOps', snapshot.deploy?.argocd?.name ?? 'portfolio', `${fallback(snapshot.deploy?.argocd?.syncStatus)} / ${fallback(snapshot.deploy?.argocd?.healthStatus)}`, snapshot.deploy?.argocd?.shortRevision ?? '-'],
-      ['Edge', snapshot.edge?.proxy?.service ?? 'edge proxy', `${snapshot.edge?.destinationCounts?.kubernetes ?? '-'} Kubernetes routes`, snapshot.edge?.proxy?.default_upstream ?? '-'],
+      ['Virtualization', proxmoxNode?.node ?? '-', proxmoxNode?.status ?? '-', `${fallback(proxmoxNode?.maxcpu)} CPU / ${formatGiB(proxmoxNode?.maxmem)}`],
+      ['Workload VMs', `${k8sVms.length || '-'} Kubernetes VMs`, vms.length ? `${runningVms}/${vms.length} VMs running` : '-', controlPlanes === null || workers === null ? '-' : `${controlPlanes} control-plane + ${workers} worker`],
+      ['Delivery', snapshot.deploy?.actions?.workflowName ?? '-', snapshot.deploy?.actions?.status ?? '-', snapshot.deploy?.image?.repository ?? '-'],
+      ['GitOps', snapshot.deploy?.argocd?.name ?? '-', `${fallback(snapshot.deploy?.argocd?.syncStatus)} / ${fallback(snapshot.deploy?.argocd?.healthStatus)}`, snapshot.deploy?.argocd?.shortRevision ?? '-'],
+      ['Edge', snapshot.edge?.proxy?.service ?? '-', `${snapshot.edge?.destinationCounts?.kubernetes ?? '-'} Kubernetes routes`, snapshot.edge?.proxy?.default_upstream ?? '-'],
     ];
     const edgeRows = (snapshot.edge?.routes ?? []).map((route) => [
       route.hostname,
@@ -548,24 +558,87 @@ export const DevOpsInlinePortfolio = () => {
       route.destination,
     ]);
     const workloadRows = [
-      [snapshot.deploy?.kubernetes?.namespace ?? 'portfolio', snapshot.deploy?.kubernetes?.name ?? 'portfolio', snapshot.deploy?.kubernetes?.shortImageTag ?? '-', `${fallback(snapshot.deploy?.kubernetes?.readyReplicas)}/${fallback(snapshot.deploy?.kubernetes?.replicas)} ready`],
-      [snapshot.deploy?.argocd?.namespace ?? 'argocd', snapshot.deploy?.argocd?.name ?? 'portfolio', snapshot.deploy?.argocd?.shortRevision ?? '-', `${fallback(snapshot.deploy?.argocd?.syncStatus)} / ${fallback(snapshot.deploy?.argocd?.healthStatus)}`],
+      [snapshot.deploy?.kubernetes?.namespace ?? '-', snapshot.deploy?.kubernetes?.name ?? '-', snapshot.deploy?.kubernetes?.shortImageTag ?? '-', formatReady(snapshot.deploy?.kubernetes?.readyReplicas, snapshot.deploy?.kubernetes?.replicas)],
+      [snapshot.deploy?.argocd?.namespace ?? '-', snapshot.deploy?.argocd?.name ?? '-', snapshot.deploy?.argocd?.shortRevision ?? '-', `${fallback(snapshot.deploy?.argocd?.syncStatus)} / ${fallback(snapshot.deploy?.argocd?.healthStatus)}`],
       ['monitoring', 'prometheus targets', `${snapshot.prometheus?.targets?.up ?? '-'}/${snapshot.prometheus?.targets?.total ?? '-'} up`, `${snapshot.prometheus?.series?.pods ?? '-'} pod series`],
-      ['edge', snapshot.edge?.proxy?.service ?? 'tcp_reverse_proxy', `${snapshot.edge?.proxy?.running_worker_count ?? '-'}/${snapshot.edge?.proxy?.configured_worker_count ?? '-'} workers`, `${snapshot.edge?.proxy?.total_live_sessions ?? '-'} sessions`],
+      ['edge', snapshot.edge?.proxy?.service ?? '-', `${snapshot.edge?.proxy?.running_worker_count ?? '-'}/${snapshot.edge?.proxy?.configured_worker_count ?? '-'} workers`, `${snapshot.edge?.proxy?.total_live_sessions ?? '-'} sessions`],
     ];
     const preparedRows = (snapshot.edge?.routes ?? [])
       .filter((route) => ['dropapp.mintcocoa.cc', 'webhook.mintcocoa.cc'].includes(route.hostname))
       .map((route) => [route.hostname.replace('.mintcocoa.cc', ''), route.upstream, route.destination]);
-    const preparedNames = preparedRows.map(([name]) => name).join(', ') || '-';
-    const liveHost = (snapshot.deploy?.live?.url ?? 'https://portfolio.mintcocoa.cc').replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-    const overviewRows = [
-      ['문서 역할', 'Ops API live data와 연결된 홈랩 DevOps 경로'],
-      ['현재 live 배포', `${snapshot.deploy?.kubernetes?.name ?? '-'} @ ${snapshot.deploy?.kubernetes?.shortImageTag ?? '-'}`],
-      ['준비된 배포 후보', preparedNames],
-      ['이미지 레지스트리', snapshot.deploy?.image?.repository ?? '-'],
-      ['배포 제어', `${fallback(snapshot.deploy?.actions?.workflowName)} + ${fallback(snapshot.deploy?.argocd?.syncStatus)} / ${fallback(snapshot.deploy?.argocd?.healthStatus)}`],
-      ['실행 환경', `${k8sVms.length || '-'} Kubernetes VMs on ${proxmoxNode?.node ?? 'Proxmox'}`],
-      ['검증된 공개 경로', liveHost],
+    const liveHost = snapshot.deploy?.live?.url
+      ? snapshot.deploy.live.url.replace(/^https?:\/\//, '').replace(/\/.*$/, '')
+      : '-';
+    const liveWorkload = snapshot.deploy?.kubernetes?.name ?? '-';
+    const liveRevision = snapshot.deploy?.kubernetes?.shortImageTag ?? snapshot.deploy?.image?.shortTag ?? '-';
+    const rolloutReady = snapshot.deploy?.kubernetes?.replicas !== null
+      && snapshot.deploy?.kubernetes?.replicas !== undefined
+      && snapshot.deploy?.kubernetes?.readyReplicas === snapshot.deploy?.kubernetes?.replicas;
+    const overviewPipeline = [
+      {
+        id: 'source',
+        label: 'Source Commit',
+        value: snapshot.deploy?.commit?.shortSha,
+        detail: snapshot.deploy?.commit?.message ?? 'RuntimeWeb 포트폴리오 서버 소스 commit',
+        status: snapshot.deploy?.commit ? 'observed' : 'check',
+        href: snapshot.deploy?.commit?.url,
+        icon: GitCommit,
+      },
+      {
+        id: 'build',
+        label: 'GitHub Actions',
+        value: snapshot.deploy?.actions?.displayStatus ?? snapshot.deploy?.actions?.workflowName,
+        detail: snapshot.deploy?.actions?.workflowName
+          ? `run #${fallback(snapshot.deploy.actions.runNumber)} image build`
+          : 'C++ 서버 이미지 빌드와 GHCR push',
+        status: snapshot.deploy?.actions?.status ?? 'check',
+        href: snapshot.deploy?.actions?.url,
+        icon: PlayCircle,
+      },
+      {
+        id: 'image',
+        label: 'GHCR Image',
+        value: snapshot.deploy?.image?.shortTag,
+        detail: snapshot.deploy?.image?.repository ?? 'ghcr.io/mint-cocoa/portfolio',
+        status: snapshot.deploy?.image ? 'observed' : 'check',
+        icon: Package,
+      },
+      {
+        id: 'gitops',
+        label: 'GitOps Values',
+        value: snapshot.deploy?.gitops?.shortSha,
+        detail: snapshot.deploy?.gitops?.message ?? 'Helm values image tag 승격',
+        status: snapshot.deploy?.gitops ? 'observed' : 'check',
+        href: snapshot.deploy?.gitops?.url,
+        icon: GitBranch,
+      },
+      {
+        id: 'argocd',
+        label: 'Argo CD Sync',
+        value: `${fallback(snapshot.deploy?.argocd?.syncStatus)} / ${fallback(snapshot.deploy?.argocd?.healthStatus)}`,
+        detail: snapshot.deploy?.argocd?.message ?? 'desired state 동기화',
+        status: snapshot.deploy?.argocd?.healthStatus ?? snapshot.deploy?.argocd?.syncStatus ?? 'check',
+        icon: ShieldCheck,
+      },
+      {
+        id: 'rollout',
+        label: 'K8s Rollout',
+        value: formatReady(snapshot.deploy?.kubernetes?.readyReplicas, snapshot.deploy?.kubernetes?.replicas),
+        detail: snapshot.deploy?.kubernetes?.shortImageTag
+          ? `${fallback(snapshot.deploy.kubernetes.name)} @ ${snapshot.deploy.kubernetes.shortImageTag}`
+          : 'Deployment ready replica 확인',
+        status: rolloutReady ? 'ready' : 'check',
+        icon: Boxes,
+      },
+      {
+        id: 'live',
+        label: 'Live HTTPS',
+        value: snapshot.deploy?.live?.statusCode ? `HTTP ${snapshot.deploy.live.statusCode}` : liveHost,
+        detail: snapshot.deploy?.live?.url ?? 'portfolio.mintcocoa.cc 공개 경로',
+        status: snapshot.deploy?.live?.ok ? 'live' : 'check',
+        href: snapshot.deploy?.live?.url,
+        icon: Cloud,
+      },
     ];
     const observabilityRows = [
       ['Targets', `${snapshot.prometheus?.targets?.up ?? '-'}/${snapshot.prometheus?.targets?.total ?? '-'}`, `${snapshot.prometheus?.targets?.down ?? '-'} down`],
@@ -584,6 +657,8 @@ export const DevOpsInlinePortfolio = () => {
       vms,
       controlPlanes,
       workers,
+      platformSummary,
+      platformDetail,
       deploySteps,
       vmRows,
       layerRows,
@@ -592,7 +667,9 @@ export const DevOpsInlinePortfolio = () => {
       preparedRows,
       observabilityRows,
       storageRows,
-      overviewRows,
+      overviewPipeline,
+      liveWorkload,
+      liveRevision,
       liveHost,
     };
   }, [snapshot]);
@@ -602,25 +679,20 @@ export const DevOpsInlinePortfolio = () => {
       <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">C++ Server · GitOps · Kubernetes</p>
-          <h1>홈랩 DevOps 포트폴리오</h1>
+          <h1>홈랩 DevOps 운영 포트폴리오</h1>
           <p className="lead">
-            C++ io_uring 런타임을 Kubernetes 홈랩에 배포하고 운영하는 전체 경로.
-            코드는 이미지가 되고, GitOps desired state로 승격되고, Argo CD를 지나 live HTTPS endpoint까지 도달합니다.
+            홈랩 네트워크 구성 및 k8s 실행 환경을 구축, github actions와 Argo CD로 ci/cd 자동화, Prometheus로 관측 지표를 수집하는 전체 운영 흐름을 구현했습니다. 
           </p>
           <div className="hero-actions" aria-label="주요 링크">
-            <a className="button primary" href="https://mint-cocoa.github.io/portfolio/">
-              <BookOpen size={18} />
-              포트폴리오 상세 문서
-            </a>
             <a className="button" href="https://portfolio.mintcocoa.cc/devops/DevOpsPortfolio.html" target="_blank" rel="noreferrer">
               <Activity size={18} />
               운영 mirror
             </a>
           </div>
           <div className="summary-grid devops-summary-grid">
-            <Metric icon={GitCommit} label="CI/CD" value={data.deploy?.actions?.displayStatus ?? 'GitHub Actions'} detail="C++ 서버 이미지 빌드와 GHCR push" valueStatus={data.deploy?.actions?.status} />
-            <Metric icon={ShieldCheck} label="GitOps" value={data.deploy?.argocd?.syncStatus ?? 'Argo CD'} detail="Helm values tag 갱신과 automated sync" valueStatus={data.deploy?.argocd?.syncStatus} />
-            <Metric icon={Server} label="Platform" value={`${data.controlPlanes} + ${data.workers}`} detail="control-plane + worker native Kubernetes" valueStatus="ready" />
+            <Metric icon={GitCommit} label="CI/CD" value={data.deploy?.actions?.displayStatus ?? 'API unavailable'} detail="C++ 서버 이미지 빌드와 GHCR push" valueStatus={data.deploy?.actions?.status} />
+            <Metric icon={ShieldCheck} label="GitOps" value={data.deploy?.argocd?.syncStatus ?? 'API unavailable'} detail="Helm values tag 갱신과 automated sync" valueStatus={data.deploy?.argocd?.syncStatus} />
+            <Metric icon={Server} label="Platform" value={data.platformSummary} detail={data.platformDetail} valueStatus={data.platformSummary === '-' ? 'check' : 'ready'} />
           </div>
         </div>
         <LivePanel data={data} loading={loading} error={error} updatedAt={updatedAt} onRefresh={load} />
@@ -628,98 +700,94 @@ export const DevOpsInlinePortfolio = () => {
 
       <div className="devops-content-grid devops-content-grid-wide">
         <div>
-          <Section number="1 Overview" title="Commit에서 Live까지 이어지는 홈랩 DevOps 경로">
-            <div className="work-grid overview-work-grid">
-              <FactGrid rows={data.overviewRows} />
-              <div className="work-card">
-                <div className="work-card-body">
-                <p className="text-sm leading-7 text-zinc-700">
-                  이 문서는 단순히 CI/CD workflow만 보여주는 것이 아니라, 코드가 이미지로 빌드되고,
-                  GitOps desired state로 승격되고, Kubernetes에 배포되고, 외부 트래픽과 관측 시스템까지 연결되는 전체 DevOps 흐름을 정리합니다.
-                </p>
-                <div className="mt-4">
-                  <Chain items={['Commit', 'Actions', 'Image', 'GitOps', 'Argo CD']} tone="delivery" />
-                  <div className="mt-2">
-                    <Chain items={['Rollout', 'Service', 'Ingress', 'Ops API', 'Live']} tone="runtime" />
+          <Section number="1 Overview" title="프로젝트 개요">
+            <div className="work-card overview-pipeline-card">
+              <div className="work-card-body">
+                <div className="pipeline-overview-title">
+                  <div>
+                    <p className="card-eyebrow">RuntimeWeb Delivery</p>
+                    <h3>Source에서 Live HTTPS까지 이어지는 배포 흐름</h3>
+                  </div>
+                  <div className="pipeline-api-state">
+                    <StatusPill value={data.health?.ok ? 'live API' : error ? 'partial API' : loading ? 'loading' : 'static overview'} />
+                    <span>{API_LABEL} · updated {formatTime(updatedAt)}</span>
                   </div>
                 </div>
-                </div>
+                <p className="pipeline-overview-copy">
+                  GitHub Actions가 C++ RuntimeWeb 이미지를 만들고, GitOps repository의 Helm values에
+                  이미지 태그를 승격하면 Argo CD가 Kubernetes rollout을 수렴시킵니다. Ops API가 연결된
+                  단계는 실제 commit, image tag, sync/health, HTTPS 응답값으로 채워집니다.
+                </p>
+                <dl className="overview-inline-facts">
+                  <div>
+                    <dt>Runtime source</dt>
+                    <dd>{data.liveWorkload === '-' && data.liveRevision === '-' ? 'Ops API 연결 시 표시' : `${data.liveWorkload} @ ${data.liveRevision}`}</dd>
+                  </div>
+                  <div>
+                    <dt>Verification path</dt>
+                    <dd>{'commit -> image -> GitOps -> Argo CD -> rollout -> HTTPS'}</dd>
+                  </div>
+                </dl>
+                <PipelineOverview steps={data.overviewPipeline} />
               </div>
             </div>
           </Section>
 
-          <Section number="2 CI/CD Pipeline" title="Commit -> Actions -> Image -> GitOps -> Argo CD -> Rollout -> Live">
+          <Section number="2 Delivery Flow" title="배포 흐름">
             <Timeline steps={data.deploySteps} />
             <div className="mt-5">
               <DataTable headers={['단계', '책임', '검증 포인트']} rows={ciRows} />
             </div>
-            <p className="mt-4 text-sm leading-7 text-zinc-700">
-              배포 단위는 branch나 latest tag가 아니라 commit SHA입니다. Kubernetes에서 실행 중인 image tag를 보면 어떤 앱 commit이 배포되었는지 바로 추적할 수 있고,
-              Argo CD revision을 보면 어떤 GitOps commit이 cluster state를 만들었는지 확인할 수 있습니다.
-            </p>
           </Section>
 
-          <Section number="3 Infrastructure Platform" title="Proxmox VM 위 5-node native Kubernetes HA cluster">
+          <Section number="3 Runtime Platform" title="Kubernetes 실행 환경">
             <DataTable headers={['VM', 'VMID', 'Role', 'Status', 'Capacity']} rows={data.vmRows} />
             <div className="mt-4">
               <DataTable headers={['Layer', 'Component', 'Status', 'Live detail']} rows={data.layerRows} />
             </div>
           </Section>
 
-          <Section number="4 Networking And Exposure" title="Edge proxy에서 Pod까지 이어지는 외부 트래픽 경로">
+          <Section number="4 Network Path" title="외부 트래픽 경로">
             <NetworkTopologyMap data={data} />
             <div className="mt-4">
               <DataTable headers={['Hostname', 'Upstream', 'Destination']} rows={data.edgeRows} />
             </div>
             <p className="mt-4 text-sm leading-7 text-zinc-700">
-              Edge route 목록은 /api/edge-runtime 응답을 그대로 사용합니다. Kubernetes로 들어가는 route와 local/docker route를 destination 값으로 구분합니다.
+              Edge route 목록은 Ops API의 edge-runtime 응답을 기준으로 표시합니다. Kubernetes로 들어가는 route와
+              local/docker route를 destination 값으로 구분해, 공개 경로가 어느 계층으로 연결되는지 확인합니다.
             </p>
           </Section>
 
-          <Section number="5 Runtime Workloads" title="Live workload와 prepared workload를 분리해 표시">
+          <Section number="5 Runtime Workload" title="Runtime workload">
             <DataTable headers={['Namespace', 'Workload', 'Revision / Signal', 'Status']} rows={data.workloadRows} />
             <div className="mt-4">
               <DataTable headers={['Prepared app', 'Upstream', 'Destination']} rows={data.preparedRows} />
             </div>
           </Section>
 
-          <Section number="6 Storage" title="Storage-related live signals">
+          <Section number="6 Storage" title="Storage">
             <DataTable headers={['VM', 'Status', 'Disk', 'Memory']} rows={data.storageRows} />
           </Section>
 
-          <Section number="7 Observability" title="Prometheus, Grafana, Ops API, split dashboard">
+          <Section number="7 Observability" title="Observability">
             <DataTable headers={['Metric', 'Live value', 'Source']} rows={data.observabilityRows} />
             <div className="mt-4">
               <Chain tone="runtime" items={['DevOpsPortfolio.html', API_LABEL, 'FastAPI 127.0.0.1:18081', 'Prometheus', 'Proxmox API']} />
             </div>
             <p className="mt-4 text-sm leading-7 text-zinc-700">
               Live dashboard는 브라우저에서 Ops API를 호출해 Prometheus, Proxmox, GitOps rollout, C++ edge runtime 요약 상태를 읽습니다.
-              CORS는 https://portfolio.mintcocoa.cc와 https://mint-cocoa.github.io만 허용합니다.
             </p>
           </Section>
 
-          <Section number="8 Gaps And Next Steps" title="남은 운영 gap">
-            <ul className="grid gap-3">
-              {nextSteps.map((item) => (
-                <li key={item} className="border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm leading-6 text-zinc-700">{item}</li>
-              ))}
-            </ul>
-          </Section>
-
-          <Section number="9 Retrospective" title="빌드 가능한 코드에서 운영 가능한 서비스로">
-            <p className="text-sm leading-7 text-zinc-700">
-              가장 큰 성과는 C++ 서버 구현을 빌드 가능한 코드에서 끝내지 않고 image, GitOps desired state,
-              Argo CD reconciliation, Kubernetes runtime, public ingress, observability까지 연결한 점입니다.
-              앞으로는 준비된 앱 후보를 같은 pipeline에 태워 portfolio 외의 live workload로 확장하는 것이 다음 단계입니다.
-            </p>
-          </Section>
-
-          <Section number="10 관련 레포" title="구성 요소별 repository 역할">
-            <DataTable headers={['레포', '역할']} rows={[
-              ['iouring-runtime', 'C++ runtime, web module, proxy module'],
-              ['portfolio', '이 문서와 C++ 정적 파일 서버 이미지'],
-              ['home-k8s-gitops', 'Helm values, Argo CD Application, cluster'],
-            ]} />
+          <Section number="8 Ops Dashboard" title="Ops Dashboard">
+            <div className="ops-dashboard-frame">
+              <iframe
+                src="https://portfolio.mintcocoa.cc/devops/OpsDashboard.html"
+                title="Ops Dashboard"
+                loading="lazy"
+                scrolling="no"
+              />
+            </div>
           </Section>
         </div>
       </div>
