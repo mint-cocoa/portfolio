@@ -109,6 +109,12 @@ const routeTreeSource = (route) => {
   return route.destination === 'docker-or-local' ? 'upstream fallback' : 'destination fallback';
 };
 
+const publicRouteHref = (route) => {
+  const hostname = route?.hostname;
+  if (!hostname || hostname === 'default' || hostname.includes(':') || !hostname.includes('.')) return null;
+  return `https://${hostname}`;
+};
+
 const apiReads = [
   { key: 'health', label: 'health', load: fetchHealth, fallback: null },
   { key: 'summary', label: 'summary', load: fetchSummary, fallback: null },
@@ -536,14 +542,25 @@ const NetworkTopologyMap = ({ data }) => {
                     <div className="route-leaf-list">
                       {items.map((item) => {
                         const selected = item === route;
+                        const href = publicRouteHref(item);
+                        const LeafTag = href ? 'a' : 'article';
+                        const leafProps = href
+                          ? {
+                              href,
+                              target: '_blank',
+                              rel: 'noreferrer',
+                              'aria-label': `${item.hostname} 열기`,
+                            }
+                          : {};
                         return (
-                          <article className={`route-leaf ${selected ? 'route-leaf-selected' : ''}`} key={`${item.hostname}-${item.upstream}`}>
+                          <LeafTag className={`route-leaf ${href ? 'route-leaf-link' : ''} ${selected ? 'route-leaf-selected' : ''}`} key={`${item.hostname}-${item.upstream}`} {...leafProps}>
                             <div className={`route-leaf-node route-leaf-node-${item.kind ?? routeTreeDestination(item)}`} aria-hidden="true" />
                             <div className="route-leaf-body">
                               <strong>{fallback(item.hostname)}</strong>
                               <span>{fallback(item.upstream)}</span>
                             </div>
-                          </article>
+                            {href && <ExternalLink className="route-leaf-link-icon" size={14} aria-hidden="true" />}
+                          </LeafTag>
                         );
                       })}
                     </div>

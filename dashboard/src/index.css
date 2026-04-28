@@ -1150,13 +1150,14 @@ body:has(.devops-app) {
 .devops-app .route-leaf {
   position: relative;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 0.55rem;
   align-items: center;
   min-width: 0;
   border: 1px solid #eef2f7;
   background: #fbfdff;
   padding: 0.6rem;
+  color: inherit;
 }
 
 .devops-app .route-leaf::before {
@@ -1173,6 +1174,21 @@ body:has(.devops-app) {
   border-color: #14b8a6;
   background: #f0fdfa;
   box-shadow: 0 8px 18px rgba(15, 118, 110, 0.09);
+}
+
+.devops-app .route-leaf-link:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.devops-app .route-leaf-link-icon {
+  color: #64748b;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.devops-app .route-leaf-link:hover .route-leaf-link-icon {
+  opacity: 1;
 }
 
 .devops-app .route-leaf-node {
