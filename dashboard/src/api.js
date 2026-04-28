@@ -1,5 +1,9 @@
-const DEFAULT_API_BASE = 'https://ops-api.mintcocoa.cc/api';
-const rawApiBase = import.meta.env.VITE_OPS_API_BASE || DEFAULT_API_BASE;
+const REMOTE_API_BASE = 'https://ops-api.mintcocoa.cc/api';
+const localHosts = new Set(['localhost', '127.0.0.1', '::1']);
+const defaultApiBase = typeof window !== 'undefined' && localHosts.has(window.location.hostname)
+  ? '/api'
+  : REMOTE_API_BASE;
+const rawApiBase = import.meta.env.VITE_OPS_API_BASE || defaultApiBase;
 const API_BASE = rawApiBase.replace(/\/+$/, '');
 
 const websocketBase = () => {
@@ -15,9 +19,11 @@ const websocketBase = () => {
 
 const WS_BASE = websocketBase();
 
-export const API_LABEL = API_BASE
-  .replace(/^https?:\/\//, '')
-  .replace(/\/api$/, '');
+export const API_LABEL = API_BASE.startsWith('/')
+  ? `${window.location.host}${API_BASE}`
+  : API_BASE
+    .replace(/^https?:\/\//, '')
+    .replace(/\/api$/, '');
 
 const getJson = async (path) => {
   const response = await fetch(`${API_BASE}${path}`, { cache: 'no-store' });

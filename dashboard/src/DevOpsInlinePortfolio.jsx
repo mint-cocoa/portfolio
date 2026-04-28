@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Activity,
   Boxes,
-  CheckCircle2,
   Cloud,
+  Cpu,
+  Database,
   ExternalLink,
   GitBranch,
   GitCommit,
@@ -11,7 +12,6 @@ import {
   Network,
   Package,
   PlayCircle,
-  RefreshCw,
   Route,
   Server,
   Split,
@@ -46,6 +46,13 @@ const formatReady = (ready, total) => {
   return `${ready}/${total} ready`;
 };
 
+const clampPercent = (value) => Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
+
+const ratioPercent = (used, total) => {
+  if (!Number.isFinite(used) || !Number.isFinite(total) || total <= 0) return 0;
+  return clampPercent((used / total) * 100);
+};
+
 const vmRole = (name = '') => {
   if (name.includes('cp')) return 'control-plane';
   if (name.includes('worker')) return 'worker';
@@ -70,36 +77,47 @@ const tone = {
   zinc: 'border-zinc-200 bg-zinc-50 text-zinc-700',
 };
 
-const timelineIcons = {
-  commit: GitCommit,
-  actions: PlayCircle,
-  image: Package,
-  gitops: GitBranch,
-  argocd: ShieldCheck,
-  rollout: Boxes,
-  live: Cloud,
-  client: Globe,
-  edge: Network,
-  route: Route,
-  ingress: ShieldCheck,
-  service: Server,
-  pod: Boxes,
-  split: Split,
-};
-
 const destinationLabels = {
   'cxx-web': 'C++ RuntimeWeb',
   'docker-or-local': 'Docker / local',
+  docker: 'Docker apps',
+  'local-service': 'Local endpoints',
   kubernetes: 'Kubernetes ingress',
   external: 'External upstream',
+  'api-ha': 'Kubernetes API HA',
 };
 
-const ciRows = [
-  ['Source', '앱 repository commit', '배포 이미지 tag와 commit SHA 연결.'],
-  ['CI', 'Docker multi-stage build로 C++ 서버를 빌드 및 GHCR에 이미지를 푸시.'],
-  ['Promotion', 'GitOps repository의 Helm values에서 image tag만 갱신.'],
-  ['CD', 'Argo CD가 GitOps 변경을 감지해 cluster state를 수렴.'],
-  ['Runtime verification', 'Deployment, Service, Ingress, live HTTPS 응답을 확인.'],
+const OPS_DASHBOARD_PATH = './OpsDashboard.html';
+const LIVE_OPS_DASHBOARD_URL = 'https://portfolio.mintcocoa.cc/devops/OpsDashboard.html';
+
+const localUpstreamPort = (upstream = '') => {
+  const match = upstream.match(/^(?:127\.0\.0\.1|localhost):(\d+)$/);
+  return match ? Number(match[1]) : null;
+};
+
+const routeTreeDestination = (route) => {
+  if (route.runtimeType) return route.runtimeType;
+  if (route.destination !== 'docker-or-local') return route.destination ?? 'external';
+  const port = localUpstreamPort(route.upstream);
+  if (port >= 3000 && port < 4000) return 'docker';
+  return 'local-service';
+};
+
+const routeTreeSource = (route) => {
+  if (route.runtimeTypeSource) return route.runtimeTypeSource;
+  if (route.runtimeType) return 'ops-api';
+  return route.destination === 'docker-or-local' ? 'upstream fallback' : 'destination fallback';
+};
+
+const apiReads = [
+  { key: 'health', label: 'health', load: fetchHealth, fallback: null },
+  { key: 'summary', label: 'summary', load: fetchSummary, fallback: null },
+  { key: 'deploy', label: 'deploy-pipeline', load: fetchDeployPipeline, fallback: null },
+  { key: 'edge', label: 'edge-runtime', load: fetchEdgeRuntime, fallback: null },
+  { key: 'prometheus', label: 'prometheus-summary', load: fetchPrometheusSummary, fallback: null },
+  { key: 'targets', label: 'prometheus-targets', load: fetchPrometheusTargets, fallback: null },
+  { key: 'nodes', label: 'proxmox-nodes', load: fetchProxmoxNodes, fallback: [] },
+  { key: 'vms', label: 'proxmox-vms', load: () => fetchProxmoxResources('vm'), fallback: [] },
 ];
 
 const StatusPill = ({ value }) => (
@@ -140,96 +158,137 @@ const Section = ({ number, title, kicker, children }) => (
   </section>
 );
 
-const DataTable = ({ headers, rows }) => (
-  <div className="overflow-x-auto border border-zinc-200 bg-white">
-    <table className="w-full min-w-[760px] border-collapse text-sm">
-      {headers && (
-        <thead>
-          <tr className="border-b border-zinc-200 bg-zinc-50 text-left text-zinc-600">
-            {headers.map((header) => (
-              <th key={header} className="px-3 py-2 font-black">{header}</th>
-            ))}
-          </tr>
-        </thead>
-      )}
-      <tbody>
-        {(rows.length ? rows : [['-', '-', '-']]).map((row) => (
-          <tr key={row.join('|')} className="border-b border-zinc-100 last:border-b-0">
-            {row.map((cell, index) => (
-              <td key={`${cell}-${index}`} className={`px-3 py-3 align-top ${index === 0 ? 'font-bold text-zinc-950' : 'text-zinc-700'}`}>
-                {cell}
-              </td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
-
-const Metric = ({ icon: Icon, label, value, detail, valueStatus }) => (
-  <div className="summary-card">
-    <div className="flex items-start justify-between gap-3">
-      <div className="min-w-0">
-        <strong>{label}</strong>
-        <div className="mt-2 break-words text-xl font-black leading-tight text-zinc-950">{fallback(value)}</div>
-        <p>{detail}</p>
-      </div>
-      <div className={`shrink-0 border p-2 ${tone[valueStatus ? statusTone(valueStatus) : 'sky']}`}>
-        <Icon size={22} />
-      </div>
+const MiniBar = ({ label, value }) => (
+  <div className="mini-meter">
+    <div className="mini-meter-head">
+      <span>{label}</span>
+      <strong>{Math.round(clampPercent(value))}%</strong>
+    </div>
+    <div className="mini-meter-track">
+      <span style={{ '--bar-value': `${clampPercent(value)}%` }} />
     </div>
   </div>
 );
 
-const Timeline = ({ steps }) => (
-  <div className="timeline-scroll" aria-label="배포 흐름 단계">
-    {steps.length === 0 ? (
-      <div className="work-card timeline-empty-card">
-        <div className="work-card-body">
-          <StatusPill value="API unavailable" />
-          <h3>Ops API 연결 필요</h3>
-          <p>
-            배포 흐름은 <code>/api/deploy-pipeline</code> 응답으로만 표시합니다.
-            로컬 preview에서 CORS나 네트워크 제한으로 API를 읽지 못하면 실제 단계 데이터를 표시하지 않습니다.
-          </p>
+const VisualStat = ({ icon: Icon, label, value, detail, status }) => (
+  <article className="visual-stat">
+    <div className="visual-stat-icon">
+      <Icon size={19} />
+    </div>
+    <div>
+      <p>{label}</p>
+      <strong>{fallback(value)}</strong>
+      <span>{fallback(detail)}</span>
+    </div>
+    {status && <StatusPill value={status} />}
+  </article>
+);
+
+const RuntimePlatformVisual = ({ data }) => {
+  const controlPlanes = data.k8sVms.filter((vm) => vmRole(vm.name) === 'control-plane');
+  const workers = data.k8sVms.filter((vm) => vmRole(vm.name) === 'worker');
+  const proxmoxNode = data.proxmoxNode;
+  const nodeCpu = proxmoxNode?.cpu ? proxmoxNode.cpu * 100 : 0;
+  const nodeMem = ratioPercent(proxmoxNode?.mem, proxmoxNode?.maxmem);
+  const k8sRunning = data.k8sVms.filter((vm) => vm.status === 'running').length;
+
+  const vmCard = (vm) => {
+    const role = vmRole(vm.name);
+    return (
+      <article className={`vm-chip vm-chip-${role}`} key={vm.vmid ?? vm.name}>
+        <div className="vm-chip-head">
+          <span>{role}</span>
+          <StatusPill value={vm.status} />
         </div>
-      </div>
-    ) : (
-      <div className="timeline-horizontal" style={{ '--step-count': steps.length }}>
-    {steps.map((step, index) => {
-      const Icon = timelineIcons[step.id] ?? CheckCircle2;
-      return (
-        <div key={step.id} className="timeline-step">
-          <div className="timeline-icon-wrap">
-            <div className={`timeline-icon ${tone[statusTone(step.status)]}`}>
-              <Icon size={21} />
-            </div>
-          </div>
-          <div className="work-card timeline-work-card">
-            <div className="work-card-body">
-              <div className="timeline-card-head">
-                <div className="min-w-0">
-                  <div className="text-xs font-black text-zinc-500">Step {index + 1}</div>
-                  <h3>{step.label}</h3>
-                </div>
-                <StatusPill value={step.status ?? step.primary} />
-              </div>
-              <div className="timeline-primary">{fallback(step.primary)}</div>
-              <p>{fallback(step.secondary)}</p>
-              {step.href && (
-                <a className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-sky-700 hover:text-sky-900" href={step.href} target="_blank" rel="noreferrer">
-                  evidence 열기
-                  <ExternalLink size={15} />
-                </a>
-              )}
-            </div>
-          </div>
+        <strong>{fallback(vm.name)}</strong>
+        <div className="vm-chip-meta">
+          <span>{fallback(vm.maxcpu)} CPU</span>
+          <span>{formatGiB(vm.maxmem)}</span>
         </div>
-      );
-    })}
+        <MiniBar label="memory" value={ratioPercent(vm.mem, vm.maxmem)} />
+      </article>
+    );
+  };
+
+  return (
+    <div className="runtime-visual">
+      <div className="visual-stat-grid">
+        <VisualStat icon={Server} label="Proxmox node" value={proxmoxNode?.node} detail={`${fallback(proxmoxNode?.maxcpu)} CPU / ${formatGiB(proxmoxNode?.maxmem)}`} status={proxmoxNode?.status} />
+        <VisualStat icon={Boxes} label="Kubernetes VMs" value={`${k8sRunning}/${data.k8sVms.length || '-'}`} detail={`${fallback(data.controlPlanes)} control-plane + ${fallback(data.workers)} worker`} status={k8sRunning === data.k8sVms.length && data.k8sVms.length ? 'ready' : 'check'} />
+        <VisualStat icon={ShieldCheck} label="GitOps state" value={`${fallback(data.deploy?.argocd?.syncStatus)} / ${fallback(data.deploy?.argocd?.healthStatus)}`} detail={data.deploy?.argocd?.shortRevision} status={data.deploy?.argocd?.healthStatus ?? data.deploy?.argocd?.syncStatus} />
+        <VisualStat icon={Network} label="Edge ingress" value={data.edge?.proxy?.service} detail={`${fallback(data.edge?.destinationCounts?.kubernetes)} Kubernetes routes`} status={data.edge?.proxy?.running_worker_count ? 'running' : 'check'} />
       </div>
-    )}
+
+      <div className="platform-map">
+        <section className="platform-host">
+          <div className="platform-card-head">
+            <div>
+              <p>Virtualization</p>
+              <h3>{fallback(proxmoxNode?.node, 'PVE node')}</h3>
+            </div>
+            <Cpu size={24} />
+          </div>
+          <StatusPill value={proxmoxNode?.status ?? 'check'} />
+          <MiniBar label="CPU load" value={nodeCpu} />
+          <MiniBar label="memory" value={nodeMem} />
+        </section>
+
+        <section className="platform-cluster">
+          <div className="platform-band control">
+            <div className="platform-band-title">
+              <span>Control plane</span>
+              <strong>{controlPlanes.length || '-'}</strong>
+            </div>
+            <div className="vm-chip-grid">{(controlPlanes.length ? controlPlanes : [{ name: 'waiting for API', status: 'check' }]).map(vmCard)}</div>
+          </div>
+          <div className="platform-band worker">
+            <div className="platform-band-title">
+              <span>Workers</span>
+              <strong>{workers.length || '-'}</strong>
+            </div>
+            <div className="vm-chip-grid">{(workers.length ? workers : [{ name: 'waiting for API', status: 'check' }]).map(vmCard)}</div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  );
+};
+
+const WorkloadVisual = ({ data }) => (
+  <div className="workload-visual">
+    <div className="workload-card-grid">
+      {data.workloadCards.map(({ id, icon: Icon, label, value, detail, status }) => (
+        <article className="workload-card" key={id}>
+          <div className="workload-card-head">
+            <div className="workload-icon">
+              <Icon size={20} />
+            </div>
+            <StatusPill value={status} />
+          </div>
+          <p>{label}</p>
+          <strong>{fallback(value)}</strong>
+          <span>{fallback(detail)}</span>
+        </article>
+      ))}
+    </div>
+
+    <div className="prepared-app-grid">
+      {(data.preparedApps.length ? data.preparedApps : [{ name: 'waiting', upstream: '-', destination: 'check' }]).map((app) => (
+        <article className="prepared-app-card" key={`${app.name}-${app.upstream}`}>
+          <div>
+            <p>Prepared app</p>
+            <strong>{fallback(app.name)}</strong>
+          </div>
+          <Route size={18} />
+          <div>
+            <p>Upstream</p>
+            <strong>{fallback(app.upstream)}</strong>
+          </div>
+          <StatusPill value={app.destination} />
+        </article>
+      ))}
+    </div>
   </div>
 );
 
@@ -251,7 +310,7 @@ const PipelineOverview = ({ steps }) => (
           <p>{fallback(step.detail)}</p>
           {step.href && (
             <a href={step.href} target="_blank" rel="noreferrer">
-              evidence
+              {step.linkLabel ?? 'Open detail'}
               <ExternalLink size={14} />
             </a>
           )}
@@ -261,9 +320,37 @@ const PipelineOverview = ({ steps }) => (
   </div>
 );
 
+const HeroDashboardPreview = ({ data }) => (
+  <aside className="hero-dashboard-preview" aria-label="Ops Dashboard live preview">
+    <div className="hero-dashboard-frame">
+      <iframe
+        title="Ops Dashboard live preview"
+        src={OPS_DASHBOARD_PATH}
+        loading="eager"
+      />
+    </div>
+    <a className="hero-dashboard-path" href={LIVE_OPS_DASHBOARD_URL} target="_blank" rel="noreferrer">
+      <span className="hero-dashboard-dot" aria-hidden="true" />
+      <strong>{fallback(data.deploy?.live?.url, LIVE_OPS_DASHBOARD_URL).replace(/^https?:\/\//, '')}</strong>
+      <ExternalLink size={16} />
+    </a>
+  </aside>
+);
+
 const NetworkTopologyMap = ({ data }) => {
   const routes = data.edge?.routes ?? [];
-  const topology = data.edge?.topology ?? {};
+  const proxyListen = data.edge?.proxy?.listen;
+  const proxyListenLabel = proxyListen
+    ? `${proxyListen.host ?? '0.0.0.0'}:${proxyListen.port ?? 443}`
+    : data.edge?.proxy?.default_upstream;
+  const topology = {
+    publicEntry: data.liveHost,
+    edgeNode: data.edge?.proxy?.service ?? 'tcp_reverse_proxy',
+    publicListen: proxyListenLabel,
+    kubernetesLabel: destinationLabels.kubernetes,
+    controlPlaneEndpoints: [],
+    ...(data.edge?.topology ?? {}),
+  };
   if (!data.edge) {
     return (
       <div className="work-card">
@@ -279,11 +366,43 @@ const NetworkTopologyMap = ({ data }) => {
   }
   const route = routes.find((item) => item.hostname === data.liveHost)
     ?? routes.find((item) => item.destination === 'kubernetes');
-  const visibleRoutes = [
-    ...(route ? [route] : []),
-    ...routes.filter((item) => item !== route && item.hostname !== 'default'),
-    ...routes.filter((item) => item !== route && item.hostname === 'default'),
-  ].slice(0, 6);
+  const routeGroupMap = routes.reduce((groups, item) => {
+      const key = routeTreeDestination(item);
+      groups[key] = [...(groups[key] ?? []), item];
+      return groups;
+    }, {});
+  const controlPlaneEndpoints = topology.controlPlaneEndpoints?.length
+    ? topology.controlPlaneEndpoints
+    : data.k8sVms
+      ?.filter((vm) => vmRole(vm.name) === 'control-plane')
+      .map((vm) => vm.name) ?? [];
+  const apiHaNodes = [
+    {
+      hostname: topology.kubernetesApiEndpoint ?? 'kubernetes-api',
+      upstream: 'HAProxy virtual endpoint',
+      destination: 'api-ha',
+      runtimeType: 'api-ha',
+      runtimeTypeSource: topology.kubernetesApiEndpoint ? 'ops-api topology' : 'topology fallback',
+      kind: 'haproxy',
+    },
+    ...controlPlaneEndpoints.map((endpoint, index) => ({
+      hostname: `control-plane-${index + 1}`,
+      upstream: endpoint,
+      destination: 'api-ha',
+      runtimeType: 'api-ha',
+      runtimeTypeSource: topology.controlPlaneEndpoints?.length ? 'ops-api topology' : 'proxmox fallback',
+      kind: 'control-plane',
+    })),
+  ];
+  if (apiHaNodes.length) {
+    routeGroupMap['api-ha'] = [...(routeGroupMap['api-ha'] ?? []), ...apiHaNodes];
+  }
+  const routeTreeGroups = Object.entries(routeGroupMap).sort(([left], [right]) => {
+    const order = ['kubernetes', 'docker', 'local-service', 'api-ha', 'external', 'cxx-web'];
+    const leftIndex = order.includes(left) ? order.indexOf(left) : order.length;
+    const rightIndex = order.includes(right) ? order.indexOf(right) : order.length;
+    return leftIndex - rightIndex;
+  });
   const rolloutStatus = formatReady(data.deploy?.kubernetes?.readyReplicas, data.deploy?.kubernetes?.replicas);
   const entryPath = [
     ['Client', data.liveHost, 'public HTTPS request', data.deploy?.live?.ok ? 'live' : 'check', Globe],
@@ -296,11 +415,6 @@ const NetworkTopologyMap = ({ data }) => {
     ['Ingress / upstream', route?.destination === 'kubernetes' ? topology.kubernetesLabel : destinationLabels[route?.destination] ?? 'selected upstream', route?.destination === 'kubernetes' ? 'ingress-nginx -> service -> pod' : route?.upstream],
     ['Workload', data.deploy?.kubernetes?.name, rolloutStatus],
   ];
-  const apiBranch = [
-    ['HAProxy', topology.kubernetesApiEndpoint, 'Kubernetes API virtual endpoint'],
-    ['Control planes', topology.controlPlaneEndpoints?.join(' / '), 'control-plane API backends'],
-  ];
-
   return (
     <div className="work-card">
       <div className="work-card-body">
@@ -337,10 +451,9 @@ const NetworkTopologyMap = ({ data }) => {
             ))}
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3">
             {[
               ['Public HTTP/S', route?.destination === 'kubernetes' ? 'kubernetes' : route?.destination ?? 'check', publicBranch],
-              ['Kubernetes API HA', topology.kubernetesApiEndpoint ? 'ready' : 'check', apiBranch],
             ].map(([title, status, rows]) => (
               <div key={title} className="border border-zinc-200 bg-white p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
@@ -361,106 +474,89 @@ const NetworkTopologyMap = ({ data }) => {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(240px,0.6fr)]">
-          <div className="grid gap-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-black uppercase text-zinc-500">Actual route table</span>
-              <span className="font-bold text-zinc-500">{routes.length || '-'} routes</span>
+        <div className="route-tree">
+          <div className="route-tree-root">
+            <div className="route-tree-root-icon">
+              <Network size={20} />
             </div>
-            <div className="grid gap-2 md:grid-cols-2">
-              {(visibleRoutes.length ? visibleRoutes : [{ hostname: data.liveHost, upstream: '-', destination: 'check' }]).map((item) => {
-                const selected = item === route;
-                return (
-                  <div
-                    key={`${item.hostname}-${item.upstream}`}
-                    className={`grid gap-1 border p-3 text-xs ${selected ? 'border-zinc-950 bg-white shadow-sm' : 'border-zinc-200 bg-white'}`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="min-w-0 break-words font-black text-zinc-900">{fallback(item.hostname)}</span>
-                      <StatusPill value={item.destination ?? 'check'} />
-                    </div>
-                    <div className="grid grid-cols-[58px_1fr] gap-2 text-zinc-600">
-                      <span className="font-bold text-zinc-400">to</span>
-                      <span className="min-w-0 break-words font-semibold">{fallback(item.upstream)}</span>
-                    </div>
-                    <div className="grid grid-cols-[58px_1fr] gap-2 text-zinc-600">
-                      <span className="font-bold text-zinc-400">type</span>
-                      <span className="min-w-0 break-words font-semibold">{destinationLabels[item.destination] ?? fallback(item.destination)}</span>
-                    </div>
-                  </div>
-                );
-              })}
+            <div>
+              <p>Actual route tree</p>
+              <h4>{fallback(data.edge?.proxy?.service, 'edge proxy')}</h4>
+              <span>{routes.length || '-'} live routes from edge-runtime</span>
             </div>
           </div>
 
-          <div className="grid content-start gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-            <div className="text-xs font-black uppercase text-zinc-500">Destination counts</div>
-            {Object.entries(data.edge?.destinationCounts ?? {}).map(([destination, count]) => (
-              <div key={destination} className="flex items-center justify-between gap-3 border border-zinc-100 bg-white px-3 py-2 text-xs">
-                <span className="font-semibold text-zinc-700">{destinationLabels[destination] ?? destination}</span>
-                <StatusPill value={count} />
-              </div>
-            ))}
-            {Object.keys(data.edge?.destinationCounts ?? {}).length === 0 && (
-              <div className="text-xs font-semibold text-zinc-500">waiting for edge-runtime routes</div>
-            )}
+          <div className="route-tree-branches">
+            {(routeTreeGroups.length ? routeTreeGroups : [['check', [{ hostname: data.liveHost, upstream: '-', destination: 'check' }]]]).map(([destination, items]) => {
+              const sourceSummary = [...new Set(items.map((item) => routeTreeSource(item)))].join(' + ');
+              const branchClassName = [
+                'route-branch',
+                `route-branch-${destination}`,
+                destination === 'docker' ? 'route-branch-compact' : '',
+              ].filter(Boolean).join(' ');
+              const apiHaRoot = destination === 'api-ha'
+                ? items.find((item) => item.kind === 'haproxy') ?? items[0]
+                : null;
+              const apiHaChildren = destination === 'api-ha'
+                ? items.filter((item) => item !== apiHaRoot)
+                : [];
+              return (
+                <section className={branchClassName} key={destination}>
+                  <div className="route-branch-head">
+                    <div>
+                      <p>{destination === 'api-ha' ? 'Cluster API HA' : destinationLabels[destination] ?? destination}</p>
+                      <strong>{items.length} {destination === 'api-ha' ? `node${items.length === 1 ? '' : 's'}` : `route${items.length === 1 ? '' : 's'}`}</strong>
+                      <span>source: {sourceSummary}</span>
+                    </div>
+                    <StatusPill value={destination} />
+                  </div>
+
+                  {destination === 'api-ha' ? (
+                    <div className="route-ha-map">
+                      <article className="route-leaf route-ha-root" key={`${apiHaRoot.hostname}-${apiHaRoot.upstream}`}>
+                        <div className={`route-leaf-node route-leaf-node-${apiHaRoot.kind ?? routeTreeDestination(apiHaRoot)}`} aria-hidden="true" />
+                        <div className="route-leaf-body">
+                          <strong>{fallback(apiHaRoot.hostname)}</strong>
+                          <span>{fallback(apiHaRoot.upstream)}</span>
+                        </div>
+                      </article>
+                      <div className="route-ha-children">
+                        {apiHaChildren.map((item) => (
+                          <article className="route-leaf" key={`${item.hostname}-${item.upstream}`}>
+                            <div className={`route-leaf-node route-leaf-node-${item.kind ?? routeTreeDestination(item)}`} aria-hidden="true" />
+                            <div className="route-leaf-body">
+                              <strong>{fallback(item.hostname)}</strong>
+                              <span>{fallback(item.upstream)}</span>
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="route-leaf-list">
+                      {items.map((item) => {
+                        const selected = item === route;
+                        return (
+                          <article className={`route-leaf ${selected ? 'route-leaf-selected' : ''}`} key={`${item.hostname}-${item.upstream}`}>
+                            <div className={`route-leaf-node route-leaf-node-${item.kind ?? routeTreeDestination(item)}`} aria-hidden="true" />
+                            <div className="route-leaf-body">
+                              <strong>{fallback(item.hostname)}</strong>
+                              <span>{fallback(item.upstream)}</span>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
           </div>
         </div>
       </div>
     </div>
   );
 };
-
-const Chain = ({ items, tone = 'delivery' }) => (
-  <div className={`mini-flow ${tone}`}>
-    {items.map((item, index) => (
-      <div className="mini-flow-step" key={`${item}-${index}`}>
-        <span>{item}</span>
-        {index < items.length - 1 && <i aria-hidden="true" />}
-      </div>
-    ))}
-  </div>
-);
-
-const LivePanel = ({ data, loading, error, updatedAt, onRefresh }) => (
-  <aside className="hero-devops live-panel">
-    <div className="flex items-start justify-between gap-3">
-      <div>
-        <div className="text-sm font-bold text-zinc-500">운영 관측값</div>
-        <h2 className="mt-1 text-xl font-bold text-zinc-950">Live 상태</h2>
-      </div>
-      <button
-        type="button"
-        onClick={onRefresh}
-        className="inline-flex items-center gap-2 border border-zinc-200 bg-white px-3 py-2 text-sm font-bold text-zinc-700 shadow-sm hover:border-sky-300 hover:bg-sky-50"
-      >
-        <RefreshCw size={15} />
-        새로고침
-      </button>
-    </div>
-    <div className="mt-4 flex flex-wrap items-center gap-2">
-      <StatusPill value={data.health?.ok ? 'ok' : loading ? 'loading' : 'check'} />
-      <span className="text-sm text-zinc-500">updated {formatTime(updatedAt)}</span>
-    </div>
-    {error && <div className="mt-3 border border-rose-200 bg-rose-50 p-3 text-sm font-bold text-rose-700">{error}</div>}
-    <div className="live-panel-list">
-      {[
-        ['Commit', data.deploy?.commit?.shortSha],
-        ['Image', data.deploy?.image?.shortTag],
-        ['Argo CD', `${fallback(data.deploy?.argocd?.syncStatus)} / ${fallback(data.deploy?.argocd?.healthStatus)}`],
-        ['Rollout', formatReady(data.deploy?.kubernetes?.readyReplicas, data.deploy?.kubernetes?.replicas)],
-        ['Live 경로', data.deploy?.live?.url],
-        ['Prometheus', `${fallback(data.prometheus?.targets?.up)}/${fallback(data.prometheus?.targets?.total)} targets up`],
-        ['Edge routes', fallback(data.edge?.routes?.length)],
-      ].map(([label, value]) => (
-        <div key={label} className="flex items-start justify-between gap-3 border-b border-zinc-100 py-2 last:border-b-0">
-          <span className="font-bold text-zinc-500">{label}</span>
-          <span className="max-w-[220px] break-words text-right font-black text-zinc-900">{fallback(value)}</span>
-        </div>
-      ))}
-    </div>
-  </aside>
-);
 
 export const DevOpsInlinePortfolio = () => {
   const [snapshot, setSnapshot] = useState({
@@ -478,34 +574,23 @@ export const DevOpsInlinePortfolio = () => {
   const [updatedAt, setUpdatedAt] = useState(null);
 
   const load = useCallback(async () => {
+    setLoading(true);
     setError(null);
     const read = (result, fallbackValue) => (result.status === 'fulfilled' ? result.value : fallbackValue);
     try {
-      const results = await Promise.allSettled([
-        fetchHealth(),
-        fetchSummary(),
-        fetchDeployPipeline(),
-        fetchEdgeRuntime(),
-        fetchPrometheusSummary(),
-        fetchPrometheusTargets(),
-        fetchProxmoxNodes(),
-        fetchProxmoxResources('vm'),
-      ]);
-      const [health, summary, deploy, edge, prometheus, targets, nodes, vms] = results;
-      const failures = results.filter((result) => result.status === 'rejected');
-      setSnapshot({
-        health: read(health, null),
-        summary: read(summary, null),
-        deploy: read(deploy, null),
-        edge: read(edge, null),
-        prometheus: read(prometheus, null),
-        targets: read(targets, null),
-        nodes: read(nodes, []),
-        vms: read(vms, []),
-      });
+      const results = await Promise.allSettled(apiReads.map((item) => item.load()));
+      const nextSnapshot = apiReads.reduce((acc, item, index) => {
+        acc[item.key] = read(results[index], item.fallback);
+        return acc;
+      }, {});
+      const failures = results
+        .map((result, index) => ({ result, label: apiReads[index].label }))
+        .filter(({ result }) => result.status === 'rejected');
+
+      setSnapshot(nextSnapshot);
       setUpdatedAt(new Date());
       if (failures.length) {
-        setError(`일부 API 응답 실패: ${failures[0].reason?.message ?? 'unknown error'}`);
+        setError(`일부 API 응답 실패: ${failures.map(({ label }) => label).join(', ')}`);
       }
     } catch (nextError) {
       setError(nextError.message);
@@ -536,36 +621,7 @@ export const DevOpsInlinePortfolio = () => {
     const platformDetail = controlPlanes === null || workers === null
       ? 'Ops API 연결 필요'
       : 'control-plane + worker native Kubernetes';
-    const deploySteps = snapshot.deploy?.steps ?? [];
-    const vmRows = k8sVms.map((vm) => [
-      vm.name,
-      vm.vmid,
-      vmRole(vm.name),
-      vm.status,
-      `${fallback(vm.maxcpu)} CPU / ${formatGiB(vm.maxmem)}`,
-    ]);
     const proxmoxNode = nodes[0];
-    const layerRows = [
-      ['Virtualization', proxmoxNode?.node ?? '-', proxmoxNode?.status ?? '-', `${fallback(proxmoxNode?.maxcpu)} CPU / ${formatGiB(proxmoxNode?.maxmem)}`],
-      ['Workload VMs', `${k8sVms.length || '-'} Kubernetes VMs`, vms.length ? `${runningVms}/${vms.length} VMs running` : '-', controlPlanes === null || workers === null ? '-' : `${controlPlanes} control-plane + ${workers} worker`],
-      ['Delivery', snapshot.deploy?.actions?.workflowName ?? '-', snapshot.deploy?.actions?.status ?? '-', snapshot.deploy?.image?.repository ?? '-'],
-      ['GitOps', snapshot.deploy?.argocd?.name ?? '-', `${fallback(snapshot.deploy?.argocd?.syncStatus)} / ${fallback(snapshot.deploy?.argocd?.healthStatus)}`, snapshot.deploy?.argocd?.shortRevision ?? '-'],
-      ['Edge', snapshot.edge?.proxy?.service ?? '-', `${snapshot.edge?.destinationCounts?.kubernetes ?? '-'} Kubernetes routes`, snapshot.edge?.proxy?.default_upstream ?? '-'],
-    ];
-    const edgeRows = (snapshot.edge?.routes ?? []).map((route) => [
-      route.hostname,
-      route.upstream,
-      route.destination,
-    ]);
-    const workloadRows = [
-      [snapshot.deploy?.kubernetes?.namespace ?? '-', snapshot.deploy?.kubernetes?.name ?? '-', snapshot.deploy?.kubernetes?.shortImageTag ?? '-', formatReady(snapshot.deploy?.kubernetes?.readyReplicas, snapshot.deploy?.kubernetes?.replicas)],
-      [snapshot.deploy?.argocd?.namespace ?? '-', snapshot.deploy?.argocd?.name ?? '-', snapshot.deploy?.argocd?.shortRevision ?? '-', `${fallback(snapshot.deploy?.argocd?.syncStatus)} / ${fallback(snapshot.deploy?.argocd?.healthStatus)}`],
-      ['monitoring', 'prometheus targets', `${snapshot.prometheus?.targets?.up ?? '-'}/${snapshot.prometheus?.targets?.total ?? '-'} up`, `${snapshot.prometheus?.series?.pods ?? '-'} pod series`],
-      ['edge', snapshot.edge?.proxy?.service ?? '-', `${snapshot.edge?.proxy?.running_worker_count ?? '-'}/${snapshot.edge?.proxy?.configured_worker_count ?? '-'} workers`, `${snapshot.edge?.proxy?.total_live_sessions ?? '-'} sessions`],
-    ];
-    const preparedRows = (snapshot.edge?.routes ?? [])
-      .filter((route) => ['dropapp.mintcocoa.cc', 'webhook.mintcocoa.cc'].includes(route.hostname))
-      .map((route) => [route.hostname.replace('.mintcocoa.cc', ''), route.upstream, route.destination]);
     const liveHost = snapshot.deploy?.live?.url
       ? snapshot.deploy.live.url.replace(/^https?:\/\//, '').replace(/\/.*$/, '')
       : '-';
@@ -574,6 +630,47 @@ export const DevOpsInlinePortfolio = () => {
     const rolloutReady = snapshot.deploy?.kubernetes?.replicas !== null
       && snapshot.deploy?.kubernetes?.replicas !== undefined
       && snapshot.deploy?.kubernetes?.readyReplicas === snapshot.deploy?.kubernetes?.replicas;
+    const workloadCards = [
+      {
+        id: 'portfolio',
+        icon: Cloud,
+        label: snapshot.deploy?.kubernetes?.namespace ?? 'portfolio',
+        value: snapshot.deploy?.kubernetes?.name,
+        detail: snapshot.deploy?.kubernetes?.shortImageTag,
+        status: rolloutReady ? 'ready' : 'check',
+      },
+      {
+        id: 'argocd',
+        icon: ShieldCheck,
+        label: snapshot.deploy?.argocd?.namespace ?? 'argocd',
+        value: snapshot.deploy?.argocd?.name,
+        detail: snapshot.deploy?.argocd?.shortRevision,
+        status: snapshot.deploy?.argocd?.healthStatus ?? snapshot.deploy?.argocd?.syncStatus ?? 'check',
+      },
+      {
+        id: 'monitoring',
+        icon: Database,
+        label: 'monitoring',
+        value: `${snapshot.prometheus?.targets?.up ?? '-'}/${snapshot.prometheus?.targets?.total ?? '-'} targets`,
+        detail: `${snapshot.prometheus?.series?.pods ?? '-'} pod series`,
+        status: snapshot.prometheus?.targets?.down === 0 ? 'up' : 'check',
+      },
+      {
+        id: 'edge',
+        icon: Network,
+        label: 'edge runtime',
+        value: snapshot.edge?.proxy?.service,
+        detail: `${snapshot.edge?.proxy?.running_worker_count ?? '-'}/${snapshot.edge?.proxy?.configured_worker_count ?? '-'} workers`,
+        status: snapshot.edge?.proxy?.running_worker_count ? 'running' : 'check',
+      },
+    ];
+    const preparedApps = (snapshot.edge?.routes ?? [])
+      .filter((route) => ['dropapp.mintcocoa.cc', 'webhook.mintcocoa.cc'].includes(route.hostname))
+      .map((route) => ({
+        name: route.hostname.replace('.mintcocoa.cc', ''),
+        upstream: route.upstream,
+        destination: route.destination,
+      }));
     const overviewPipeline = [
       {
         id: 'source',
@@ -582,6 +679,7 @@ export const DevOpsInlinePortfolio = () => {
         detail: snapshot.deploy?.commit?.message ?? 'RuntimeWeb 포트폴리오 서버 소스 commit',
         status: snapshot.deploy?.commit ? 'observed' : 'check',
         href: snapshot.deploy?.commit?.url,
+        linkLabel: 'View commit',
         icon: GitCommit,
       },
       {
@@ -593,6 +691,7 @@ export const DevOpsInlinePortfolio = () => {
           : 'C++ 서버 이미지 빌드와 GHCR push',
         status: snapshot.deploy?.actions?.status ?? 'check',
         href: snapshot.deploy?.actions?.url,
+        linkLabel: 'Open run',
         icon: PlayCircle,
       },
       {
@@ -610,6 +709,7 @@ export const DevOpsInlinePortfolio = () => {
         detail: snapshot.deploy?.gitops?.message ?? 'Helm values image tag 승격',
         status: snapshot.deploy?.gitops ? 'observed' : 'check',
         href: snapshot.deploy?.gitops?.url,
+        linkLabel: 'View change',
         icon: GitBranch,
       },
       {
@@ -637,36 +737,23 @@ export const DevOpsInlinePortfolio = () => {
         detail: snapshot.deploy?.live?.url ?? 'portfolio.mintcocoa.cc 공개 경로',
         status: snapshot.deploy?.live?.ok ? 'live' : 'check',
         href: snapshot.deploy?.live?.url,
+        linkLabel: 'Open live',
         icon: Cloud,
       },
     ];
-    const observabilityRows = [
-      ['Targets', `${snapshot.prometheus?.targets?.up ?? '-'}/${snapshot.prometheus?.targets?.total ?? '-'}`, `${snapshot.prometheus?.targets?.down ?? '-'} down`],
-      ['Pod series', fallback(snapshot.prometheus?.series?.pods), 'Prometheus summary'],
-      ['Deployment series', fallback(snapshot.prometheus?.series?.deployments), 'Prometheus summary'],
-      ['PVC phases', fallback(snapshot.prometheus?.series?.pvcPhases), 'Prometheus summary'],
-      ['Scrape targets', fallback(snapshot.targets?.count ?? snapshot.targets?.targets?.length), 'prometheus/targets'],
-    ];
-    const storageRows = vms
-      .filter((vm) => vm.name?.toLowerCase().includes('omv') || vm.maxdisk)
-      .slice(0, 5)
-      .map((vm) => [vm.name, vm.status, formatGiB(vm.maxdisk), formatGiB(vm.maxmem)]);
     return {
       ...snapshot,
       nodes,
       vms,
+      k8sVms,
+      proxmoxNode,
+      runningVms,
       controlPlanes,
       workers,
       platformSummary,
       platformDetail,
-      deploySteps,
-      vmRows,
-      layerRows,
-      edgeRows,
-      workloadRows,
-      preparedRows,
-      observabilityRows,
-      storageRows,
+      workloadCards,
+      preparedApps,
       overviewPipeline,
       liveWorkload,
       liveRevision,
@@ -679,23 +766,39 @@ export const DevOpsInlinePortfolio = () => {
       <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">C++ Server · GitOps · Kubernetes</p>
-          <h1>홈랩 DevOps 운영 포트폴리오</h1>
+          <h1>
+            <span>홈랩 DevOps</span>
+            <span>운영 포트폴리오</span>
+          </h1>
           <p className="lead">
-            홈랩 네트워크 구성 및 k8s 실행 환경을 구축, github actions와 Argo CD로 ci/cd 자동화, Prometheus로 관측 지표를 수집하는 전체 운영 흐름을 구현했습니다. 
+            홈랩 네트워크와 Kubernetes 실행 환경을 구축하고 GitHub Actions, GHCR, Argo CD로 배포를 자동화했습니다.
+            Prometheus와 Ops API로 실제 운영 상태를 이 페이지에 연결했습니다.
           </p>
-          <div className="hero-actions" aria-label="주요 링크">
-            <a className="button" href="https://portfolio.mintcocoa.cc/devops/DevOpsPortfolio.html" target="_blank" rel="noreferrer">
+          <div className="hero-document-card">
+            <div className="hero-document-head">
               <Activity size={18} />
-              운영 mirror
-            </a>
-          </div>
-          <div className="summary-grid devops-summary-grid">
-            <Metric icon={GitCommit} label="CI/CD" value={data.deploy?.actions?.displayStatus ?? 'API unavailable'} detail="C++ 서버 이미지 빌드와 GHCR push" valueStatus={data.deploy?.actions?.status} />
-            <Metric icon={ShieldCheck} label="GitOps" value={data.deploy?.argocd?.syncStatus ?? 'API unavailable'} detail="Helm values tag 갱신과 automated sync" valueStatus={data.deploy?.argocd?.syncStatus} />
-            <Metric icon={Server} label="Platform" value={data.platformSummary} detail={data.platformDetail} valueStatus={data.platformSummary === '-' ? 'check' : 'ready'} />
+              <span>DevOps document</span>
+            </div>
+            <h2>GitOps 기반 홈 Kubernetes 운영</h2>
+            <p>홈랩 계층, 배포 흐름, workload, ingress, observability를 실제 운영 API와 연결해 문서화했습니다.</p>
+            <div className="hero-actions" aria-label="주요 링크">
+              <a className="button" href="https://portfolio.mintcocoa.cc/devops/DevOpsPortfolio.html" target="_blank" rel="noreferrer">
+                GitHub Pages
+                <ExternalLink size={16} />
+              </a>
+              <a className="button" href={LIVE_OPS_DASHBOARD_URL} target="_blank" rel="noreferrer">
+                Ops Dashboard
+                <Cloud size={16} />
+              </a>
+            </div>
+            <div className="hero-tag-list" aria-label="기술 스택">
+              {['Kubernetes', 'GHCR', 'Argo CD', 'Prometheus'].map((tag) => (
+                <span key={tag}>{tag}</span>
+              ))}
+            </div>
           </div>
         </div>
-        <LivePanel data={data} loading={loading} error={error} updatedAt={updatedAt} onRefresh={load} />
+        <HeroDashboardPreview data={data} />
       </section>
 
       <div className="devops-content-grid devops-content-grid-wide">
@@ -717,6 +820,7 @@ export const DevOpsInlinePortfolio = () => {
                   GitHub Actions가 C++ RuntimeWeb 이미지를 만들고, GitOps repository의 Helm values에
                   이미지 태그를 승격하면 Argo CD가 Kubernetes rollout을 수렴시킵니다. Ops API가 연결된
                   단계는 실제 commit, image tag, sync/health, HTTPS 응답값으로 채워집니다.
+                  이 페이지는 정적 포트폴리오 문서가 아니라 운영 API를 읽는 live 검증 표면으로 설계했습니다.
                 </p>
                 <dl className="overview-inline-facts">
                   <div>
@@ -733,61 +837,16 @@ export const DevOpsInlinePortfolio = () => {
             </div>
           </Section>
 
-          <Section number="2 Delivery Flow" title="배포 흐름">
-            <Timeline steps={data.deploySteps} />
-            <div className="mt-5">
-              <DataTable headers={['단계', '책임', '검증 포인트']} rows={ciRows} />
-            </div>
+          <Section number="2 Runtime Platform" title="Kubernetes 실행 환경">
+            <RuntimePlatformVisual data={data} />
           </Section>
 
-          <Section number="3 Runtime Platform" title="Kubernetes 실행 환경">
-            <DataTable headers={['VM', 'VMID', 'Role', 'Status', 'Capacity']} rows={data.vmRows} />
-            <div className="mt-4">
-              <DataTable headers={['Layer', 'Component', 'Status', 'Live detail']} rows={data.layerRows} />
-            </div>
-          </Section>
-
-          <Section number="4 Network Path" title="외부 트래픽 경로">
+          <Section number="3 Network Path" title="외부 트래픽 경로">
             <NetworkTopologyMap data={data} />
-            <div className="mt-4">
-              <DataTable headers={['Hostname', 'Upstream', 'Destination']} rows={data.edgeRows} />
-            </div>
-            <p className="mt-4 text-sm leading-7 text-zinc-700">
-              Edge route 목록은 Ops API의 edge-runtime 응답을 기준으로 표시합니다. Kubernetes로 들어가는 route와
-              local/docker route를 destination 값으로 구분해, 공개 경로가 어느 계층으로 연결되는지 확인합니다.
-            </p>
           </Section>
 
-          <Section number="5 Runtime Workload" title="Runtime workload">
-            <DataTable headers={['Namespace', 'Workload', 'Revision / Signal', 'Status']} rows={data.workloadRows} />
-            <div className="mt-4">
-              <DataTable headers={['Prepared app', 'Upstream', 'Destination']} rows={data.preparedRows} />
-            </div>
-          </Section>
-
-          <Section number="6 Storage" title="Storage">
-            <DataTable headers={['VM', 'Status', 'Disk', 'Memory']} rows={data.storageRows} />
-          </Section>
-
-          <Section number="7 Observability" title="Observability">
-            <DataTable headers={['Metric', 'Live value', 'Source']} rows={data.observabilityRows} />
-            <div className="mt-4">
-              <Chain tone="runtime" items={['DevOpsPortfolio.html', API_LABEL, 'FastAPI 127.0.0.1:18081', 'Prometheus', 'Proxmox API']} />
-            </div>
-            <p className="mt-4 text-sm leading-7 text-zinc-700">
-              Live dashboard는 브라우저에서 Ops API를 호출해 Prometheus, Proxmox, GitOps rollout, C++ edge runtime 요약 상태를 읽습니다.
-            </p>
-          </Section>
-
-          <Section number="8 Ops Dashboard" title="Ops Dashboard">
-            <div className="ops-dashboard-frame">
-              <iframe
-                src="https://portfolio.mintcocoa.cc/devops/OpsDashboard.html"
-                title="Ops Dashboard"
-                loading="lazy"
-                scrolling="no"
-              />
-            </div>
+          <Section number="4 Runtime Workload" title="Runtime workload">
+            <WorkloadVisual data={data} />
           </Section>
         </div>
       </div>

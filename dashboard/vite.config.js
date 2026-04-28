@@ -8,11 +8,28 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://ops-api.mintcocoa.cc',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
   build: {
     outDir: '../docs/devops',
     emptyOutDir: false, // Do not delete other portfolio files
     rollupOptions: {
-      input: 'OpsDashboard.html',
+      input: {
+        DevOpsPortfolio: 'DevOpsPortfolio.html',
+        OpsDashboard: 'OpsDashboard.html',
+      },
+      output: {
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name][extname]',
+      },
     }
   },
   base: './'

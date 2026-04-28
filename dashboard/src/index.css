@@ -25,9 +25,13 @@ body:has(.devops-app) {
   --teal: #087f7a;
   --dark: #101828;
   --shadow: 0 20px 50px rgba(24, 32, 51, 0.12);
+  --page-max: 1180px;
+  --hero-max: 1400px;
+  --page-gutter: 1.25rem;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
+  font-size: 18px;
 }
 
 .devops-app a {
@@ -35,10 +39,9 @@ body:has(.devops-app) {
   text-decoration: none;
 }
 
-.devops-app .site-header,
-.devops-app .hero {
-  padding-left: max(1.25rem, calc((100vw - 1180px) / 2));
-  padding-right: max(1.25rem, calc((100vw - 1180px) / 2));
+.devops-app .site-header {
+  padding-left: max(var(--page-gutter), calc((100vw - var(--page-max)) / 2));
+  padding-right: max(var(--page-gutter), calc((100vw - var(--page-max)) / 2));
 }
 
 .devops-app .site-header {
@@ -66,7 +69,7 @@ body:has(.devops-app) {
 .devops-app .brand {
   gap: 0.62rem;
   font-size: 1rem;
-  font-weight: 750;
+  font-weight: 850;
 }
 
 .devops-app .brand span {
@@ -94,7 +97,7 @@ body:has(.devops-app) {
   border-radius: 7px;
   color: var(--muted);
   font-size: 0.92rem;
-  font-weight: 650;
+  font-weight: 750;
 }
 
 .devops-app .site-header nav a:hover,
@@ -105,15 +108,17 @@ body:has(.devops-app) {
 
 .devops-app .hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 380px;
+  grid-template-columns: minmax(320px, 0.57fr) minmax(620px, 1fr);
   gap: clamp(1.75rem, 4vw, 3rem);
-  align-items: start;
+  align-items: center;
+  padding-left: max(var(--page-gutter), calc((100vw - var(--hero-max)) / 2));
+  padding-right: max(var(--page-gutter), calc((100vw - var(--hero-max)) / 2));
   padding-top: clamp(3rem, 6vw, 5rem);
   padding-bottom: clamp(2.75rem, 5.5vw, 4.75rem);
 }
 
 .devops-app .hero-copy {
-  max-width: 760px;
+  max-width: 492px;
 }
 
 .devops-app .eyebrow,
@@ -122,7 +127,7 @@ body:has(.devops-app) {
   margin: 0;
   color: var(--teal);
   font-size: 0.78rem;
-  font-weight: 750;
+  font-weight: 850;
   letter-spacing: 0;
   text-transform: uppercase;
 }
@@ -136,12 +141,20 @@ body:has(.devops-app) {
 }
 
 .devops-app h1 {
-  max-width: 760px;
-  margin-bottom: 1.05rem;
-  font-size: clamp(1.95rem, 3.45vw, 3rem);
+  display: grid;
+  gap: 0.15rem;
+  max-width: 492px;
+  margin-bottom: 1rem;
+  font-size: 3rem;
   font-weight: 740;
   line-height: 1.1;
   letter-spacing: 0;
+  text-wrap: balance;
+  word-break: keep-all;
+}
+
+.devops-app h1 span {
+  display: block;
 }
 
 .devops-app code {
@@ -150,11 +163,12 @@ body:has(.devops-app) {
 }
 
 .devops-app .lead {
-  max-width: 760px;
-  margin-bottom: 1.35rem;
+  max-width: 492px;
+  margin-bottom: 2rem;
   color: var(--muted);
-  font-size: 1.02rem;
-  line-height: 1.78;
+  font-size: 1.12rem;
+  line-height: 1.75;
+  word-break: keep-all;
 }
 
 .devops-app .hero-actions {
@@ -168,12 +182,12 @@ body:has(.devops-app) {
   justify-content: center;
   gap: 0.48rem;
   min-height: 2.8rem;
-  padding: 0.58rem 0.95rem;
+  padding: 0.62rem 1rem;
   border: 1px solid #aeb8c9;
   border-radius: 7px;
   background: rgba(255, 255, 255, 0.82);
   color: var(--ink);
-  font-weight: 720;
+  font-weight: 850;
   box-shadow: 0 1px 0 rgba(24, 32, 51, 0.04);
 }
 
@@ -181,6 +195,125 @@ body:has(.devops-app) {
   border-color: var(--blue);
   background: var(--blue);
   color: #ffffff;
+}
+
+.devops-app .hero-document-card {
+  max-width: 492px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.86);
+  padding: 1.25rem;
+  box-shadow: 0 18px 44px rgba(24, 32, 51, 0.08);
+}
+
+.devops-app .hero-document-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--teal);
+  font-size: 0.82rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.devops-app .hero-document-card h2 {
+  margin: 0.75rem 0 0;
+  color: var(--ink);
+  font-size: 1.2rem;
+  font-weight: 850;
+  line-height: 1.35;
+  word-break: keep-all;
+}
+
+.devops-app .hero-document-card p {
+  margin: 0.95rem 0 0;
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 620;
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+.devops-app .hero-document-card .hero-actions {
+  margin-top: 0.9rem;
+}
+
+.devops-app .hero-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 1.35rem;
+}
+
+.devops-app .hero-tag-list span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #ffffff;
+  padding: 0.3rem 0.72rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 780;
+}
+
+.devops-app .hero-dashboard-preview {
+  min-width: 0;
+  align-self: start;
+  margin-top: 6.35rem;
+  border: 1px solid #d5deea;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 24px 70px rgba(24, 32, 51, 0.13);
+}
+
+.devops-app .hero-dashboard-frame {
+  position: relative;
+  height: 483px;
+  overflow: hidden;
+  background: #edf2f7;
+}
+
+.devops-app .hero-dashboard-frame iframe {
+  width: 200%;
+  height: 200%;
+  border: 0;
+  transform: scale(0.5);
+  transform-origin: top left;
+  pointer-events: none;
+}
+
+.devops-app .hero-dashboard-path {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  border-top: 1px solid var(--line);
+  background: #ffffff;
+  min-height: 41px;
+  padding: 0.55rem 0.9rem;
+  color: var(--muted);
+}
+
+.devops-app .hero-dashboard-path strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #566178;
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+.devops-app .hero-dashboard-dot {
+  width: 0.72rem;
+  height: 0.72rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 0 5px #dcfce7;
 }
 
 .devops-app .hero-devops,
@@ -206,7 +339,7 @@ body:has(.devops-app) {
   display: grid;
   gap: 0.45rem;
   margin-top: 1rem;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
 }
 
 .devops-app .summary-grid {
@@ -227,22 +360,28 @@ body:has(.devops-app) {
   display: block;
   margin-bottom: 0.35rem;
   color: var(--blue);
-  font-size: 0.86rem;
+  font-size: 0.92rem;
   font-weight: 720;
 }
 
 .devops-app .summary-card p {
   margin: 0;
   color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.55;
 }
 
 .devops-app .devops-content-grid {
   display: grid;
-  width: min(1180px, calc(100vw - 2.5rem));
+  width: min(var(--page-max), calc(100vw - var(--page-gutter) - var(--page-gutter)));
   margin: 0 auto;
   grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
   gap: 1.25rem;
   align-items: start;
+}
+
+.devops-app .devops-content-grid > * {
+  min-width: 0;
 }
 
 .devops-app .devops-side-rail {
@@ -278,7 +417,7 @@ body:has(.devops-app) {
 
 .devops-app .section-title h2 {
   margin: 0.35rem 0 0;
-  font-size: clamp(1.45rem, 2.6vw, 2.15rem);
+  font-size: clamp(1.75rem, 3vw, 2.45rem);
   font-weight: 700;
   line-height: 1.14;
   letter-spacing: 0;
@@ -342,7 +481,7 @@ body:has(.devops-app) {
 .devops-app .pipeline-overview-title h3 {
   margin: 0.35rem 0 0;
   color: var(--ink);
-  font-size: clamp(1.25rem, 2vw, 1.65rem);
+  font-size: clamp(1.45rem, 2.2vw, 1.9rem);
   font-weight: 720;
   line-height: 1.3;
 }
@@ -362,7 +501,7 @@ body:has(.devops-app) {
   max-width: 880px;
   margin: 0;
   color: var(--muted);
-  font-size: 0.95rem;
+  font-size: 1rem;
   line-height: 1.72;
 }
 
@@ -425,7 +564,7 @@ body:has(.devops-app) {
 .devops-app .pipeline-overview-step h3 {
   margin: 0;
   color: #0f172a;
-  font-size: 0.98rem;
+  font-size: 1.05rem;
   font-weight: 720;
   line-height: 1.25;
 }
@@ -433,7 +572,7 @@ body:has(.devops-app) {
 .devops-app .pipeline-step-value {
   min-height: 2.55rem;
   color: #0f172a;
-  font-size: 0.92rem;
+  font-size: 0.98rem;
   font-weight: 740;
   line-height: 1.4;
   overflow-wrap: anywhere;
@@ -442,7 +581,7 @@ body:has(.devops-app) {
 .devops-app .pipeline-overview-step p {
   margin: 0;
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   font-weight: 560;
   line-height: 1.45;
   overflow-wrap: anywhere;
@@ -483,7 +622,7 @@ body:has(.devops-app) {
 .devops-app .overview-inline-facts dd {
   margin: 0.25rem 0 0;
   color: var(--ink);
-  font-size: 0.9rem;
+  font-size: 0.96rem;
   font-weight: 720;
   line-height: 1.45;
   overflow-wrap: anywhere;
@@ -560,6 +699,16 @@ body:has(.devops-app) {
 
 .devops-app .work-card {
   overflow: hidden;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.devops-app .work-card:hover {
+  transform: translateY(-3px);
+  border-color: #b8c4d7;
+  box-shadow: 0 18px 42px rgba(24, 32, 51, 0.12);
 }
 
 .devops-app .work-card-body {
@@ -584,7 +733,7 @@ body:has(.devops-app) {
 .devops-app .serving-root-grid strong {
   overflow-wrap: anywhere;
   color: var(--ink);
-  font-size: 0.92rem;
+  font-size: 1rem;
   line-height: 1.55;
 }
 
@@ -604,37 +753,6 @@ body:has(.devops-app) {
   font-weight: 650;
 }
 
-.devops-app .mini-flow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.42rem;
-}
-
-.devops-app .mini-flow-step {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.42rem;
-  min-width: 0;
-}
-
-.devops-app .mini-flow span {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2rem;
-  max-width: 100%;
-  padding: 0.38rem 0.62rem;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: #ffffff;
-  color: var(--muted);
-  font-size: 0.8rem;
-  font-weight: 700;
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-  box-shadow: 0 6px 14px rgba(24, 32, 51, 0.05);
-}
-
 .devops-app .font-black {
   font-weight: 720;
 }
@@ -643,198 +761,550 @@ body:has(.devops-app) {
   font-weight: 680;
 }
 
-.devops-app .mini-flow i {
-  position: relative;
-  display: inline-block;
-  width: 1.6rem;
-  height: 1px;
-  background: #b8c4d7;
-}
-
-.devops-app .mini-flow i::after {
-  position: absolute;
-  top: -4px;
-  right: -1px;
-  width: 0;
-  height: 0;
-  border-top: 4px solid transparent;
-  border-bottom: 4px solid transparent;
-  border-left: 6px solid #b8c4d7;
-  content: "";
-}
-
-.devops-app .mini-flow.delivery span {
-  border-color: #c7d2fe;
-  color: #1d4ed8;
-  background: #f4f8ff;
-}
-
-.devops-app .mini-flow.runtime span {
-  border-color: #99f6e4;
-  color: #0f766e;
-  background: #f2fcfd;
-}
-
-.devops-app .mini-flow.traffic span {
-  border-color: #bbf7d0;
-  color: #16815b;
-  background: #f4fbf7;
-}
-
-.devops-app .timeline-scroll {
-  overflow-x: auto;
-  padding: 0.15rem 0 0.75rem;
-}
-
-.devops-app .timeline-horizontal {
+.devops-app .runtime-visual,
+.devops-app .workload-visual {
   display: grid;
-  grid-template-columns: repeat(var(--step-count), minmax(150px, 1fr));
-  gap: 0.7rem;
-  min-width: 1040px;
+  gap: 1rem;
 }
 
-.devops-app .timeline-step {
-  position: relative;
+.devops-app .visual-stat-grid,
+.devops-app .workload-card-grid {
   display: grid;
-  grid-template-rows: 3.7rem 1fr;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.devops-app .visual-stat,
+.devops-app .workload-card,
+.devops-app .platform-host,
+.devops-app .platform-band,
+.devops-app .prepared-app-card {
   min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 26px rgba(24, 32, 51, 0.05);
 }
 
-.devops-app .timeline-icon-wrap {
-  position: relative;
-  display: flex;
+.devops-app .visual-stat {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.9rem;
+}
+
+.devops-app .visual-stat-icon,
+.devops-app .workload-icon {
+  display: inline-flex;
+  width: 2.35rem;
+  height: 2.35rem;
   align-items: center;
   justify-content: center;
+  border: 1px solid #99f6e4;
+  background: #f2fcfd;
+  color: var(--teal);
 }
 
-.devops-app .timeline-step:not(:last-child) .timeline-icon-wrap::after {
+.devops-app .visual-stat p,
+.devops-app .workload-card p,
+.devops-app .prepared-app-card p {
+  margin: 0;
+  color: var(--teal);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.devops-app .visual-stat strong,
+.devops-app .workload-card strong,
+.devops-app .prepared-app-card strong {
+  display: block;
+  margin-top: 0.18rem;
+  color: var(--ink);
+  font-size: 1.05rem;
+  font-weight: 760;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.devops-app .visual-stat span:not(.rounded-full),
+.devops-app .workload-card span:not(.rounded-full) {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 620;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.devops-app .platform-map {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.62fr) minmax(0, 1.38fr);
+  gap: 0.85rem;
+  align-items: stretch;
+}
+
+.devops-app .platform-host,
+.devops-app .platform-band {
+  padding: 1rem;
+}
+
+.devops-app .platform-card-head,
+.devops-app .platform-band-title,
+.devops-app .vm-chip-head,
+.devops-app .workload-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.devops-app .platform-card-head p,
+.devops-app .platform-band-title span,
+.devops-app .vm-chip-head span {
+  margin: 0;
+  color: var(--teal);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.devops-app .platform-card-head h3 {
+  margin: 0.2rem 0 0;
+  color: var(--ink);
+  font-size: 1.65rem;
+  font-weight: 760;
+  line-height: 1.1;
+}
+
+.devops-app .platform-host > .rounded-full {
+  margin: 0.9rem 0;
+}
+
+.devops-app .mini-meter {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+}
+
+.devops-app .mini-meter-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 720;
+}
+
+.devops-app .mini-meter-track {
+  overflow: hidden;
+  height: 0.48rem;
+  border: 1px solid #d7f3ef;
+  background: #edf6f6;
+}
+
+.devops-app .mini-meter-track span {
+  display: block;
+  width: var(--bar-value);
+  height: 100%;
+  background: linear-gradient(90deg, #0f766e, #2563eb);
+}
+
+.devops-app .platform-cluster {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.devops-app .platform-band {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.devops-app .platform-band-title strong {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2rem;
+  height: 2rem;
+  border: 1px solid #99f6e4;
+  background: #f2fcfd;
+  color: var(--teal);
+  font-size: 0.95rem;
+}
+
+.devops-app .vm-chip-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-top: 0.85rem;
+}
+
+.devops-app .vm-chip {
+  min-width: 0;
+  border: 1px solid #dce2ec;
+  background: #ffffff;
+  padding: 0.78rem;
+}
+
+.devops-app .vm-chip-control-plane {
+  border-color: #bfdbfe;
+  background: #f6f9ff;
+}
+
+.devops-app .vm-chip-worker {
+  border-color: #bbf7d0;
+  background: #f6fcf8;
+}
+
+.devops-app .vm-chip strong {
+  display: block;
+  margin-top: 0.62rem;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 760;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.devops-app .vm-chip-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.devops-app .vm-chip-meta span {
+  border: 1px solid var(--line);
+  background: #ffffff;
+  padding: 0.22rem 0.42rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.devops-app .workload-card {
+  display: grid;
+  align-content: start;
+  gap: 0.7rem;
+  padding: 1rem;
+}
+
+.devops-app .prepared-app-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.devops-app .prepared-app-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.95rem;
+}
+
+.devops-app .prepared-app-card svg {
+  color: #94a3b8;
+}
+
+.devops-app .route-tree {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+  scroll-margin-top: 7rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 1rem;
+}
+
+.devops-app .route-tree-root {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  width: fit-content;
+  min-width: min(100%, 24rem);
+  border: 1px solid #99f6e4;
+  background: #ffffff;
+  padding: 0.85rem;
+  box-shadow: 0 8px 18px rgba(24, 32, 51, 0.05);
+}
+
+.devops-app .route-tree-root-icon {
+  display: inline-flex;
+  width: 2.45rem;
+  height: 2.45rem;
+  align-items: center;
+  justify-content: center;
+  background: #f2fcfd;
+  color: var(--teal);
+  border: 1px solid #99f6e4;
+}
+
+.devops-app .route-tree-root p,
+.devops-app .route-branch-head p {
+  margin: 0;
+  color: var(--teal);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.devops-app .route-branch-head span {
+  display: block;
+  width: fit-content;
+  margin-top: 0.45rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  padding: 0.16rem 0.42rem;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 760;
+  line-height: 1.2;
+}
+
+.devops-app .route-tree-root h4,
+.devops-app .route-branch-head strong {
+  display: block;
+  margin: 0.15rem 0 0;
+  color: var(--ink);
+  font-size: 1.05rem;
+  font-weight: 760;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.devops-app .route-tree-root span {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.devops-app .route-tree-branches {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  padding-left: 1rem;
+}
+
+.devops-app .route-tree-branches::before {
   position: absolute;
-  left: calc(50% + 1.45rem);
-  right: calc(-50% - 0.35rem);
-  top: 50%;
+  top: -1rem;
+  bottom: 1.4rem;
+  left: 0.25rem;
+  width: 2px;
+  background: #cbd5e1;
+  content: "";
+}
+
+.devops-app .route-branch {
+  position: relative;
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: #ffffff;
+  padding: 0.9rem;
+}
+
+.devops-app .route-branch::before {
+  position: absolute;
+  top: 1.55rem;
+  left: -0.78rem;
+  width: 0.78rem;
   height: 2px;
-  background: #b8c4d7;
+  background: #cbd5e1;
   content: "";
 }
 
-.devops-app .timeline-step:not(:last-child) .timeline-icon-wrap::before {
-  position: absolute;
-  right: calc(-50% - 0.38rem);
-  top: calc(50% - 4px);
-  z-index: 1;
-  width: 0;
-  height: 0;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  border-left: 7px solid #b8c4d7;
-  content: "";
-}
-
-.devops-app .timeline-icon {
-  position: relative;
-  z-index: 2;
+.devops-app .route-branch-head {
   display: flex;
-  width: 3rem;
-  height: 3rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid #eef2f7;
+  padding-bottom: 0.75rem;
+}
+
+.devops-app .route-leaf-list {
+  position: relative;
+  display: grid;
+  gap: 0.48rem;
+  margin-top: 0.75rem;
+  padding-left: 1rem;
+}
+
+.devops-app .route-leaf-list::before {
+  position: absolute;
+  top: 0.6rem;
+  bottom: 0.6rem;
+  left: 0.22rem;
+  width: 2px;
+  background: #e2e8f0;
+  content: "";
+}
+
+.devops-app .route-leaf {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.55rem;
   align-items: center;
-  justify-content: center;
-  border: 2px solid currentColor;
+  min-width: 0;
+  border: 1px solid #eef2f7;
+  background: #fbfdff;
+  padding: 0.6rem;
+}
+
+.devops-app .route-leaf::before {
+  position: absolute;
+  top: 50%;
+  left: -0.78rem;
+  width: 0.78rem;
+  height: 2px;
+  background: #e2e8f0;
+  content: "";
+}
+
+.devops-app .route-leaf-selected {
+  border-color: #14b8a6;
+  background: #f0fdfa;
+  box-shadow: 0 8px 18px rgba(15, 118, 110, 0.09);
+}
+
+.devops-app .route-leaf-node {
+  width: 0.62rem;
+  height: 0.62rem;
+  border: 2px solid var(--teal);
   border-radius: 999px;
   background: #ffffff;
 }
 
-.devops-app .timeline-work-card {
-  height: 100%;
-  transition:
-    transform 160ms ease,
-    border-color 160ms ease,
-    box-shadow 160ms ease;
+.devops-app .route-leaf-node-docker {
+  border-color: #2563eb;
+  background: #dbeafe;
 }
 
-.devops-app .timeline-work-card .work-card-body {
-  gap: 0.65rem;
-  height: 100%;
-  padding: 0.95rem;
+.devops-app .route-leaf-node-local-service {
+  border-color: #f59e0b;
+  background: #fef3c7;
 }
 
-.devops-app .timeline-card-head {
-  display: grid;
-  gap: 0.5rem;
+.devops-app .route-leaf-node-haproxy {
+  border-color: #7c3aed;
+  background: #ede9fe;
 }
 
-.devops-app .timeline-card-head h3 {
-  margin: 0.18rem 0 0;
-  color: #0f172a;
-  font-size: 1.02rem;
-  font-weight: 720;
-  line-height: 1.2;
+.devops-app .route-leaf-node-control-plane {
+  border-color: #0f766e;
+  background: #ccfbf1;
 }
 
-.devops-app .timeline-primary {
-  color: #0f172a;
-  font-size: 0.88rem;
-  font-weight: 720;
-  line-height: 1.45;
+.devops-app .route-leaf-body {
+  min-width: 0;
+}
+
+.devops-app .route-leaf-body strong,
+.devops-app .route-leaf-body span,
+.devops-app .route-leaf-body em {
+  display: block;
   overflow-wrap: anywhere;
 }
 
-.devops-app .timeline-work-card p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.82rem;
-  line-height: 1.45;
-}
-
-.devops-app .timeline-empty-card .work-card-body {
-  gap: 0.75rem;
-}
-
-.devops-app .timeline-empty-card h3 {
-  margin: 0;
+.devops-app .route-leaf-body strong {
   color: var(--ink);
-  font-size: 1.2rem;
-  font-weight: 720;
+  font-size: 0.88rem;
+  font-weight: 760;
+  line-height: 1.25;
 }
 
-.devops-app .timeline-empty-card p {
-  max-width: 760px;
-  margin: 0;
+.devops-app .route-leaf-body span {
+  margin-top: 0.12rem;
   color: var(--muted);
-  font-size: 0.95rem;
-  line-height: 1.7;
+  font-size: 0.76rem;
+  font-weight: 650;
 }
 
-.devops-app .timeline-work-card:hover {
-  transform: translateY(-2px);
-  border-color: #b8c4d7;
-  box-shadow: 0 18px 42px rgba(24, 32, 51, 0.12);
-}
-
-.devops-app .ops-dashboard-frame {
-  overflow: hidden;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+.devops-app .route-leaf-body em {
+  width: fit-content;
+  margin-top: 0.38rem;
+  border: 1px solid #e2e8f0;
   background: #ffffff;
-  box-shadow: 0 10px 26px rgba(24, 32, 51, 0.06);
-  --ops-dashboard-scale: 0.58;
-  --ops-dashboard-height: 1700px;
+  padding: 0.12rem 0.34rem;
+  color: #64748b;
+  font-size: 0.66rem;
+  font-style: normal;
+  font-weight: 760;
 }
 
-.devops-app .ops-dashboard-frame iframe {
-  display: block;
-  width: calc(100% / var(--ops-dashboard-scale));
-  height: var(--ops-dashboard-height);
-  border: 0;
-  background: #ffffff;
-  transform: scale(var(--ops-dashboard-scale));
-  transform-origin: top left;
+.devops-app .route-branch-compact .route-leaf-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding-left: 0;
+}
+
+.devops-app .route-branch-compact .route-leaf-list::before,
+.devops-app .route-branch-compact .route-leaf::before {
+  display: none;
+}
+
+.devops-app .route-branch-compact .route-leaf {
+  gap: 0.42rem;
+  padding: 0.5rem;
+}
+
+.devops-app .route-branch-compact .route-leaf-body strong {
+  font-size: 0.82rem;
+}
+
+.devops-app .route-ha-map {
+  position: relative;
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.devops-app .route-ha-map::before {
+  position: absolute;
+  top: 2.7rem;
+  bottom: 0.85rem;
+  left: 0.45rem;
+  width: 2px;
+  background: #e2e8f0;
+  content: "";
+}
+
+.devops-app .route-ha-root {
+  border-color: #ddd6fe;
+  background: #faf5ff;
+}
+
+.devops-app .route-ha-root::before {
+  display: none;
+}
+
+.devops-app .route-ha-children {
+  position: relative;
+  display: grid;
+  gap: 0.48rem;
+  padding-left: 1.2rem;
+}
+
+.devops-app .route-ha-children .route-leaf::before {
+  left: -0.78rem;
+  background: #e2e8f0;
 }
 
 @media (max-width: 980px) {
   .devops-app .site-header {
     grid-template-columns: 1fr auto;
+  }
+
+  .devops-app h1 {
+    font-size: 3rem;
   }
 
   .devops-app .site-header nav {
@@ -843,32 +1313,42 @@ body:has(.devops-app) {
     padding-bottom: 0.65rem;
   }
 
+  .devops-app .site-header .icon-link {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+
   .devops-app .hero,
   .devops-app .devops-content-grid,
   .devops-app .overview-work-grid {
     grid-template-columns: 1fr;
   }
 
-  .devops-app .overview-work-grid .serving-root-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .devops-app .hero-dashboard-frame {
+    height: 420px;
   }
 
-  .devops-app .timeline-horizontal {
-    grid-template-columns: repeat(var(--step-count), minmax(165px, 1fr));
-    min-width: 1180px;
+  .devops-app .overview-work-grid .serving-root-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .devops-app .pipeline-overview {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .devops-app .pipeline-overview-step:not(:last-child)::after {
-    display: none;
+  .devops-app .visual-stat-grid,
+  .devops-app .workload-card-grid,
+  .devops-app .route-tree-branches {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .devops-app .ops-dashboard-frame {
-    --ops-dashboard-scale: 0.52;
-    --ops-dashboard-height: 1700px;
+  .devops-app .platform-map {
+    grid-template-columns: 1fr;
+  }
+
+  .devops-app .pipeline-overview-step:not(:last-child)::after {
+    display: none;
   }
 
   .devops-app .devops-side-rail {
@@ -883,6 +1363,33 @@ body:has(.devops-app) {
     padding-right: 1rem;
   }
 
+  .devops-app .site-header {
+    position: static;
+  }
+
+  .devops-app h1 {
+    font-size: 1.95rem;
+  }
+
+  .devops-app .lead {
+    font-size: 1rem;
+    line-height: 1.68;
+  }
+
+  .devops-app .hero-document-card {
+    padding: 1rem;
+  }
+
+  .devops-app .hero-dashboard-frame {
+    height: 200px;
+  }
+
+  .devops-app .hero-dashboard-frame iframe {
+    width: 200%;
+    height: 200%;
+    transform: scale(0.5);
+  }
+
   .devops-app .devops-content-grid {
     width: calc(100vw - 2rem);
   }
@@ -890,8 +1397,27 @@ body:has(.devops-app) {
   .devops-app .overview-work-grid .serving-root-grid,
   .devops-app .overview-inline-facts,
   .devops-app .overview-source-grid,
-  .devops-app .pipeline-overview {
+  .devops-app .pipeline-overview,
+  .devops-app .visual-stat-grid,
+  .devops-app .workload-card-grid,
+  .devops-app .prepared-app-grid,
+  .devops-app .vm-chip-grid,
+  .devops-app .route-tree-branches {
     grid-template-columns: 1fr;
+  }
+
+  .devops-app .route-branch-compact .route-leaf-list {
+    grid-template-columns: 1fr;
+  }
+
+  .devops-app .visual-stat,
+  .devops-app .prepared-app-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .devops-app .prepared-app-card > .rounded-full {
+    grid-column: 1 / -1;
+    width: fit-content;
   }
 
   .devops-app .pipeline-overview-title {

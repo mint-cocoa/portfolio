@@ -7,4 +7,4 @@ cd "$repo_root"
 quarto render docs/index.qmd --to html
 quarto render docs/server/ServerCorePortfolio.qmd --to html
 quarto render docs/client/ClientPortfolio.qmd --to html
-quarto render docs/devops/DevOpsPortfolio.qmd --to html
+"$repo_root/scripts/render-devops.sh"

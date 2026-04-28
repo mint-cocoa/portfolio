@@ -11,7 +11,7 @@
 포폴문서/
 ├── CMakeLists.txt             ← iouring_runtime_web(RuntimeWeb) 기반 정적 포트폴리오 서버 빌드
 ├── Dockerfile                 ← portfolio_site 컨테이너 이미지 빌드
-├── scripts/render-devops.sh   ← DevOps QMD 문서 렌더 스크립트
+├── scripts/render-devops.sh   ← React 기반 DevOps/운영 대시보드 빌드 스크립트
 ├── terraform/                 ← remote encrypted Terraform state backend scaffold
 ├── ansible/                   ← Kubespray pin, inventory, 운영 playbook scaffold
 ├── gitops/secrets/            ← SOPS/age 기반 encrypted secret 템플릿
@@ -30,7 +30,8 @@
 
 ## 빌드와 배포
 
-DevOps 포트폴리오 문서는 Quarto 소스에서 렌더링합니다.
+DevOps 포트폴리오는 `dashboard/src/DevOpsInlinePortfolio.jsx`를 기준으로 한 React/Vite 페이지입니다.
+`docs/devops/DevOpsPortfolio.qmd`는 구형 문서이며 현재 공개 페이지의 canonical source가 아닙니다.
 
 ```bash
 ./scripts/render-devops.sh

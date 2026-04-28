@@ -3,4 +3,5 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-"$repo_root/scripts/render-docs.sh"
+cd "$repo_root/dashboard"
+npm run build
