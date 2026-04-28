@@ -12,6 +12,10 @@
 ├── CMakeLists.txt             ← iouring_runtime_web(RuntimeWeb) 기반 정적 포트폴리오 서버 빌드
 ├── Dockerfile                 ← portfolio_site 컨테이너 이미지 빌드
 ├── scripts/render-devops.sh   ← DevOps QMD 문서 렌더 스크립트
+├── terraform/                 ← remote encrypted Terraform state backend scaffold
+├── ansible/                   ← Kubespray pin, inventory, 운영 playbook scaffold
+├── gitops/secrets/            ← SOPS/age 기반 encrypted secret 템플릿
+├── deploy/                    ← systemd/Kubernetes 운영 manifest
 ├── src/                       ← C++ 포트폴리오 정적 파일 서버
 ├── docs/                      ← 공개 HTML/PDF/QMD 산출물
 ├── 01_ServerCore_v4/          ← io_uring 기반 게임 서버 프레임워크
@@ -48,6 +52,23 @@ docker build -t portfolio:local .
 docker run --rm --security-opt seccomp=unconfined --ulimit memlock=-1:-1 \
   -p 3000:3000 portfolio:local
 ```
+
+홈랩 운영 scaffold는 실제 secret/state를 커밋하지 않는 형태로 분리했습니다.
+
+```bash
+# Terraform remote encrypted backend
+cd terraform
+terraform init -backend-config=backend.home.hcl
+
+# Kubespray pinned checkout
+cd ../ansible
+./bootstrap-kubespray.sh
+
+# NFS/PV backup automation, encrypted restic secret 선행 필요
+ansible-playbook playbooks/apply-nfs-pv-backup.yml
+```
+
+세부 hardening checklist는 `docs/ops-hardening-roadmap.md`에 정리했습니다.
 
 ---
 

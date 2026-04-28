@@ -1,0 +1,23 @@
+---
+- name: Apply NFS PV backup automation
+  hosts: localhost
+  gather_facts: false
+  vars:
+    kubeconfig: "{{ lookup('env', 'KUBECONFIG') | default(lookup('env', 'HOME') ~ '/.kube/config', true) }}"
+    backup_manifest: "{{ playbook_dir }}/../../deploy/nfs-pv-backup-cronjob.yaml"
+  tasks:
+    - name: Apply restic backup CronJob manifest
+      ansible.builtin.command:
+        argv:
+          - kubectl
+          - --kubeconfig
+          - "{{ kubeconfig }}"
+          - apply
+          - -f
+          - "{{ backup_manifest }}"
+      changed_when: "'configured' in apply_result.stdout or 'created' in apply_result.stdout"
+      register: apply_result
+
+    - name: Show apply result
+      ansible.builtin.debug:
+        var: apply_result.stdout_lines

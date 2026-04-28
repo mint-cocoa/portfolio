@@ -24,5 +24,22 @@ html2pdf.py
 # Local ops credentials
 .env.ops
 
+# Terraform local state/cache. Remote backend config examples are committed.
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/*.tfvars
+!terraform/*.tfvars.example
+
+# Vendored Kubespray source and local Python env are reproducible from lock files.
+ansible/vendor/
+ansible/.venv/
+ansible/inventory/*/artifacts/
+
+# GitOps secret workflow keeps cleartext out of git.
+gitops/secrets/*.plain.yaml
+gitops/secrets/*.dec.yaml
+
 /.quarto/
 **/*.quarto_ipynb

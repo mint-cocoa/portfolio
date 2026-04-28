@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: storage-backup
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-pv-backup-root
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadOnlyMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  mountOptions:
+    - nfsvers=4.1
+    - ro
+  nfs:
+    server: 172.30.1.52
+    path: /export/k8s_pv
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-pv-backup-root
+  namespace: storage-backup
+spec:
+  accessModes:
+    - ReadOnlyMany
+  storageClassName: ""
+  volumeName: nfs-pv-backup-root
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nfs-pv-restic-backup
+  namespace: storage-backup
+spec:
+  schedule: "17 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            fsGroup: 1000
+          containers:
+            - name: restic
+              image: restic/restic:0.17.3
+              imagePullPolicy: IfNotPresent
+              envFrom:
+                - secretRef:
+                    name: nfs-pv-backup-restic
+              env:
+                - name: RESTIC_CACHE_DIR
+                  value: /cache
+              command:
+                - /bin/sh
+                - -ec
+                - |
+                  restic snapshots >/dev/null 2>&1 || restic init
+                  restic backup /source \
+                    --host home-k8s-nfs \
+                    --tag kubernetes-pv \
+                    --tag nfs-client
+                  restic forget \
+                    --keep-daily 7 \
+                    --keep-weekly 4 \
+                    --keep-monthly 6 \
+                    --prune
+              volumeMounts:
+                - name: nfs-root
+                  mountPath: /source
+                  readOnly: true
+                - name: cache
+                  mountPath: /cache
+          volumes:
+            - name: nfs-root
+              persistentVolumeClaim:
+                claimName: nfs-pv-backup-root
+                readOnly: true
+            - name: cache
+              emptyDir: {}

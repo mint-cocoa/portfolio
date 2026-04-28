@@ -1,0 +1,4 @@
+KUBESPRAY_REPO=https://github.com/kubernetes-sigs/kubespray.git
+KUBESPRAY_REF=v2.30.0
+KUBESPRAY_COMMIT_SHORT=f4ccdb5
+KUBESPRAY_SOURCE_DIR=vendor/kubespray
