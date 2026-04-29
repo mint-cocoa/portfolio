@@ -329,6 +329,7 @@ function App() {
               eyebrow="Deploy evidence"
               title="Commit to live rollout"
               summary="GitHub Actions, image, GitOps, Argo CD, rollout, and live dashboard evidence."
+              defaultOpen
             >
               <DeploymentPipeline pipeline={deployPipeline} />
             </DetailSection>

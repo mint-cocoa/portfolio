@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  Background,
+  Controls,
+  Handle,
+  MarkerType,
+  Position,
+  ReactFlow,
+} from '@xyflow/react';
+import {
   Activity,
   Boxes,
   Cloud,
@@ -17,6 +25,7 @@ import {
   Split,
   ShieldCheck,
 } from 'lucide-react';
+import '@xyflow/react/dist/style.css';
 import {
   API_LABEL,
   fetchDeployPipeline,
@@ -76,6 +85,86 @@ const tone = {
   violet: 'border-violet-200 bg-violet-50 text-violet-800',
   zinc: 'border-zinc-200 bg-zinc-50 text-zinc-700',
 };
+
+const flowStatusClass = (status) => `flow-node-${statusTone(status)}`;
+
+const FlowNode = ({ data }) => {
+  const Icon = data.icon ?? Network;
+  const NodeTag = data.href ? 'a' : 'div';
+  const nodeProps = data.href
+    ? { href: data.href, target: '_blank', rel: 'noreferrer' }
+    : {};
+
+  return (
+    <NodeTag className={`flow-node-card ${flowStatusClass(data.status)} ${data.compact ? 'flow-node-compact' : ''}`} {...nodeProps}>
+      <Handle className="flow-handle" type="target" position={Position.Left} isConnectable={false} />
+      <div className="flow-node-icon">
+        <Icon size={16} />
+      </div>
+      <div className="flow-node-body">
+        <p>{data.eyebrow}</p>
+        <strong>{fallback(data.label)}</strong>
+        {data.detail && <span>{fallback(data.detail)}</span>}
+      </div>
+      {data.href && <ExternalLink className="flow-node-link" size={13} aria-hidden="true" />}
+      <Handle className="flow-handle" type="source" position={Position.Right} isConnectable={false} />
+    </NodeTag>
+  );
+};
+
+const flowNodeTypes = {
+  evidence: FlowNode,
+};
+
+const flowEdge = (id, source, target, label) => ({
+  id,
+  source,
+  target,
+  label,
+  type: 'smoothstep',
+  markerEnd: {
+    type: MarkerType.ArrowClosed,
+    width: 16,
+    height: 16,
+  },
+  style: {
+    stroke: '#94a3b8',
+    strokeWidth: 1.5,
+  },
+  labelStyle: {
+    fill: '#64748b',
+    fontSize: 10,
+    fontWeight: 700,
+  },
+  labelBgPadding: [6, 3],
+  labelBgBorderRadius: 4,
+  labelBgStyle: {
+    fill: '#ffffff',
+    fillOpacity: 0.86,
+  },
+});
+
+const EvidenceFlow = ({ nodes, edges, height = 360, ariaLabel }) => (
+  <div className="evidence-flow" style={{ '--flow-height': `${height}px` }} aria-label={ariaLabel}>
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      nodeTypes={flowNodeTypes}
+      fitView
+      fitViewOptions={{ padding: 0.16 }}
+      minZoom={0.25}
+      maxZoom={1.4}
+      nodesDraggable={false}
+      nodesConnectable={false}
+      elementsSelectable
+      panOnScroll={false}
+      proOptions={{ hideAttribution: true }}
+    >
+      <Background gap={20} size={1} color="#dbe4ef" />
+      <Controls showInteractive={false} />
+    </ReactFlow>
+  </div>
+);
 
 const destinationLabels = {
   'cxx-web': 'C++ RuntimeWeb',
@@ -305,33 +394,144 @@ const WorkloadVisual = ({ data }) => (
   </div>
 );
 
-const PipelineOverview = ({ steps }) => (
-  <div className="pipeline-overview" aria-label="RuntimeWeb 배포 파이프라인 요약">
-    {steps.map((step, index) => {
-      const Icon = step.icon;
-      return (
-        <article className="pipeline-overview-step" key={step.id}>
-          <div className="pipeline-step-head">
-            <div className={`pipeline-step-icon ${tone[statusTone(step.status)]}`}>
-              <Icon size={18} />
-            </div>
-            <StatusPill value={step.status} />
-          </div>
-          <div className="pipeline-step-number">0{index + 1}</div>
-          <h3>{step.label}</h3>
-          <div className="pipeline-step-value">{fallback(step.value, 'Ops API 연결 시 표시')}</div>
-          <p>{fallback(step.detail)}</p>
-          {step.href && (
-            <a href={step.href} target="_blank" rel="noreferrer">
-              {step.linkLabel ?? 'Open detail'}
-              <ExternalLink size={14} />
-            </a>
-          )}
-        </article>
-      );
-    })}
-  </div>
-);
+const PipelineOverview = ({ steps }) => {
+  const nodes = steps.map((step, index) => ({
+    id: step.id,
+    type: 'evidence',
+    position: { x: index * 245, y: index % 2 === 0 ? 0 : 112 },
+    data: {
+      eyebrow: `0${index + 1} - ${fallback(step.status, 'check')}`,
+      label: step.label,
+      detail: fallback(step.value, 'Ops API 연결 시 표시'),
+      status: step.status,
+      href: step.href,
+      icon: step.icon,
+    },
+  }));
+  const edges = steps.slice(0, -1).map((step, index) => (
+    flowEdge(`pipeline-${step.id}-${steps[index + 1].id}`, step.id, steps[index + 1].id, steps[index + 1].label)
+  ));
+
+  return (
+    <EvidenceFlow
+      nodes={nodes}
+      edges={edges}
+      height={310}
+      ariaLabel="RuntimeWeb 배포 파이프라인 요약"
+    />
+  );
+};
+
+const routeGroupStatus = (destination) => ({
+  kubernetes: 'ready',
+  docker: 'running',
+  'local-service': 'running',
+  'api-ha': 'observed',
+  'cxx-web': 'ready',
+  external: 'check',
+}[destination] ?? 'check');
+
+const RouteTopologyFlow = ({ routeTreeGroups, routes, hiddenRouteCount, selectedRoute, proxyService, liveHost }) => {
+  const groups = routeTreeGroups.length
+    ? routeTreeGroups
+    : [['check', [{ hostname: liveHost, upstream: '-', destination: 'check' }]]];
+  const nodes = [
+    {
+      id: 'edge-proxy',
+      type: 'evidence',
+      position: { x: 0, y: Math.max(0, (groups.length - 1) * 92) },
+      data: {
+        eyebrow: 'Actual route tree',
+        label: fallback(proxyService, 'edge proxy'),
+        detail: `${routes.length || '-'} published routes${hiddenRouteCount > 0 ? ` / ${hiddenRouteCount} private` : ''}`,
+        status: routes.length ? 'running' : 'check',
+        icon: Network,
+      },
+    },
+  ];
+  const edges = [];
+  let maxY = 0;
+
+  groups.forEach(([destination, items], groupIndex) => {
+    const groupY = groupIndex * 184;
+    const destinationId = `destination-${destination}`;
+    const sourceSummary = [...new Set(items.map((item) => routeTreeSource(item)))].join(' + ');
+    nodes.push({
+      id: destinationId,
+      type: 'evidence',
+      position: { x: 300, y: groupY },
+      data: {
+        eyebrow: destination === 'api-ha' ? 'Cluster API HA' : destinationLabels[destination] ?? destination,
+        label: `${items.length} ${destination === 'api-ha' ? `node${items.length === 1 ? '' : 's'}` : `route${items.length === 1 ? '' : 's'}`}`,
+        detail: sourceSummary,
+        status: routeGroupStatus(destination),
+        icon: destination === 'kubernetes' ? Cloud : destination === 'api-ha' ? ShieldCheck : Route,
+        compact: true,
+      },
+    });
+    edges.push(flowEdge(`edge-proxy-${destinationId}`, 'edge-proxy', destinationId, destinationLabels[destination] ?? destination));
+
+    const apiHaRoot = destination === 'api-ha'
+      ? items.find((item) => item.kind === 'haproxy') ?? items[0]
+      : null;
+    const apiHaChildren = destination === 'api-ha'
+      ? items.filter((item) => item !== apiHaRoot)
+      : [];
+    const visibleItems = destination === 'api-ha' ? [apiHaRoot].filter(Boolean) : items;
+
+    visibleItems.forEach((item, itemIndex) => {
+      const itemId = `route-${destination}-${itemIndex}-${item.hostname}`;
+      const y = groupY + itemIndex * 78;
+      nodes.push({
+        id: itemId,
+        type: 'evidence',
+        position: { x: 600, y },
+        data: {
+          eyebrow: item === selectedRoute ? 'Selected public path' : routeTreeDestination(item),
+          label: item.hostname,
+          detail: item.upstream,
+          status: item === selectedRoute ? 'live' : routeGroupStatus(routeTreeDestination(item)),
+          href: publicRouteHref(item),
+          icon: item.kind === 'haproxy' ? ShieldCheck : item.kind === 'control-plane' ? Server : ExternalLink,
+          compact: true,
+        },
+      });
+      edges.push(flowEdge(`${destinationId}-${itemId}`, destinationId, itemId, item === selectedRoute ? 'selected' : undefined));
+      maxY = Math.max(maxY, y);
+
+      if (destination === 'api-ha') {
+        apiHaChildren.forEach((child, childIndex) => {
+          const childId = `route-api-ha-child-${childIndex}-${child.upstream}`;
+          const childY = groupY + childIndex * 78 - ((apiHaChildren.length - 1) * 39);
+          nodes.push({
+            id: childId,
+            type: 'evidence',
+            position: { x: 895, y: childY },
+            data: {
+              eyebrow: child.kind ?? 'control-plane',
+              label: child.hostname,
+              detail: child.upstream,
+              status: 'running',
+              icon: Server,
+              compact: true,
+            },
+          });
+          edges.push(flowEdge(`${itemId}-${childId}`, itemId, childId, '6443'));
+          maxY = Math.max(maxY, childY);
+        });
+      }
+    });
+  });
+
+  return (
+    <EvidenceFlow
+      nodes={nodes}
+      edges={edges}
+      height={Math.max(360, maxY + 150)}
+      ariaLabel="Actual edge route topology"
+    />
+  );
+};
 
 const HeroDashboardPreview = ({ data }) => (
   <aside className="hero-dashboard-preview" aria-label="Ops Dashboard live preview">
@@ -489,99 +689,14 @@ const NetworkTopologyMap = ({ data }) => {
           </div>
         </div>
 
-        <div className="route-tree">
-          <div className="route-tree-root">
-            <div className="route-tree-root-icon">
-              <Network size={20} />
-            </div>
-            <div>
-              <p>Actual route tree</p>
-              <h4>{fallback(data.edge?.proxy?.service, 'edge proxy')}</h4>
-              <span>
-                {routes.length || '-'} published routes from edge-runtime
-                {hiddenRouteCount > 0 ? ` · ${hiddenRouteCount} private` : ''}
-              </span>
-            </div>
-          </div>
-
-          <div className="route-tree-branches">
-            {(routeTreeGroups.length ? routeTreeGroups : [['check', [{ hostname: data.liveHost, upstream: '-', destination: 'check' }]]]).map(([destination, items]) => {
-              const sourceSummary = [...new Set(items.map((item) => routeTreeSource(item)))].join(' + ');
-              const branchClassName = [
-                'route-branch',
-                `route-branch-${destination}`,
-                destination === 'docker' ? 'route-branch-compact' : '',
-              ].filter(Boolean).join(' ');
-              const apiHaRoot = destination === 'api-ha'
-                ? items.find((item) => item.kind === 'haproxy') ?? items[0]
-                : null;
-              const apiHaChildren = destination === 'api-ha'
-                ? items.filter((item) => item !== apiHaRoot)
-                : [];
-              return (
-                <section className={branchClassName} key={destination}>
-                  <div className="route-branch-head">
-                    <div>
-                      <p>{destination === 'api-ha' ? 'Cluster API HA' : destinationLabels[destination] ?? destination}</p>
-                      <strong>{items.length} {destination === 'api-ha' ? `node${items.length === 1 ? '' : 's'}` : `route${items.length === 1 ? '' : 's'}`}</strong>
-                      <span>source: {sourceSummary}</span>
-                    </div>
-                    <StatusPill value={destination} />
-                  </div>
-
-                  {destination === 'api-ha' ? (
-                    <div className="route-ha-map">
-                      <article className="route-leaf route-ha-root" key={`${apiHaRoot.hostname}-${apiHaRoot.upstream}`}>
-                        <div className={`route-leaf-node route-leaf-node-${apiHaRoot.kind ?? routeTreeDestination(apiHaRoot)}`} aria-hidden="true" />
-                        <div className="route-leaf-body">
-                          <strong>{fallback(apiHaRoot.hostname)}</strong>
-                          <span>{fallback(apiHaRoot.upstream)}</span>
-                        </div>
-                      </article>
-                      <div className="route-ha-children">
-                        {apiHaChildren.map((item) => (
-                          <article className="route-leaf" key={`${item.hostname}-${item.upstream}`}>
-                            <div className={`route-leaf-node route-leaf-node-${item.kind ?? routeTreeDestination(item)}`} aria-hidden="true" />
-                            <div className="route-leaf-body">
-                              <strong>{fallback(item.hostname)}</strong>
-                              <span>{fallback(item.upstream)}</span>
-                            </div>
-                          </article>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="route-leaf-list">
-                      {items.map((item) => {
-                        const selected = item === route;
-                        const href = publicRouteHref(item);
-                        const LeafTag = href ? 'a' : 'article';
-                        const leafProps = href
-                          ? {
-                              href,
-                              target: '_blank',
-                              rel: 'noreferrer',
-                              'aria-label': `${item.hostname} 열기`,
-                            }
-                          : {};
-                        return (
-                          <LeafTag className={`route-leaf ${href ? 'route-leaf-link' : ''} ${selected ? 'route-leaf-selected' : ''}`} key={`${item.hostname}-${item.upstream}`} {...leafProps}>
-                            <div className={`route-leaf-node route-leaf-node-${item.kind ?? routeTreeDestination(item)}`} aria-hidden="true" />
-                            <div className="route-leaf-body">
-                              <strong>{fallback(item.hostname)}</strong>
-                              <span>{fallback(item.upstream)}</span>
-                            </div>
-                            {href && <ExternalLink className="route-leaf-link-icon" size={14} aria-hidden="true" />}
-                          </LeafTag>
-                        );
-                      })}
-                    </div>
-                  )}
-                </section>
-              );
-            })}
-          </div>
-        </div>
+        <RouteTopologyFlow
+          routeTreeGroups={routeTreeGroups}
+          routes={routes}
+          hiddenRouteCount={hiddenRouteCount}
+          selectedRoute={route}
+          proxyService={data.edge?.proxy?.service}
+          liveHost={data.liveHost}
+        />
       </div>
     </div>
   );

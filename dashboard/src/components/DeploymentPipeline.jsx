@@ -1,5 +1,14 @@
 import { useMemo, useState } from 'react';
+import {
+  Background,
+  Controls,
+  Handle,
+  MarkerType,
+  Position,
+  ReactFlow,
+} from '@xyflow/react';
 import { Boxes, CircleDashed, ExternalLink, GitBranch, GitCommit, Package, PlayCircle, RadioTower, ShieldCheck } from 'lucide-react';
+import '@xyflow/react/dist/style.css';
 
 const icons = {
   commit: GitCommit,
@@ -11,6 +20,58 @@ const icons = {
   live: RadioTower,
 };
 
+const PipelineNode = ({ data }) => {
+  const Icon = data.icon ?? CircleDashed;
+
+  return (
+    <div className={`grid w-52 grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-lg border bg-white p-3 text-left shadow-sm ${data.selected ? 'border-slate-950 ring-2 ring-slate-900' : 'border-slate-200'}`}>
+      <Handle className="opacity-0" type="target" position={Position.Left} isConnectable={false} />
+      <div className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-700">
+        <Icon size={18} />
+      </div>
+      <div className="min-w-0">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{data.status ?? 'check'}</div>
+        <div className="mt-1 truncate text-sm font-bold text-slate-900">{data.label}</div>
+        <div className="mt-1 truncate text-xs font-semibold text-slate-600">{data.primary}</div>
+        <div className="mt-1 line-clamp-2 text-[11px] leading-4 text-slate-500">{data.secondary}</div>
+      </div>
+      <Handle className="opacity-0" type="source" position={Position.Right} isConnectable={false} />
+    </div>
+  );
+};
+
+const nodeTypes = {
+  pipeline: PipelineNode,
+};
+
+const pipelineEdge = (source, target, label) => ({
+  id: `${source}-${target}`,
+  source,
+  target,
+  label,
+  type: 'smoothstep',
+  markerEnd: {
+    type: MarkerType.ArrowClosed,
+    width: 16,
+    height: 16,
+  },
+  style: {
+    stroke: '#94a3b8',
+    strokeWidth: 1.5,
+  },
+  labelStyle: {
+    fill: '#64748b',
+    fontSize: 10,
+    fontWeight: 700,
+  },
+  labelBgPadding: [6, 3],
+  labelBgBorderRadius: 4,
+  labelBgStyle: {
+    fill: '#ffffff',
+    fillOpacity: 0.88,
+  },
+});
+
 const DetailRow = ({ label, value }) => {
   if (value === undefined || value === null || value === '') return null;
   return (
@@ -18,25 +79,6 @@ const DetailRow = ({ label, value }) => {
       <div className="font-semibold uppercase text-slate-400">{label}</div>
       <div className="min-w-0 break-words text-slate-700">{String(value)}</div>
     </div>
-  );
-};
-
-const StepButton = ({ step, selected, onClick }) => {
-  const Icon = icons[step.id] ?? CircleDashed;
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`min-h-28 rounded-lg border bg-white p-3 text-left shadow-sm transition hover:border-slate-400 ${selected ? 'border-slate-950 ring-2 ring-slate-900' : 'border-slate-200 ring-0'}`}
-    >
-      <div className="inline-flex rounded-md border border-slate-200 bg-slate-50 p-2 text-slate-700">
-        <Icon size={18} />
-      </div>
-      <div className="mt-3 text-sm font-bold text-slate-900">{step.label}</div>
-      <div className="mt-1 truncate text-xs font-semibold text-slate-600">{step.primary}</div>
-      <div className="mt-1 line-clamp-2 text-[11px] leading-4 text-slate-500">{step.secondary}</div>
-    </button>
   );
 };
 
@@ -48,6 +90,19 @@ export const DeploymentPipeline = ({ pipeline }) => {
     [selectedId, steps],
   );
   const details = selected?.details ?? {};
+  const flowNodes = useMemo(() => steps.map((step, index) => ({
+    id: step.id,
+    type: 'pipeline',
+    position: { x: index * 250, y: index % 2 === 0 ? 0 : 118 },
+    data: {
+      ...step,
+      icon: icons[step.id] ?? CircleDashed,
+      selected: selected?.id === step.id,
+    },
+  })), [selected?.id, steps]);
+  const flowEdges = useMemo(() => steps.slice(0, -1).map((step, index) => (
+    pipelineEdge(step.id, steps[index + 1].id, steps[index + 1].label)
+  )), [steps]);
 
   if (!pipeline || steps.length === 0) return null;
 
@@ -65,15 +120,25 @@ export const DeploymentPipeline = ({ pipeline }) => {
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
-          {steps.map((step) => (
-            <StepButton
-              key={step.id}
-              step={step}
-              selected={selected?.id === step.id}
-              onClick={() => setSelectedId(step.id)}
-            />
-          ))}
+        <div className="h-[320px] overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+          <ReactFlow
+            nodes={flowNodes}
+            edges={flowEdges}
+            nodeTypes={nodeTypes}
+            fitView
+            fitViewOptions={{ padding: 0.18 }}
+            minZoom={0.25}
+            maxZoom={1.4}
+            nodesDraggable={false}
+            nodesConnectable={false}
+            elementsSelectable
+            panOnScroll={false}
+            onNodeClick={(_, node) => setSelectedId(node.id)}
+            proOptions={{ hideAttribution: true }}
+          >
+            <Background gap={20} size={1} color="#dbe4ef" />
+            <Controls showInteractive={false} />
+          </ReactFlow>
         </div>
 
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
