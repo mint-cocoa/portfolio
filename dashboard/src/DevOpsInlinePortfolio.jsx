@@ -144,7 +144,7 @@ const flowEdge = (id, source, target, label) => ({
   },
 });
 
-const EvidenceFlow = ({ nodes, edges, height = 360, ariaLabel }) => (
+const EvidenceFlow = ({ nodes, edges, height = 360, ariaLabel, minZoom = 0.25, fitPadding = 0.16 }) => (
   <div
     className="evidence-flow"
     style={{ '--flow-height': `${height}px`, height: `${height}px`, minHeight: `${height}px` }}
@@ -155,8 +155,8 @@ const EvidenceFlow = ({ nodes, edges, height = 360, ariaLabel }) => (
       edges={edges}
       nodeTypes={flowNodeTypes}
       fitView
-      fitViewOptions={{ padding: 0.16 }}
-      minZoom={0.25}
+      fitViewOptions={{ padding: fitPadding }}
+      minZoom={minZoom}
       maxZoom={1.4}
       nodesDraggable={false}
       nodesConnectable={false}
@@ -169,6 +169,17 @@ const EvidenceFlow = ({ nodes, edges, height = 360, ariaLabel }) => (
     </ReactFlow>
   </div>
 );
+
+const pipelineNodePosition = (index, columnCount = 4, xGap = 280, yGap = 132) => {
+  const row = Math.floor(index / columnCount);
+  const column = index % columnCount;
+  const isReverseRow = row % 2 === 1;
+
+  return {
+    x: (isReverseRow ? columnCount - 1 - column : column) * xGap,
+    y: row * yGap,
+  };
+};
 
 const destinationLabels = {
   'cxx-web': 'C++ RuntimeWeb',
@@ -402,7 +413,7 @@ const PipelineOverview = ({ steps }) => {
   const nodes = steps.map((step, index) => ({
     id: step.id,
     type: 'evidence',
-    position: { x: index * 245, y: index % 2 === 0 ? 0 : 112 },
+    position: pipelineNodePosition(index),
     data: {
       eyebrow: `0${index + 1} - ${fallback(step.status, 'check')}`,
       label: step.label,
@@ -420,7 +431,9 @@ const PipelineOverview = ({ steps }) => {
     <EvidenceFlow
       nodes={nodes}
       edges={edges}
-      height={310}
+      height={280}
+      minZoom={0.5}
+      fitPadding={0.08}
       ariaLabel="RuntimeWeb 배포 파이프라인 요약"
     />
   );

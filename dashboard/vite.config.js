@@ -14,6 +14,7 @@ export default defineConfig({
         target: 'https://ops-api.mintcocoa.cc',
         changeOrigin: true,
         secure: true,
+        ws: true,
       },
     },
   },

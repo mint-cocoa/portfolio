@@ -72,6 +72,17 @@ const pipelineEdge = (source, target, label) => ({
   },
 });
 
+const pipelineNodePosition = (index, columnCount = 4, xGap = 270, yGap = 132) => {
+  const row = Math.floor(index / columnCount);
+  const column = index % columnCount;
+  const isReverseRow = row % 2 === 1;
+
+  return {
+    x: (isReverseRow ? columnCount - 1 - column : column) * xGap,
+    y: row * yGap,
+  };
+};
+
 const DetailRow = ({ label, value }) => {
   if (value === undefined || value === null || value === '') return null;
   return (
@@ -93,7 +104,7 @@ export const DeploymentPipeline = ({ pipeline }) => {
   const flowNodes = useMemo(() => steps.map((step, index) => ({
     id: step.id,
     type: 'pipeline',
-    position: { x: index * 250, y: index % 2 === 0 ? 0 : 118 },
+    position: pipelineNodePosition(index),
     data: {
       ...step,
       icon: icons[step.id] ?? CircleDashed,
@@ -120,14 +131,14 @@ export const DeploymentPipeline = ({ pipeline }) => {
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
-        <div className="h-[320px] overflow-hidden rounded-lg border border-slate-200 bg-slate-50" style={{ height: '320px', minHeight: '320px' }}>
+        <div className="h-[300px] overflow-hidden rounded-lg border border-slate-200 bg-slate-50" style={{ height: '300px', minHeight: '300px' }}>
           <ReactFlow
             nodes={flowNodes}
             edges={flowEdges}
             nodeTypes={nodeTypes}
             fitView
-            fitViewOptions={{ padding: 0.18 }}
-            minZoom={0.25}
+            fitViewOptions={{ padding: 0.08 }}
+            minZoom={0.5}
             maxZoom={1.4}
             nodesDraggable={false}
             nodesConnectable={false}
