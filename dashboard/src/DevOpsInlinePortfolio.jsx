@@ -145,7 +145,11 @@ const flowEdge = (id, source, target, label) => ({
 });
 
 const EvidenceFlow = ({ nodes, edges, height = 360, ariaLabel }) => (
-  <div className="evidence-flow" style={{ '--flow-height': `${height}px` }} aria-label={ariaLabel}>
+  <div
+    className="evidence-flow"
+    style={{ '--flow-height': `${height}px`, height: `${height}px`, minHeight: `${height}px` }}
+    aria-label={ariaLabel}
+  >
     <ReactFlow
       nodes={nodes}
       edges={edges}

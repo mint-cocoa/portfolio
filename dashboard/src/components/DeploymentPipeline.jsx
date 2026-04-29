@@ -120,7 +120,7 @@ export const DeploymentPipeline = ({ pipeline }) => {
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
-        <div className="h-[320px] overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+        <div className="h-[320px] overflow-hidden rounded-lg border border-slate-200 bg-slate-50" style={{ height: '320px', minHeight: '320px' }}>
           <ReactFlow
             nodes={flowNodes}
             edges={flowEdges}
