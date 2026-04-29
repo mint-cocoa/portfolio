@@ -569,6 +569,11 @@ body:has(.devops-app) {
   min-height: 4.75rem;
 }
 
+.devops-app .flow-node-wide {
+  width: 17rem;
+  min-height: 5.7rem;
+}
+
 .devops-app .flow-node-icon {
   display: inline-flex;
   width: 2.1rem;

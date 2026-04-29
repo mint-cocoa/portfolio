@@ -96,7 +96,7 @@ const FlowNode = ({ data }) => {
     : {};
 
   return (
-    <NodeTag className={`flow-node-card ${flowStatusClass(data.status)} ${data.compact ? 'flow-node-compact' : ''}`} {...nodeProps}>
+    <NodeTag className={`flow-node-card ${flowStatusClass(data.status)} ${data.compact ? 'flow-node-compact' : ''} ${data.wide ? 'flow-node-wide' : ''}`} {...nodeProps}>
       <Handle className="flow-handle" type="target" position={data.targetPosition ?? Position.Left} isConnectable={false} />
       <div className="flow-node-icon">
         <Icon size={16} />
@@ -465,11 +465,37 @@ const RouteTopologyFlow = ({ routeTreeGroups, routes, hiddenRouteCount, selected
   const groups = routeTreeGroups.length
     ? routeTreeGroups
     : [['check', [{ hostname: liveHost, upstream: '-', destination: 'check' }]]];
+  const itemSpacing = 94;
+  const groupGap = 58;
+  let groupCursorY = 0;
+  const groupLayouts = groups.map(([destination, items]) => {
+    const apiHaRoot = destination === 'api-ha'
+      ? items.find((item) => item.kind === 'haproxy') ?? items[0]
+      : null;
+    const apiHaChildren = destination === 'api-ha'
+      ? items.filter((item) => item !== apiHaRoot)
+      : [];
+    const visibleItems = destination === 'api-ha' ? [apiHaRoot].filter(Boolean) : items;
+    const routeRows = Math.max(visibleItems.length, apiHaChildren.length, 1);
+    const height = Math.max(190, routeRows * itemSpacing);
+    const layout = {
+      destination,
+      items,
+      apiHaRoot,
+      apiHaChildren,
+      visibleItems,
+      y: groupCursorY,
+      height,
+    };
+    groupCursorY += height + groupGap;
+    return layout;
+  });
+  const totalRouteHeight = Math.max(0, groupCursorY - groupGap);
   const nodes = [
     {
       id: 'edge-proxy',
       type: 'evidence',
-      position: { x: 0, y: Math.max(0, (groups.length - 1) * 92) },
+      position: { x: 0, y: Math.max(0, totalRouteHeight / 2 - 48) },
       data: {
         eyebrow: 'Actual route tree',
         label: fallback(proxyService, 'edge proxy'),
@@ -480,10 +506,9 @@ const RouteTopologyFlow = ({ routeTreeGroups, routes, hiddenRouteCount, selected
     },
   ];
   const edges = [];
-  let maxY = 0;
+  let maxY = totalRouteHeight;
 
-  groups.forEach(([destination, items], groupIndex) => {
-    const groupY = groupIndex * 184;
+  groupLayouts.forEach(({ destination, items, apiHaChildren, visibleItems, y: groupY }) => {
     const destinationId = `destination-${destination}`;
     const sourceSummary = [...new Set(items.map((item) => routeTreeSource(item)))].join(' + ');
     nodes.push({
@@ -501,17 +526,9 @@ const RouteTopologyFlow = ({ routeTreeGroups, routes, hiddenRouteCount, selected
     });
     edges.push(flowEdge(`edge-proxy-${destinationId}`, 'edge-proxy', destinationId, destinationLabels[destination] ?? destination));
 
-    const apiHaRoot = destination === 'api-ha'
-      ? items.find((item) => item.kind === 'haproxy') ?? items[0]
-      : null;
-    const apiHaChildren = destination === 'api-ha'
-      ? items.filter((item) => item !== apiHaRoot)
-      : [];
-    const visibleItems = destination === 'api-ha' ? [apiHaRoot].filter(Boolean) : items;
-
     visibleItems.forEach((item, itemIndex) => {
       const itemId = `route-${destination}-${itemIndex}-${item.hostname}`;
-      const y = groupY + itemIndex * 78;
+      const y = groupY + (destination === 'api-ha' && apiHaChildren.length > 1 ? Math.floor(apiHaChildren.length / 2) * itemSpacing : itemIndex * itemSpacing);
       nodes.push({
         id: itemId,
         type: 'evidence',
@@ -532,7 +549,7 @@ const RouteTopologyFlow = ({ routeTreeGroups, routes, hiddenRouteCount, selected
       if (destination === 'api-ha') {
         apiHaChildren.forEach((child, childIndex) => {
           const childId = `route-api-ha-child-${childIndex}-${child.upstream}`;
-          const childY = groupY + childIndex * 78 - ((apiHaChildren.length - 1) * 39);
+          const childY = groupY + childIndex * itemSpacing;
           nodes.push({
             id: childId,
             type: 'evidence',
@@ -557,8 +574,64 @@ const RouteTopologyFlow = ({ routeTreeGroups, routes, hiddenRouteCount, selected
     <EvidenceFlow
       nodes={nodes}
       edges={edges}
-      height={Math.max(360, maxY + 150)}
+      height={Math.max(420, maxY + 150)}
       ariaLabel="Actual edge route topology"
+    />
+  );
+};
+
+const TrafficPathFlow = ({ entryPath, publicBranch, route }) => {
+  const branchIcons = [ShieldCheck, Split, Cloud, Package];
+  const branchStatuses = [
+    'running',
+    route?.destination === 'kubernetes' ? 'live' : route?.destination ?? 'check',
+    route?.destination === 'kubernetes' ? 'ready' : route?.destination ?? 'observed',
+    'ready',
+  ];
+  const steps = [
+    ...entryPath.map(([label, primary, secondary, status, Icon]) => ({
+      id: `entry-${label}`,
+      eyebrow: label,
+      label: primary,
+      detail: secondary,
+      status,
+      icon: Icon,
+    })),
+    ...publicBranch.map(([label, primary, secondary], index) => ({
+      id: `branch-${label}`,
+      eyebrow: label,
+      label: primary,
+      detail: secondary,
+      status: branchStatuses[index],
+      icon: branchIcons[index] ?? Route,
+    })),
+  ];
+  const nodes = steps.map((step, index) => ({
+    id: step.id,
+    type: 'evidence',
+    position: pipelineNodePosition(index, 4, 292, 142),
+    data: {
+      eyebrow: `${String(index + 1).padStart(2, '0')} - ${step.eyebrow}`,
+      label: step.label,
+      detail: step.detail,
+      status: step.status,
+      icon: step.icon,
+      wide: true,
+      ...pipelineNodePorts(index, steps.length),
+    },
+  }));
+  const edges = steps.slice(0, -1).map((step, index) => (
+    flowEdge(`traffic-${step.id}-${steps[index + 1].id}`, step.id, steps[index + 1].id)
+  ));
+
+  return (
+    <EvidenceFlow
+      nodes={nodes}
+      edges={edges}
+      height={330}
+      minZoom={0.5}
+      fitPadding={0.02}
+      ariaLabel="External public traffic path"
     />
   );
 };
@@ -655,8 +728,8 @@ const NetworkTopologyMap = ({ data }) => {
     ['Edge Mini PC', topology.edgeNode, 'branches by protocol and port', data.edge?.proxy?.running_worker_count ? 'running' : 'check', Network],
   ];
   const publicBranch = [
-    ['RuntimeProxy', data.edge?.proxy?.service ?? 'tcp_reverse_proxy', topology.publicListen],
-    ['SNI route', route?.hostname ?? data.liveHost, route?.upstream ?? data.edge?.proxy?.default_upstream],
+    ['Runtime Proxy', data.edge?.proxy?.service ?? 'tcp_reverse_proxy', topology.publicListen],
+    ['SNI Route', route?.hostname ?? data.liveHost, route?.upstream ?? data.edge?.proxy?.default_upstream],
     ['Ingress / upstream', route?.destination === 'kubernetes' ? topology.kubernetesLabel : destinationLabels[route?.destination] ?? 'selected upstream', route?.destination === 'kubernetes' ? 'ingress-nginx -> service -> pod' : route?.upstream],
     ['Workload', data.deploy?.kubernetes?.name, rolloutStatus],
   ];
@@ -674,51 +747,19 @@ const NetworkTopologyMap = ({ data }) => {
           <StatusPill value={route?.destination ?? 'check'} />
         </div>
 
-        <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.3fr)]">
-          <div className="grid gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-            {entryPath.map(([label, primary, secondary, status, Icon], index) => (
-              <div key={label}>
-                <div className={`grid grid-cols-[40px_1fr] gap-3 border bg-white p-3 ${tone[statusTone(status)]}`}>
-                  <div className="flex h-10 w-10 items-center justify-center border border-current/20 bg-white/75">
-                    <Icon size={18} />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-black uppercase text-current/70">{label}</span>
-                      <span className="text-xs font-black">{fallback(status)}</span>
-                    </div>
-                    <div className="mt-1 break-words text-base font-black">{fallback(primary)}</div>
-                    <div className="mt-1 break-words text-xs leading-5 opacity-80">{fallback(secondary)}</div>
-                  </div>
-                </div>
-                {index < entryPath.length - 1 && <div className="ml-5 h-4 w-px bg-zinc-300" aria-hidden="true" />}
-              </div>
-            ))}
-          </div>
-
-          <div className="grid gap-3">
-            {[
-              ['Public HTTP/S', route?.destination === 'kubernetes' ? 'kubernetes' : route?.destination ?? 'check', publicBranch],
-            ].map(([title, status, rows]) => (
-              <div key={title} className="border border-zinc-200 bg-white p-4">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <h4 className="text-base font-black text-zinc-950">{title}</h4>
-                  <StatusPill value={status} />
-                </div>
-                <div className="grid gap-3">
-                  {rows.map(([label, primary, secondary]) => (
-                    <div key={label} className="grid gap-1 border-l-2 border-zinc-200 pl-3 text-sm">
-                      <div className="font-black uppercase text-zinc-400">{label}</div>
-                      <div className="min-w-0 break-words font-black text-zinc-900">{fallback(primary)}</div>
-                      <div className="min-w-0 break-words font-semibold leading-5 text-zinc-500">{fallback(secondary)}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="mt-4">
+          <TrafficPathFlow entryPath={entryPath} publicBranch={publicBranch} route={route} />
         </div>
 
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 pt-4">
+          <div>
+            <h4 className="text-base font-black text-zinc-950">Published route tree</h4>
+            <p className="mt-1 text-sm font-semibold text-zinc-500">
+              {routes.length || '-'} public routes are grouped by runtime destination.
+            </p>
+          </div>
+          <StatusPill value={`${hiddenRouteCount} private hidden`} />
+        </div>
         <RouteTopologyFlow
           routeTreeGroups={routeTreeGroups}
           routes={routes}
