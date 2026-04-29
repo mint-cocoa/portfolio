@@ -41,7 +41,7 @@ DevOps 포트폴리오는 `dashboard/src/DevOpsInlinePortfolio.jsx`를 기준으
 컨테이너 이미지는 `ghcr.io/mint-cocoa/portfolio:${GITHUB_SHA}`로 빌드되며,
 GitHub Actions가 `home-k8s-gitops`의 `apps/portfolio/values.yaml` tag를 갱신합니다.
 
-GitHub Pages는 `master:/docs`를 정적 미러로 서빙합니다.
+GitHub Pages는 GitHub Actions가 `docs/` 빌드 결과를 `_site/`로 미러링한 뒤 Pages artifact로 배포합니다.
 
 - Pages: `https://mint-cocoa.github.io/portfolio/`
 - Live C++ server path: `https://portfolio.mintcocoa.cc/`

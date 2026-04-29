@@ -1,13 +1,16 @@
-name: portfolio image
+name: portfolio image and pages
 
 on:
   push:
     branches:
       - master
+  workflow_dispatch:
 
 permissions:
   contents: read
   packages: write
+  pages: write
+  id-token: write
 
 jobs:
   build-push-and-deploy:
@@ -67,3 +70,51 @@ jobs:
           git add apps/portfolio/values.yaml
           git commit -m "deploy portfolio ${GITHUB_SHA}" || exit 0
           git push
+
+  build-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout portfolio
+        uses: actions/checkout@v4
+
+      - name: Setup Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Install dashboard dependencies
+        working-directory: dashboard
+        run: npm ci
+
+      - name: Render portfolio documents
+        run: ./scripts/render-docs.sh
+
+      - name: Build _site mirror
+        run: bash ./scripts/build-pages-site.sh
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload _site Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy-pages:
+    runs-on: ubuntu-latest
+    needs: build-pages
+    concurrency:
+      group: portfolio-pages
+      cancel-in-progress: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy _site to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
