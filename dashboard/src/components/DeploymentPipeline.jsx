@@ -25,7 +25,7 @@ const PipelineNode = ({ data }) => {
 
   return (
     <div className={`grid w-52 grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-lg border bg-white p-3 text-left shadow-sm ${data.selected ? 'border-slate-950 ring-2 ring-slate-900' : 'border-slate-200'}`}>
-      <Handle className="opacity-0" type="target" position={Position.Left} isConnectable={false} />
+      <Handle className="opacity-0" type="target" position={data.targetPosition ?? Position.Left} isConnectable={false} />
       <div className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-700">
         <Icon size={18} />
       </div>
@@ -35,7 +35,7 @@ const PipelineNode = ({ data }) => {
         <div className="mt-1 truncate text-xs font-semibold text-slate-600">{data.primary}</div>
         <div className="mt-1 line-clamp-2 text-[11px] leading-4 text-slate-500">{data.secondary}</div>
       </div>
-      <Handle className="opacity-0" type="source" position={Position.Right} isConnectable={false} />
+      <Handle className="opacity-0" type="source" position={data.sourcePosition ?? Position.Right} isConnectable={false} />
     </div>
   );
 };
@@ -83,6 +83,18 @@ const pipelineNodePosition = (index, columnCount = 4, xGap = 270, yGap = 132) =>
   };
 };
 
+const pipelineNodePorts = (index, total, columnCount = 4) => {
+  const row = Math.floor(index / columnCount);
+  const previousRow = Math.floor((index - 1) / columnCount);
+  const nextRow = Math.floor((index + 1) / columnCount);
+  const isReverseRow = row % 2 === 1;
+
+  return {
+    targetPosition: index > 0 && previousRow < row ? Position.Top : isReverseRow ? Position.Right : Position.Left,
+    sourcePosition: index < total - 1 && nextRow > row ? Position.Bottom : isReverseRow ? Position.Left : Position.Right,
+  };
+};
+
 const DetailRow = ({ label, value }) => {
   if (value === undefined || value === null || value === '') return null;
   return (
@@ -109,6 +121,7 @@ export const DeploymentPipeline = ({ pipeline }) => {
       ...step,
       icon: icons[step.id] ?? CircleDashed,
       selected: selected?.id === step.id,
+      ...pipelineNodePorts(index, steps.length),
     },
   })), [selected?.id, steps]);
   const flowEdges = useMemo(() => steps.slice(0, -1).map((step, index) => (

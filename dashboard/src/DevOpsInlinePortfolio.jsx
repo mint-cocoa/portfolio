@@ -97,7 +97,7 @@ const FlowNode = ({ data }) => {
 
   return (
     <NodeTag className={`flow-node-card ${flowStatusClass(data.status)} ${data.compact ? 'flow-node-compact' : ''}`} {...nodeProps}>
-      <Handle className="flow-handle" type="target" position={Position.Left} isConnectable={false} />
+      <Handle className="flow-handle" type="target" position={data.targetPosition ?? Position.Left} isConnectable={false} />
       <div className="flow-node-icon">
         <Icon size={16} />
       </div>
@@ -107,7 +107,7 @@ const FlowNode = ({ data }) => {
         {data.detail && <span>{fallback(data.detail)}</span>}
       </div>
       {data.href && <ExternalLink className="flow-node-link" size={13} aria-hidden="true" />}
-      <Handle className="flow-handle" type="source" position={Position.Right} isConnectable={false} />
+      <Handle className="flow-handle" type="source" position={data.sourcePosition ?? Position.Right} isConnectable={false} />
     </NodeTag>
   );
 };
@@ -178,6 +178,18 @@ const pipelineNodePosition = (index, columnCount = 4, xGap = 280, yGap = 132) =>
   return {
     x: (isReverseRow ? columnCount - 1 - column : column) * xGap,
     y: row * yGap,
+  };
+};
+
+const pipelineNodePorts = (index, total, columnCount = 4) => {
+  const row = Math.floor(index / columnCount);
+  const previousRow = Math.floor((index - 1) / columnCount);
+  const nextRow = Math.floor((index + 1) / columnCount);
+  const isReverseRow = row % 2 === 1;
+
+  return {
+    targetPosition: index > 0 && previousRow < row ? Position.Top : isReverseRow ? Position.Right : Position.Left,
+    sourcePosition: index < total - 1 && nextRow > row ? Position.Bottom : isReverseRow ? Position.Left : Position.Right,
   };
 };
 
@@ -421,6 +433,7 @@ const PipelineOverview = ({ steps }) => {
       status: step.status,
       href: step.href,
       icon: step.icon,
+      ...pipelineNodePorts(index, steps.length),
     },
   }));
   const edges = steps.slice(0, -1).map((step, index) => (
