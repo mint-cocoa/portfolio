@@ -26,9 +26,9 @@ export default defineConfig({
         OpsDashboard: 'OpsDashboard.html',
       },
       output: {
-        entryFileNames: 'assets/[name].js',
+        entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name][extname]',
+        assetFileNames: 'assets/[name]-[hash][extname]',
       },
     }
   },
