@@ -1,6 +1,6 @@
 # 포트폴리오 문서 저장소
 
-> 최종 정리일: 2026-04-27
+> 최종 정리일: 2026-05-01
 > 3개 프로젝트의 포트폴리오 문서, 소스코드, 벤치마크 데이터를 프로젝트별로 분류
 
 ---
@@ -37,14 +37,15 @@ DevOps 포트폴리오는 `dashboard/src/DevOpsInlinePortfolio.jsx`를 기준으
 ./scripts/render-devops.sh
 ```
 
-포트폴리오 사이트는 `iouring_runtime_web` 기반 C++ 서버로 `docs/`를 서빙합니다.
+포트폴리오 상세 문서의 canonical 경로는 GitHub Pages의 `/portfolio/` 프로젝트 페이지입니다.
 컨테이너 이미지는 `ghcr.io/mint-cocoa/portfolio:${GITHUB_SHA}`로 빌드되며,
 GitHub Actions가 `home-k8s-gitops`의 `apps/portfolio/values.yaml` tag를 갱신합니다.
 
 GitHub Pages는 GitHub Actions가 `docs/` 빌드 결과를 `_site/`로 미러링한 뒤 Pages artifact로 배포합니다.
+`portfolio.mintcocoa.cc`는 과거 RuntimeWeb 운영 검증 경로였으며, 현재는 사용 종료 안내 페이지만 서빙합니다.
 
-- Pages: `https://mint-cocoa.github.io/portfolio/`
-- Live C++ server path: `https://portfolio.mintcocoa.cc/`
+- Canonical docs: `https://mint-cocoa.github.io/portfolio/`
+- Retired runtime path: `https://portfolio.mintcocoa.cc/`
 
 로컬 컨테이너 확인:
 

@@ -204,7 +204,7 @@ const destinationLabels = {
 };
 
 const OPS_DASHBOARD_PATH = './OpsDashboard.html';
-const LIVE_OPS_DASHBOARD_URL = 'https://portfolio.mintcocoa.cc/devops/OpsDashboard.html';
+const LIVE_OPS_DASHBOARD_URL = 'https://mint-cocoa.github.io/portfolio/devops/OpsDashboard.html';
 const hiddenPublicRouteHosts = new Set(['webhook.mintcocoa.cc']);
 
 const visiblePortfolioRoute = (route) => !hiddenPublicRouteHosts.has(route?.hostname);
@@ -647,7 +647,7 @@ const HeroDashboardPreview = ({ data }) => (
     </div>
     <a className="hero-dashboard-path" href={LIVE_OPS_DASHBOARD_URL} target="_blank" rel="noreferrer">
       <span className="hero-dashboard-dot" aria-hidden="true" />
-      <strong>{fallback(data.deploy?.live?.url, LIVE_OPS_DASHBOARD_URL).replace(/^https?:\/\//, '')}</strong>
+      <strong>{LIVE_OPS_DASHBOARD_URL.replace(/^https?:\/\//, '')}</strong>
       <ExternalLink size={16} />
     </a>
   </aside>
@@ -837,9 +837,7 @@ export const DevOpsInlinePortfolio = () => {
       ? 'Ops API 연결 필요'
       : 'control-plane + worker native Kubernetes';
     const proxmoxNode = nodes[0];
-    const liveHost = snapshot.deploy?.live?.url
-      ? snapshot.deploy.live.url.replace(/^https?:\/\//, '').replace(/\/.*$/, '')
-      : '-';
+    const liveHost = 'mint-cocoa.github.io';
     const liveWorkload = snapshot.deploy?.kubernetes?.name ?? '-';
     const liveRevision = snapshot.deploy?.kubernetes?.shortImageTag ?? snapshot.deploy?.image?.shortTag ?? '-';
     const rolloutReady = snapshot.deploy?.kubernetes?.replicas !== null
@@ -947,12 +945,12 @@ export const DevOpsInlinePortfolio = () => {
       },
       {
         id: 'live',
-        label: 'Live HTTPS',
-        value: snapshot.deploy?.live?.statusCode ? `HTTP ${snapshot.deploy.live.statusCode}` : liveHost,
-        detail: snapshot.deploy?.live?.url ?? 'portfolio.mintcocoa.cc 공개 경로',
-        status: snapshot.deploy?.live?.ok ? 'live' : 'check',
-        href: snapshot.deploy?.live?.url,
-        linkLabel: 'Open live',
+        label: 'Docs HTTPS',
+        value: 'GitHub Pages',
+        detail: 'mint-cocoa.github.io/portfolio 공개 경로',
+        status: 'live',
+        href: 'https://mint-cocoa.github.io/portfolio/',
+        linkLabel: 'Open docs',
         icon: Cloud,
       },
     ];
@@ -997,7 +995,7 @@ export const DevOpsInlinePortfolio = () => {
             <h2>GitOps 기반 홈 Kubernetes 운영</h2>
             <p>홈랩 계층, 배포 흐름, workload, ingress, observability를 실제 운영 API와 연결해 문서화했습니다.</p>
             <div className="hero-actions" aria-label="주요 링크">
-              <a className="button" href="https://portfolio.mintcocoa.cc/devops/DevOpsPortfolio.html" target="_blank" rel="noreferrer">
+              <a className="button" href="https://mint-cocoa.github.io/portfolio/devops/DevOpsPortfolio.html" target="_blank" rel="noreferrer">
                 GitHub Pages
                 <ExternalLink size={16} />
               </a>
@@ -1023,8 +1021,8 @@ export const DevOpsInlinePortfolio = () => {
               <div className="work-card-body">
                 <div className="pipeline-overview-title">
                   <div>
-                    <p className="card-eyebrow">RuntimeWeb Delivery</p>
-                    <h3>Source에서 Live HTTPS까지 이어지는 배포 흐름</h3>
+                    <p className="card-eyebrow">Pages Delivery</p>
+                    <h3>Source에서 GitHub Pages까지 이어지는 공개 문서 흐름</h3>
                   </div>
                   <div className="pipeline-api-state">
                     <StatusPill value={data.health?.ok ? 'live API' : error ? 'partial API' : loading ? 'loading' : 'static overview'} />
@@ -1032,10 +1030,10 @@ export const DevOpsInlinePortfolio = () => {
                   </div>
                 </div>
                 <p className="pipeline-overview-copy">
-                  GitHub Actions가 C++ RuntimeWeb 이미지를 만들고, GitOps repository의 Helm values에
-                  이미지 태그를 승격하면 Argo CD가 Kubernetes rollout을 수렴시킵니다. Ops API가 연결된
-                  단계는 실제 commit, image tag, sync/health, HTTPS 응답값으로 채워집니다.
-                  이 페이지는 정적 포트폴리오 문서가 아니라 운영 API를 읽는 live 검증 표면으로 설계했습니다.
+                  GitHub Actions가 상세 문서와 대시보드 산출물을 렌더링해 GitHub Pages의
+                  /portfolio 경로로 배포합니다. Ops API가 연결된 단계는 과거 RuntimeWeb/GitOps
+                  운영 경로의 commit, image tag, sync/health 같은 증거를 함께 보여줍니다.
+                  이 페이지는 정적 포트폴리오 문서 위에서 운영 API를 읽는 검증 표면으로 설계했습니다.
                 </p>
                 <dl className="overview-inline-facts">
                   <div>
@@ -1044,7 +1042,7 @@ export const DevOpsInlinePortfolio = () => {
                   </div>
                   <div>
                     <dt>Verification path</dt>
-                    <dd>{'commit -> image -> GitOps -> Argo CD -> rollout -> HTTPS'}</dd>
+                    <dd>{'commit -> render -> _site -> GitHub Pages -> Ops API'}</dd>
                   </div>
                 </dl>
                 <PipelineOverview steps={data.overviewPipeline} />

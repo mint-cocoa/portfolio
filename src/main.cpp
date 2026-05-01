@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
@@ -58,6 +59,57 @@ WorkerAffinityMode ReadWorkerAffinityEnv(const char* name,
 
 void ConfigureLoggingFromEnv() {
     iouring_runtime::observability::ConfigureLoggingFromEnv("PORTFOLIO_LOG_LEVEL");
+}
+
+char ToLowerAscii(char ch) {
+    if (ch >= 'A' && ch <= 'Z') {
+        return static_cast<char>(ch + ('a' - 'A'));
+    }
+    return ch;
+}
+
+std::string_view TrimAsciiWhitespace(std::string_view text) {
+    while (!text.empty() &&
+           (text.front() == ' ' || text.front() == '\t' ||
+            text.front() == '\r' || text.front() == '\n')) {
+        text.remove_prefix(1);
+    }
+    while (!text.empty() &&
+           (text.back() == ' ' || text.back() == '\t' ||
+            text.back() == '\r' || text.back() == '\n')) {
+        text.remove_suffix(1);
+    }
+    return text;
+}
+
+bool EqualsIgnoreCase(std::string_view lhs, std::string_view rhs) {
+    if (lhs.size() != rhs.size()) {
+        return false;
+    }
+    for (std::size_t i = 0; i < lhs.size(); ++i) {
+        if (ToLowerAscii(lhs[i]) != ToLowerAscii(rhs[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+std::string_view HostNameWithoutPort(std::string_view host) {
+    host = TrimAsciiWhitespace(host);
+    if (host.empty()) {
+        return {};
+    }
+    if (host.front() == '[') {
+        const auto end = host.find(']');
+        return end == std::string_view::npos ? host : host.substr(0, end + 1);
+    }
+    const auto colon = host.find(':');
+    return colon == std::string_view::npos ? host : host.substr(0, colon);
+}
+
+bool IsRetiredPublicHost(std::string_view host_header) {
+    const auto host = HostNameWithoutPort(host_header);
+    return EqualsIgnoreCase(host, "portfolio.mintcocoa.cc");
 }
 
 int HexValue(char ch) {
@@ -144,6 +196,52 @@ void SendText(RequestContext& ctx, HttpStatus status, std::string body) {
         .Send();
 }
 
+void SendInlineUnusedPage(RequestContext& ctx) {
+    ctx.response.ContentType("text/html; charset=utf-8")
+        .Header("Cache-Control", "no-cache")
+        .Header("X-Robots-Tag", "noindex")
+        .Body(R"(<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>사용하지 않는 포트폴리오 경로</title>
+</head>
+<body>
+  <main>
+    <h1>portfolio.mintcocoa.cc는 더 이상 사용하지 않습니다.</h1>
+    <p>상세 포트폴리오 문서는 GitHub Pages 경로로 이동했습니다.</p>
+    <p><a href="https://mint-cocoa.github.io/portfolio/">https://mint-cocoa.github.io/portfolio/</a></p>
+  </main>
+</body>
+</html>
+)")
+        .Send();
+}
+
+void ServeUnusedPage(RequestContext& ctx, const std::filesystem::path& root,
+                     std::uint64_t max_file_bytes) {
+    const auto path = root / "unused.html";
+    std::error_code ec;
+    if (!std::filesystem::is_regular_file(path, ec)) {
+        SendInlineUnusedPage(ctx);
+        return;
+    }
+    const auto size = std::filesystem::file_size(path, ec);
+    if (ec || size > max_file_bytes) {
+        SendInlineUnusedPage(ctx);
+        return;
+    }
+
+    ctx.response.ContentType("text/html; charset=utf-8")
+        .Header("Cache-Control", "no-cache")
+        .Header("X-Robots-Tag", "noindex");
+    if (!ctx.response.SendFile(path.string(), "text/html; charset=utf-8")) {
+        SendInlineUnusedPage(ctx);
+    }
+}
+
 void ServeStatic(RequestContext& ctx, const std::filesystem::path& root,
                  std::string_view raw_path,
                  std::uint64_t max_file_bytes) {
@@ -208,9 +306,17 @@ int main() {
         ctx.response.ContentType("text/plain; charset=utf-8").Body("ok").Send();
     });
     server.Get("/", [&](RequestContext& ctx) {
+        if (IsRetiredPublicHost(ctx.request.GetHeader("Host"))) {
+            ServeUnusedPage(ctx, static_root, max_file_bytes);
+            return;
+        }
         ServeStatic(ctx, static_root, "/", max_file_bytes);
     });
     server.Get("/*path", [&](RequestContext& ctx) {
+        if (IsRetiredPublicHost(ctx.request.GetHeader("Host"))) {
+            ServeUnusedPage(ctx, static_root, max_file_bytes);
+            return;
+        }
         ServeStatic(ctx, static_root, ctx.request.ParamDecoded("path"),
                     max_file_bytes);
     });

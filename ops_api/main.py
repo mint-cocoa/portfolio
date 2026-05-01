@@ -94,7 +94,7 @@ class Settings:
     )
     live_dashboard_url: str = os.getenv(
         "OPS_API_LIVE_DASHBOARD_URL",
-        "https://portfolio.mintcocoa.cc/devops/OpsDashboard.html",
+        "https://mint-cocoa.github.io/portfolio/devops/OpsDashboard.html",
     )
 
 

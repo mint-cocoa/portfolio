@@ -18,14 +18,12 @@ import {
 const ingressRules = [
   { name: 'k8s-status', domain: 'k8s.mintcocoa.cc', service: 'gatus', note: 'Gatus status page' },
   { name: 'dropapp', domain: 'dropapp.mintcocoa.cc', service: 'pairdrop', note: 'PairDrop file transfer' },
-  { name: 'portfolio', domain: 'portfolio.mintcocoa.cc', service: 'portfolio', note: 'portfolio' },
   { name: 'argocd', domain: 'argocd.homelab.local', service: 'argocd-server', note: 'private UI' },
 ];
 
 const publicKubernetesHosts = new Set([
   'k8s.mintcocoa.cc',
   'dropapp.mintcocoa.cc',
-  'portfolio.mintcocoa.cc',
 ]);
 const hiddenPublicRouteHosts = new Set(['webhook.mintcocoa.cc']);
 

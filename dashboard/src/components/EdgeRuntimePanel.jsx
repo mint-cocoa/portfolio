@@ -36,7 +36,6 @@ const routeHref = (hostname) => {
 const publicKubernetesHosts = new Set([
   'k8s.mintcocoa.cc',
   'dropapp.mintcocoa.cc',
-  'portfolio.mintcocoa.cc',
 ]);
 const hiddenPublicRouteHosts = new Set(['webhook.mintcocoa.cc']);
 

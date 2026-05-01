@@ -799,9 +799,9 @@ Virtual Machines
       </button>
     </div>
     <div class="ops-ingress-grid">
-      <button class="ops-mini-card" data-endpoint="/api/prometheus/query?query=count(kube_pod_info)" data-title="Portfolio Pods">
-        <strong>portfolio.mintcocoa.cc</strong>
-        <span class="ops-subtle">service/portfolio → pod/portfolio</span>
+      <button class="ops-mini-card" data-endpoint="/api/prometheus/query?query=count(kube_pod_info)" data-title="Portfolio Docs">
+        <strong>mint-cocoa.github.io/portfolio</strong>
+        <span class="ops-subtle">GitHub Pages canonical docs</span>
       </button>
       <button class="ops-mini-card" data-endpoint="/api/prometheus/query?query=count(kube_pod_info)" data-title="Demo Pods">
         <strong>demo.mintcocoa.cc</strong>
