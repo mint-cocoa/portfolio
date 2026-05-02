@@ -827,23 +827,28 @@ body:has(.devops-app) {
   font-weight: 680;
 }
 
-.devops-app .runtime-visual,
+.devops-app .runtime-doc,
 .devops-app .workload-visual {
   display: grid;
   gap: 1rem;
 }
 
-.devops-app .visual-stat-grid,
+.devops-app .runtime-doc-summary,
+.devops-app .runtime-doc-question-grid,
+.devops-app .runtime-doc-note-grid,
 .devops-app .workload-card-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.85rem;
 }
 
-.devops-app .visual-stat,
+.devops-app .runtime-doc-summary article,
+.devops-app .runtime-doc-prose,
+.devops-app .runtime-doc-question-grid article,
+.devops-app .runtime-doc-table-card,
+.devops-app .runtime-doc-flow,
+.devops-app .runtime-doc-note-grid article,
 .devops-app .workload-card,
-.devops-app .platform-host,
-.devops-app .platform-band,
 .devops-app .prepared-app-card {
   min-width: 0;
   border: 1px solid var(--line);
@@ -852,15 +857,184 @@ body:has(.devops-app) {
   box-shadow: 0 10px 26px rgba(24, 32, 51, 0.05);
 }
 
-.devops-app .visual-stat {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 0.75rem;
-  align-items: start;
-  padding: 0.9rem;
+.devops-app .runtime-doc-summary article,
+.devops-app .runtime-doc-note-grid article {
+  padding: 1rem;
 }
 
-.devops-app .visual-stat-icon,
+.devops-app .runtime-doc-summary strong,
+.devops-app .runtime-doc-note-grid strong {
+  display: block;
+  color: var(--blue);
+  font-size: 0.92rem;
+  font-weight: 760;
+}
+
+.devops-app .runtime-doc-summary p,
+.devops-app .runtime-doc-note-grid p {
+  margin: 0.38rem 0 0;
+  color: var(--muted);
+  font-size: 0.93rem;
+  font-weight: 620;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
+.devops-app .runtime-doc-prose,
+.devops-app .runtime-doc-table-card,
+.devops-app .runtime-doc-flow {
+  padding: 1.15rem;
+}
+
+.devops-app .runtime-doc-prose h3,
+.devops-app .runtime-doc-table-head h3,
+.devops-app .runtime-doc-flow h3 {
+  margin: 0.4rem 0 0;
+  color: var(--ink);
+  font-size: clamp(1.18rem, 2vw, 1.5rem);
+  font-weight: 760;
+  line-height: 1.35;
+  word-break: keep-all;
+}
+
+.devops-app .runtime-doc-prose p:not(.card-eyebrow),
+.devops-app .runtime-doc-table-head p:not(.card-eyebrow) {
+  max-width: 980px;
+  margin: 0.85rem 0 0;
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 620;
+  line-height: 1.78;
+  word-break: keep-all;
+}
+
+.devops-app .runtime-doc-question-grid article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.95rem;
+}
+
+.devops-app .runtime-doc-question-grid span,
+.devops-app .runtime-doc-flow li span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid #99f6e4;
+  background: #f2fcfd;
+  color: var(--teal);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.devops-app .runtime-doc-question-grid p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.96rem;
+  font-weight: 690;
+  line-height: 1.58;
+  word-break: keep-all;
+}
+
+.devops-app .runtime-doc-table-scroll {
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+.devops-app .runtime-doc-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+}
+
+.devops-app .runtime-doc-table th,
+.devops-app .runtime-doc-table td {
+  padding: 0.82rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.devops-app .runtime-doc-table th {
+  border-bottom: 1px solid var(--line);
+  background: var(--wash);
+  color: var(--teal);
+  font-size: 0.74rem;
+  font-weight: 830;
+  text-transform: uppercase;
+}
+
+.devops-app .runtime-doc-table td {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 640;
+  line-height: 1.55;
+}
+
+.devops-app .runtime-doc-table td:first-child,
+.devops-app .runtime-doc-table td:nth-child(2) {
+  color: var(--ink);
+  font-weight: 740;
+}
+
+.devops-app .runtime-doc-table tr + tr td {
+  border-top: 1px solid var(--line);
+}
+
+.devops-app .runtime-doc-flow {
+  display: grid;
+  gap: 1rem;
+}
+
+.devops-app .runtime-doc-flow ol {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.devops-app .runtime-doc-flow li {
+  display: grid;
+  align-content: start;
+  gap: 0.5rem;
+  min-width: 0;
+  border-left: 2px solid #99f6e4;
+  background: var(--wash);
+  padding: 0.75rem;
+}
+
+.devops-app .runtime-doc-flow li strong {
+  color: var(--ink);
+  font-size: 0.98rem;
+  font-weight: 780;
+  line-height: 1.25;
+}
+
+.devops-app .runtime-doc-flow li p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 620;
+  line-height: 1.5;
+}
+
+.devops-app .workload-card {
+  display: grid;
+  align-content: start;
+  gap: 0.7rem;
+  padding: 1rem;
+}
+
+.devops-app .workload-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
 .devops-app .workload-icon {
   display: inline-flex;
   width: 2.35rem;
@@ -872,7 +1046,6 @@ body:has(.devops-app) {
   color: var(--teal);
 }
 
-.devops-app .visual-stat p,
 .devops-app .workload-card p,
 .devops-app .prepared-app-card p {
   margin: 0;
@@ -883,7 +1056,6 @@ body:has(.devops-app) {
   text-transform: uppercase;
 }
 
-.devops-app .visual-stat strong,
 .devops-app .workload-card strong,
 .devops-app .prepared-app-card strong {
   display: block;
@@ -895,7 +1067,6 @@ body:has(.devops-app) {
   overflow-wrap: anywhere;
 }
 
-.devops-app .visual-stat span:not(.rounded-full),
 .devops-app .workload-card span:not(.rounded-full) {
   display: block;
   margin-top: 0.25rem;
@@ -904,156 +1075,6 @@ body:has(.devops-app) {
   font-weight: 620;
   line-height: 1.4;
   overflow-wrap: anywhere;
-}
-
-.devops-app .platform-map {
-  display: grid;
-  grid-template-columns: minmax(220px, 0.62fr) minmax(0, 1.38fr);
-  gap: 0.85rem;
-  align-items: stretch;
-}
-
-.devops-app .platform-host,
-.devops-app .platform-band {
-  padding: 1rem;
-}
-
-.devops-app .platform-card-head,
-.devops-app .platform-band-title,
-.devops-app .vm-chip-head,
-.devops-app .workload-card-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.devops-app .platform-card-head p,
-.devops-app .platform-band-title span,
-.devops-app .vm-chip-head span {
-  margin: 0;
-  color: var(--teal);
-  font-size: 0.74rem;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.devops-app .platform-card-head h3 {
-  margin: 0.2rem 0 0;
-  color: var(--ink);
-  font-size: 1.65rem;
-  font-weight: 760;
-  line-height: 1.1;
-}
-
-.devops-app .platform-host > .rounded-full {
-  margin: 0.9rem 0;
-}
-
-.devops-app .mini-meter {
-  display: grid;
-  gap: 0.35rem;
-  margin-top: 0.75rem;
-}
-
-.devops-app .mini-meter-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-  color: var(--muted);
-  font-size: 0.76rem;
-  font-weight: 720;
-}
-
-.devops-app .mini-meter-track {
-  overflow: hidden;
-  height: 0.48rem;
-  border: 1px solid #d7f3ef;
-  background: #edf6f6;
-}
-
-.devops-app .mini-meter-track span {
-  display: block;
-  width: var(--bar-value);
-  height: 100%;
-  background: linear-gradient(90deg, #0f766e, #2563eb);
-}
-
-.devops-app .platform-cluster {
-  display: grid;
-  gap: 0.85rem;
-}
-
-.devops-app .platform-band {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-}
-
-.devops-app .platform-band-title strong {
-  display: inline-grid;
-  place-items: center;
-  min-width: 2rem;
-  height: 2rem;
-  border: 1px solid #99f6e4;
-  background: #f2fcfd;
-  color: var(--teal);
-  font-size: 0.95rem;
-}
-
-.devops-app .vm-chip-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.6rem;
-  margin-top: 0.85rem;
-}
-
-.devops-app .vm-chip {
-  min-width: 0;
-  border: 1px solid #dce2ec;
-  background: #ffffff;
-  padding: 0.78rem;
-}
-
-.devops-app .vm-chip-control-plane {
-  border-color: #bfdbfe;
-  background: #f6f9ff;
-}
-
-.devops-app .vm-chip-worker {
-  border-color: #bbf7d0;
-  background: #f6fcf8;
-}
-
-.devops-app .vm-chip strong {
-  display: block;
-  margin-top: 0.62rem;
-  color: var(--ink);
-  font-size: 1rem;
-  font-weight: 760;
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-}
-
-.devops-app .vm-chip-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin-top: 0.55rem;
-}
-
-.devops-app .vm-chip-meta span {
-  border: 1px solid var(--line);
-  background: #ffffff;
-  padding: 0.22rem 0.42rem;
-  color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 700;
-}
-
-.devops-app .workload-card {
-  display: grid;
-  align-content: start;
-  gap: 0.7rem;
-  padding: 1rem;
 }
 
 .devops-app .prepared-app-grid {
@@ -1109,13 +1130,15 @@ body:has(.devops-app) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .devops-app .visual-stat-grid,
+  .devops-app .runtime-doc-summary,
+  .devops-app .runtime-doc-question-grid,
+  .devops-app .runtime-doc-note-grid,
   .devops-app .workload-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .devops-app .platform-map {
-    grid-template-columns: 1fr;
+  .devops-app .runtime-doc-flow ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .devops-app .devops-side-rail {
@@ -1164,14 +1187,15 @@ body:has(.devops-app) {
   .devops-app .overview-work-grid .serving-root-grid,
   .devops-app .overview-inline-facts,
   .devops-app .overview-source-grid,
-  .devops-app .visual-stat-grid,
+  .devops-app .runtime-doc-summary,
+  .devops-app .runtime-doc-question-grid,
+  .devops-app .runtime-doc-note-grid,
+  .devops-app .runtime-doc-flow ol,
   .devops-app .workload-card-grid,
-  .devops-app .prepared-app-grid,
-  .devops-app .vm-chip-grid {
+  .devops-app .prepared-app-grid {
     grid-template-columns: 1fr;
   }
 
-  .devops-app .visual-stat,
   .devops-app .prepared-app-card {
     grid-template-columns: auto minmax(0, 1fr);
   }

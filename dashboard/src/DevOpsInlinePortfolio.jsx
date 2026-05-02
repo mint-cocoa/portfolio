@@ -11,7 +11,6 @@ import {
   Activity,
   Boxes,
   Cloud,
-  Cpu,
   Database,
   ExternalLink,
   GitBranch,
@@ -45,21 +44,9 @@ const fallback = (value, empty = '-') => {
 
 const formatTime = (date) => (date ? date.toLocaleTimeString('ko-KR', { hour12: false }) : '-');
 
-const formatGiB = (bytes) => {
-  if (!Number.isFinite(bytes)) return '-';
-  return `${Math.round(bytes / 1024 / 1024 / 1024)} GiB`;
-};
-
 const formatReady = (ready, total) => {
   if (ready === null || ready === undefined || total === null || total === undefined) return '-';
   return `${ready}/${total} ready`;
-};
-
-const clampPercent = (value) => Math.max(0, Math.min(100, Number.isFinite(value) ? value : 0));
-
-const ratioPercent = (used, total) => {
-  if (!Number.isFinite(used) || !Number.isFinite(total) || total <= 0) return 0;
-  return clampPercent((used / total) * 100);
 };
 
 const vmRole = (name = '') => {
@@ -234,10 +221,6 @@ const publicRouteHref = (route) => {
   return `https://${hostname}`;
 };
 
-const countVisibleKubernetesRoutes = (routes = []) => (
-  routes.filter((route) => visiblePortfolioRoute(route) && routeTreeDestination(route) === 'kubernetes').length
-);
-
 const apiReads = [
   { key: 'health', label: 'health', load: fetchHealth, fallback: null },
   { key: 'summary', label: 'summary', load: fetchSummary, fallback: null },
@@ -247,6 +230,76 @@ const apiReads = [
   { key: 'targets', label: 'prometheus-targets', load: fetchPrometheusTargets, fallback: null },
   { key: 'nodes', label: 'proxmox-nodes', load: fetchProxmoxNodes, fallback: [] },
   { key: 'vms', label: 'proxmox-vms', load: () => fetchProxmoxResources('vm'), fallback: [] },
+];
+
+const runtimeSummaryCards = [
+  {
+    title: 'Runtime',
+    body: 'C++ io_uring 기반 RuntimeWeb으로 portfolio 정적 파일 서버를 운영했던 경로를 문서화했습니다.',
+  },
+  {
+    title: 'Platform',
+    body: 'Proxmox VM 위에 3 control-plane + 2 worker native Kubernetes HA cluster를 구성했습니다.',
+  },
+  {
+    title: 'Deploy',
+    body: 'GitHub Actions가 GHCR image를 push한 뒤 GitOps repo의 Helm values image tag를 갱신합니다.',
+  },
+  {
+    title: 'Operate',
+    body: '상세 문서 기준 경로는 mint-cocoa.github.io/portfolio이고 portfolio.mintcocoa.cc는 사용 종료 안내로 분리했습니다.',
+  },
+];
+
+const problemStatements = [
+  '직접 만든 C++ io_uring 런타임이 HTTP 앱을 안정적으로 서빙할 수 있는가?',
+  '앱을 이미지화하고 GHCR, GitOps, Argo CD로 자동 배포할 수 있는가?',
+  '배포 결과를 개인 도메인에서 실제 서비스로 노출할 수 있는가?',
+  '관리, edge, VM, workload, delivery, storage 계층을 분리해 운영할 수 있는가?',
+];
+
+const platformLayers = [
+  ['Management Plane', 'Odroid', '172.30.1.83', 'Terraform, Ansible, Kubespray, kubectl, Helm, GitOps bootstrap'],
+  ['Edge Plane', 'Mini PC', '172.30.1.27', 'External HTTPS entrypoint, Kubernetes API HAProxy'],
+  ['Virtualization Plane', 'Proxmox VE', '172.30.1.12', 'VM runtime, snapshots, backup base'],
+  ['Workload Plane', 'Kubernetes VMs', '172.30.1.231-235', 'Application and platform workloads'],
+  ['Delivery Plane', 'GitHub Actions, GHCR, Argo CD', 'external + cluster', 'Image build, registry, GitOps deployment'],
+  ['Storage Plane', 'OMV VM', '172.30.1.52', 'NFS backing store for Kubernetes PVCs'],
+];
+
+const deploymentSteps = [
+  ['01', 'GitHub push', '애플리케이션 코드 변경이 workflow를 시작합니다.'],
+  ['02', 'GitHub Actions', '컨테이너 이미지를 빌드하고 GHCR에 push합니다.'],
+  ['03', 'GitOps update', 'Helm values의 image tag를 commit SHA로 갱신합니다.'],
+  ['04', 'Argo CD sync', '변경된 chart를 감지해 클러스터 desired state에 반영합니다.'],
+  ['05', 'Kubernetes rollout', 'Deployment, Service, Ingress가 수렴하고 ingress-nginx + MetalLB 경로로 노출됩니다.'],
+];
+
+const clusterNodes = [
+  ['k8s-cp-1', '172.30.1.231', 'control-plane', 'Ready', 'containerd'],
+  ['k8s-cp-2', '172.30.1.232', 'control-plane', 'Ready', 'containerd'],
+  ['k8s-cp-3', '172.30.1.233', 'control-plane', 'Ready', 'containerd'],
+  ['k8s-worker-1', '172.30.1.234', 'worker', 'Ready', 'containerd'],
+  ['k8s-worker-2', '172.30.1.235', 'worker', 'Ready', 'containerd'],
+];
+
+const operationNotes = [
+  {
+    title: 'C++ RuntimeWeb',
+    body: 'WebServer, router, request context, response builder, streaming upload API를 갖춘 HTTP 앱 표면을 구현했습니다.',
+  },
+  {
+    title: 'Ingress',
+    body: 'Mini PC edge proxy에서 MetalLB LoadBalancer IP와 ingress-nginx를 거쳐 Service와 Pod로 요청을 전달합니다.',
+  },
+  {
+    title: 'Storage',
+    body: 'OMV VM의 NFS export를 nfs-subdir-external-provisioner와 연결해 PVC 요청으로 PV를 생성합니다.',
+  },
+  {
+    title: 'Observability',
+    body: 'Prometheus와 Grafana를 lightweight profile로 구성해 클러스터 메트릭과 운영 대시보드의 근거를 제공합니다.',
+  },
 ];
 
 const StatusPill = ({ value }) => (
@@ -287,102 +340,128 @@ const Section = ({ number, title, kicker, children }) => (
   </section>
 );
 
-const MiniBar = ({ label, value }) => (
-  <div className="mini-meter">
-    <div className="mini-meter-head">
-      <span>{label}</span>
-      <strong>{Math.round(clampPercent(value))}%</strong>
+const RuntimePlatformDocument = () => (
+  <div className="runtime-doc">
+    <div className="runtime-doc-summary" aria-label="DevOps 핵심 요약">
+      {runtimeSummaryCards.map((item) => (
+        <article key={item.title}>
+          <strong>{item.title}</strong>
+          <p>{item.body}</p>
+        </article>
+      ))}
     </div>
-    <div className="mini-meter-track">
-      <span style={{ '--bar-value': `${clampPercent(value)}%` }} />
+
+    <article className="runtime-doc-prose">
+      <p className="card-eyebrow">Overview</p>
+      <h3>io_uring C++ 런타임에서 GitOps 운영 경로까지</h3>
+      <p>
+        이 문서는 iouring-runtime 위에서 portfolio 정적 파일 서버를 만들고, 컨테이너 이미지,
+        GitHub Actions, GitOps, Argo CD, Kubernetes Ingress까지 연결한 과정을 정리한 운영
+        포트폴리오입니다. 과거 목표는 단순 예제 서버가 아니라 개인 도메인에서 접근 가능한
+        실사용 경로를 C++ 런타임 기반으로 배포하는 것이었습니다.
+      </p>
+      <p>
+        현재 상세 문서의 기준 공개 경로는 GitHub Pages입니다. portfolio.mintcocoa.cc는
+        상세 포트폴리오가 아니라 사용 종료 안내 경로로 분리했습니다.
+      </p>
+    </article>
+
+    <div className="runtime-doc-question-grid">
+      {problemStatements.map((item, index) => (
+        <article key={item}>
+          <span>{String(index + 1).padStart(2, '0')}</span>
+          <p>{item}</p>
+        </article>
+      ))}
+    </div>
+
+    <div className="runtime-doc-table-card">
+      <div className="runtime-doc-table-head">
+        <p className="card-eyebrow">Homelab Layers</p>
+        <h3>관리, edge, 가상화, workload, delivery, storage 계층 분리</h3>
+      </div>
+      <div className="runtime-doc-table-scroll">
+        <table className="runtime-doc-table">
+          <thead>
+            <tr>
+              <th>Layer</th>
+              <th>Component</th>
+              <th>Address</th>
+              <th>Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            {platformLayers.map(([layer, component, address, role]) => (
+              <tr key={layer}>
+                <td>{layer}</td>
+                <td>{component}</td>
+                <td><code>{address}</code></td>
+                <td>{role}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div className="runtime-doc-flow">
+      <div>
+        <p className="card-eyebrow">Deploy Flow</p>
+        <h3>애플리케이션 코드와 운영 매니페스트를 분리한 배포 흐름</h3>
+      </div>
+      <ol>
+        {deploymentSteps.map(([step, title, body]) => (
+          <li key={step}>
+            <span>{step}</span>
+            <strong>{title}</strong>
+            <p>{body}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    <div className="runtime-doc-table-card">
+      <div className="runtime-doc-table-head">
+        <p className="card-eyebrow">Kubernetes HA Cluster</p>
+        <h3>Proxmox VM 위 5-node native Kubernetes cluster</h3>
+        <p>검증된 버전은 Client v1.34.7 / Server v1.35.4이며 Calico CNI, CoreDNS, NodeLocal DNS, kube-proxy, metrics-server를 포함합니다.</p>
+      </div>
+      <div className="runtime-doc-table-scroll">
+        <table className="runtime-doc-table">
+          <thead>
+            <tr>
+              <th>Host</th>
+              <th>IP</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Runtime</th>
+            </tr>
+          </thead>
+          <tbody>
+            {clusterNodes.map(([host, ip, role, status, runtime]) => (
+              <tr key={host}>
+                <td><code>{host}</code></td>
+                <td><code>{ip}</code></td>
+                <td>{role}</td>
+                <td><StatusPill value={status} /></td>
+                <td>{runtime}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div className="runtime-doc-note-grid">
+      {operationNotes.map((item) => (
+        <article key={item.title}>
+          <strong>{item.title}</strong>
+          <p>{item.body}</p>
+        </article>
+      ))}
     </div>
   </div>
 );
-
-const VisualStat = ({ icon: Icon, label, value, detail, status }) => (
-  <article className="visual-stat">
-    <div className="visual-stat-icon">
-      <Icon size={19} />
-    </div>
-    <div>
-      <p>{label}</p>
-      <strong>{fallback(value)}</strong>
-      <span>{fallback(detail)}</span>
-    </div>
-    {status && <StatusPill value={status} />}
-  </article>
-);
-
-const RuntimePlatformVisual = ({ data }) => {
-  const controlPlanes = data.k8sVms.filter((vm) => vmRole(vm.name) === 'control-plane');
-  const workers = data.k8sVms.filter((vm) => vmRole(vm.name) === 'worker');
-  const proxmoxNode = data.proxmoxNode;
-  const nodeCpu = proxmoxNode?.cpu ? proxmoxNode.cpu * 100 : 0;
-  const nodeMem = ratioPercent(proxmoxNode?.mem, proxmoxNode?.maxmem);
-  const k8sRunning = data.k8sVms.filter((vm) => vm.status === 'running').length;
-
-  const vmCard = (vm) => {
-    const role = vmRole(vm.name);
-    return (
-      <article className={`vm-chip vm-chip-${role}`} key={vm.vmid ?? vm.name}>
-        <div className="vm-chip-head">
-          <span>{role}</span>
-          <StatusPill value={vm.status} />
-        </div>
-        <strong>{fallback(vm.name)}</strong>
-        <div className="vm-chip-meta">
-          <span>{fallback(vm.maxcpu)} CPU</span>
-          <span>{formatGiB(vm.maxmem)}</span>
-        </div>
-        <MiniBar label="memory" value={ratioPercent(vm.mem, vm.maxmem)} />
-      </article>
-    );
-  };
-
-  return (
-    <div className="runtime-visual">
-      <div className="visual-stat-grid">
-        <VisualStat icon={Server} label="Proxmox node" value={proxmoxNode?.node} detail={`${fallback(proxmoxNode?.maxcpu)} CPU / ${formatGiB(proxmoxNode?.maxmem)}`} status={proxmoxNode?.status} />
-        <VisualStat icon={Boxes} label="Kubernetes VMs" value={`${k8sRunning}/${data.k8sVms.length || '-'}`} detail={`${fallback(data.controlPlanes)} control-plane + ${fallback(data.workers)} worker`} status={k8sRunning === data.k8sVms.length && data.k8sVms.length ? 'ready' : 'check'} />
-        <VisualStat icon={ShieldCheck} label="GitOps state" value={`${fallback(data.deploy?.argocd?.syncStatus)} / ${fallback(data.deploy?.argocd?.healthStatus)}`} detail={data.deploy?.argocd?.shortRevision} status={data.deploy?.argocd?.healthStatus ?? data.deploy?.argocd?.syncStatus} />
-        <VisualStat icon={Network} label="Edge ingress" value={data.edge?.proxy?.service} detail={`${fallback(countVisibleKubernetesRoutes(data.edge?.routes))} public Kubernetes routes`} status={data.edge?.proxy?.running_worker_count ? 'running' : 'check'} />
-      </div>
-
-      <div className="platform-map">
-        <section className="platform-host">
-          <div className="platform-card-head">
-            <div>
-              <p>Virtualization</p>
-              <h3>{fallback(proxmoxNode?.node, 'PVE node')}</h3>
-            </div>
-            <Cpu size={24} />
-          </div>
-          <StatusPill value={proxmoxNode?.status ?? 'check'} />
-          <MiniBar label="CPU load" value={nodeCpu} />
-          <MiniBar label="memory" value={nodeMem} />
-        </section>
-
-        <section className="platform-cluster">
-          <div className="platform-band control">
-            <div className="platform-band-title">
-              <span>Control plane</span>
-              <strong>{controlPlanes.length || '-'}</strong>
-            </div>
-            <div className="vm-chip-grid">{(controlPlanes.length ? controlPlanes : [{ name: 'waiting for API', status: 'check' }]).map(vmCard)}</div>
-          </div>
-          <div className="platform-band worker">
-            <div className="platform-band-title">
-              <span>Workers</span>
-              <strong>{workers.length || '-'}</strong>
-            </div>
-            <div className="vm-chip-grid">{(workers.length ? workers : [{ name: 'waiting for API', status: 'check' }]).map(vmCard)}</div>
-          </div>
-        </section>
-
-      </div>
-    </div>
-  );
-};
 
 const WorkloadVisual = ({ data }) => (
   <div className="workload-visual">
@@ -636,7 +715,7 @@ const TrafficPathFlow = ({ entryPath, publicBranch, route }) => {
   );
 };
 
-const HeroDashboardPreview = ({ data }) => (
+const HeroDashboardPreview = () => (
   <aside className="hero-dashboard-preview" aria-label="Ops Dashboard live preview">
     <div className="hero-dashboard-frame">
       <iframe
@@ -1011,7 +1090,7 @@ export const DevOpsInlinePortfolio = () => {
             </div>
           </div>
         </div>
-        <HeroDashboardPreview data={data} />
+        <HeroDashboardPreview />
       </section>
 
       <div className="devops-content-grid devops-content-grid-wide">
@@ -1050,8 +1129,12 @@ export const DevOpsInlinePortfolio = () => {
             </div>
           </Section>
 
-          <Section number="2 Runtime Platform" title="Kubernetes 실행 환경">
-            <RuntimePlatformVisual data={data} />
+          <Section
+            number="2 Runtime Platform"
+            title="Kubernetes 실행 환경"
+            kicker="DevOpsPortfolio.qmd의 설명을 HTML 안에서 바로 읽을 수 있도록 문서형 구조로 정리했습니다."
+          >
+            <RuntimePlatformDocument />
           </Section>
 
           <Section number="3 Network Path" title="외부 트래픽 경로">
