@@ -121,6 +121,9 @@ std::optional<std::filesystem::path> SafeRelativePath(std::string_view raw_path)
     while (!decoded->empty() && decoded->front() == '/') {
         decoded->erase(decoded->begin());
     }
+    while (!decoded->empty() && decoded->back() == '/') {
+        decoded->pop_back();
+    }
     if (decoded->empty()) {
         *decoded = "index.html";
     }
@@ -212,8 +215,7 @@ int main() {
         ServeStatic(ctx, static_root, "/", max_file_bytes);
     });
     server.Get("/*path", [&](RequestContext& ctx) {
-        ServeStatic(ctx, static_root, ctx.request.ParamDecoded("path"),
-                    max_file_bytes);
+        ServeStatic(ctx, static_root, ctx.request.path, max_file_bytes);
     });
 
     server.Start();

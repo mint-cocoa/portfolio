@@ -33,6 +33,20 @@ RUN cmake -S . -B build -G Ninja \
         -DCMAKE_PREFIX_PATH=/opt/iouring-runtime \
     && cmake --build build --target portfolio_site
 
+FROM node:24-bookworm-slim AS homepage
+
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates git \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG HOMEPAGE_REF=main
+WORKDIR /homepage
+RUN git clone --depth 1 --branch "${HOMEPAGE_REF}" \
+        https://github.com/mint-cocoa/mint-cocoa.github.io.git . \
+    && npm ci \
+    && npm run build
+
 FROM ubuntu:24.04 AS runtime
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -45,7 +59,8 @@ RUN useradd --system --uid 10001 --home-dir /nonexistent --shell /usr/sbin/nolog
     && chown -R portfolio:portfolio /usr/share/portfolio
 
 COPY --from=build /src/build/portfolio_site /usr/local/bin/portfolio_site
-COPY docs /usr/share/portfolio
+COPY --from=homepage /homepage/_site /usr/share/portfolio
+COPY docs /usr/share/portfolio/portfolio
 
 USER portfolio
 ENV PORTFOLIO_HOST=0.0.0.0 \
