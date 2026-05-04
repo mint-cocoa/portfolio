@@ -40,14 +40,19 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates git \
     && rm -rf /var/lib/apt/lists/*
 
-ARG HOMEPAGE_REF=76d573cadf737046c05dde04d9ae992ec7dbe544
+ARG HOMEPAGE_REF=0dd85aa5c776036b15720c50eb4ae543b305485f
 WORKDIR /homepage
 RUN git init . \
     && git remote add origin https://github.com/mint-cocoa/mint-cocoa.github.io.git \
     && git fetch --depth 1 origin "${HOMEPAGE_REF}" \
     && git checkout --detach FETCH_HEAD \
     && npm ci \
-    && npm run build
+    && npm run build \
+    && find _site -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' -o -name '*.map' \) \
+        -exec sed -i \
+            -e 's#https://mint-cocoa.github.io/portfolio/#/portfolio/#g' \
+            -e 's#https://mint-cocoa.github.io/#/#g' \
+            {} +
 
 FROM ubuntu:24.04 AS runtime
 

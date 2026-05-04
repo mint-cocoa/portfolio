@@ -190,11 +190,29 @@ const destinationLabels = {
   'api-ha': 'Kubernetes API HA',
 };
 
+const DOC_PATHS = {
+  home: '/',
+  docsRoot: '/portfolio/',
+  server: '/portfolio/server/ServerCorePortfolio.html',
+  client: '/portfolio/client/ClientPortfolio.html',
+  devops: '/portfolio/devops/DevOpsPortfolio.html',
+  ops: '/portfolio/devops/OpsDashboard.html',
+};
 const OPS_DASHBOARD_PATH = './OpsDashboard.html';
-const LIVE_OPS_DASHBOARD_URL = 'https://mint-cocoa.github.io/portfolio/devops/OpsDashboard.html';
+const LIVE_OPS_DASHBOARD_URL = DOC_PATHS.ops;
 const hiddenPublicRouteHosts = new Set(['webhook.mintcocoa.cc']);
 
 const visiblePortfolioRoute = (route) => !hiddenPublicRouteHosts.has(route?.hostname);
+
+const currentHostname = () => {
+  if (typeof window === 'undefined') return 'portfolio.mintcocoa.cc';
+  return window.location.hostname || 'portfolio.mintcocoa.cc';
+};
+
+const displayCurrentHostPath = (path) => {
+  if (typeof window === 'undefined') return path.replace(/^\//, '');
+  return `${window.location.host}${path}`;
+};
 
 const localUpstreamPort = (upstream = '') => {
   const match = upstream.match(/^(?:127\.0\.0\.1|localhost):(\d+)$/);
@@ -325,15 +343,15 @@ const StatusPill = ({ value }) => (
 const Shell = ({ children }) => (
   <div className="app-shell devops-app">
     <header className="site-header">
-      <a className="brand" href="https://mint-cocoa.github.io/" aria-label="배진후 포트폴리오 홈">
+      <a className="brand" href={DOC_PATHS.home} aria-label="배진후 포트폴리오 홈">
         <span>JH</span>
         배진후
       </a>
       <nav aria-label="상세 포트폴리오">
-        <a href="https://mint-cocoa.github.io/portfolio/server/ServerCorePortfolio.html">Server</a>
-        <a href="https://mint-cocoa.github.io/portfolio/client/ClientPortfolio.html">Client</a>
-        <a href="https://mint-cocoa.github.io/portfolio/devops/DevOpsPortfolio.html">DevOps</a>
-        <a href="https://mint-cocoa.github.io/portfolio/devops/OpsDashboard.html">Ops</a>
+        <a href={DOC_PATHS.server}>Server</a>
+        <a href={DOC_PATHS.client}>Client</a>
+        <a href={DOC_PATHS.devops}>DevOps</a>
+        <a href={DOC_PATHS.ops}>Ops</a>
       </nav>
       <a className="icon-link" href="https://github.com/mint-cocoa" target="_blank" rel="noreferrer" aria-label="GitHub">
         <ExternalLink size={18} />
@@ -377,7 +395,7 @@ const RuntimePlatformDocument = () => (
       <p>
         C++ io_uring 서버 런타임에서는 nginx를 모방한 웹 서버와 HTTPS reverse proxy를
         구현했고, 개인 도메인과 SSL 인증서 발급 경로를 이용해 외부에서 접근 가능한
-        route tree까지 검증했습니다. 현재 상세 문서의 기준 공개 경로는 GitHub Pages이고,
+        route tree까지 검증했습니다. 상세 문서는 현재 호스트의 /portfolio 경로로 제공하고,
         route tree 시각화는 Ops API가 제공하는 edge runtime 데이터를 React Flow로 렌더링합니다.
       </p>
     </article>
@@ -742,7 +760,7 @@ const HeroDashboardPreview = () => (
     </div>
     <a className="hero-dashboard-path" href={LIVE_OPS_DASHBOARD_URL} target="_blank" rel="noreferrer">
       <span className="hero-dashboard-dot" aria-hidden="true" />
-      <strong>{LIVE_OPS_DASHBOARD_URL.replace(/^https?:\/\//, '')}</strong>
+      <strong>{displayCurrentHostPath(LIVE_OPS_DASHBOARD_URL)}</strong>
       <ExternalLink size={16} />
     </a>
   </aside>
@@ -932,7 +950,7 @@ export const DevOpsInlinePortfolio = () => {
       ? 'Ops API 연결 필요'
       : 'control-plane + worker native Kubernetes';
     const proxmoxNode = nodes[0];
-    const liveHost = 'mint-cocoa.github.io';
+    const liveHost = currentHostname();
     const liveWorkload = snapshot.deploy?.kubernetes?.name ?? '-';
     const liveRevision = snapshot.deploy?.kubernetes?.shortImageTag ?? snapshot.deploy?.image?.shortTag ?? '-';
     const rolloutReady = snapshot.deploy?.kubernetes?.replicas !== null
@@ -1041,10 +1059,10 @@ export const DevOpsInlinePortfolio = () => {
       {
         id: 'live',
         label: 'Docs HTTPS',
-        value: 'GitHub Pages',
-        detail: 'mint-cocoa.github.io/portfolio 공개 경로',
+        value: liveHost,
+        detail: '/portfolio 공개 경로',
         status: 'live',
-        href: 'https://mint-cocoa.github.io/portfolio/',
+        href: DOC_PATHS.docsRoot,
         linkLabel: 'Open docs',
         icon: Cloud,
       },
@@ -1091,8 +1109,8 @@ export const DevOpsInlinePortfolio = () => {
             <h2>NAS/PC 기반 GitOps 홈 Kubernetes 운영</h2>
             <p>클러스터 구축 자동화, C++ edge proxy, 개인 도메인 route, 모니터링을 실제 운영 API와 연결해 문서화했습니다.</p>
             <div className="hero-actions" aria-label="주요 링크">
-              <a className="button" href="https://mint-cocoa.github.io/portfolio/devops/DevOpsPortfolio.html" target="_blank" rel="noreferrer">
-                GitHub Pages
+              <a className="button" href={DOC_PATHS.devops} target="_blank" rel="noreferrer">
+                상세 문서
                 <ExternalLink size={16} />
               </a>
               <a className="button" href={LIVE_OPS_DASHBOARD_URL} target="_blank" rel="noreferrer">
@@ -1128,8 +1146,8 @@ export const DevOpsInlinePortfolio = () => {
                 <p className="pipeline-overview-copy">
                   GitHub Actions가 컨테이너 이미지를 만들고 GHCR에 push한 뒤 GitOps repo의
                   image tag를 commit SHA로 갱신합니다. Argo CD는 해당 commit을 기준으로
-                  Kubernetes desired state를 수렴시키며, 공개 문서와 route tree는 GitHub Pages와
-                  Ops API를 통해 운영 증거를 함께 보여줍니다.
+                  Kubernetes desired state를 수렴시키며, 공개 문서와 route tree는 현재 호스트의
+                  /portfolio 경로와 Ops API를 통해 운영 증거를 함께 보여줍니다.
                 </p>
                 <dl className="overview-inline-facts">
                   <div>
