@@ -40,10 +40,12 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates git \
     && rm -rf /var/lib/apt/lists/*
 
-ARG HOMEPAGE_REF=main
+ARG HOMEPAGE_REF=76d573cadf737046c05dde04d9ae992ec7dbe544
 WORKDIR /homepage
-RUN git clone --depth 1 --branch "${HOMEPAGE_REF}" \
-        https://github.com/mint-cocoa/mint-cocoa.github.io.git . \
+RUN git init . \
+    && git remote add origin https://github.com/mint-cocoa/mint-cocoa.github.io.git \
+    && git fetch --depth 1 origin "${HOMEPAGE_REF}" \
+    && git checkout --detach FETCH_HEAD \
     && npm ci \
     && npm run build
 
