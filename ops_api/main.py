@@ -5,6 +5,7 @@ import json
 import os
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -12,11 +13,62 @@ from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnec
 from fastapi.middleware.cors import CORSMiddleware
 
 
+PROMETHEUS_TIMEOUT_SECONDS = 8.0
+PROXMOX_TIMEOUT_SECONDS = 8.0
+GITHUB_TIMEOUT_SECONDS = 6.0
+GITHUB_CLI_TIMEOUT_SECONDS = 4.0
+COMMAND_TIMEOUT_SECONDS = 2.0
+KUBECTL_TIMEOUT_SECONDS = 3.0
+LIVE_DASHBOARD_TIMEOUT_SECONDS = 5.0
+PROXMOX_TICKET_TTL_SECONDS = 90 * 60
+KUBECTL_LOCAL_BIN = "/home/cocoa/.local/bin/kubectl"
+
+PVE_RESOURCE_FIELDS = (
+    "id",
+    "type",
+    "node",
+    "name",
+    "status",
+    "vmid",
+    "cpu",
+    "maxcpu",
+    "mem",
+    "maxmem",
+    "disk",
+    "maxdisk",
+    "uptime",
+    "template",
+    "storage",
+    "pool",
+)
+
+SYSTEMD_SHOW_PROPERTIES = (
+    "ActiveState",
+    "SubState",
+    "MainPID",
+    "Description",
+    "FragmentPath",
+    "EnvironmentFiles",
+)
+
+
 def _bool_env(name: str, default: bool = False) -> bool:
     value = os.getenv(name)
     if value is None:
         return default
     return value.lower() in {"1", "true", "yes", "on"}
+
+
+def _float_env(name: str, default: float) -> float:
+    return float(os.getenv(name, str(default)))
+
+
+def _csv_env(name: str, default: str) -> tuple[str, ...]:
+    return tuple(
+        item.strip()
+        for item in os.getenv(name, default).split(",")
+        if item.strip()
+    )
 
 
 @dataclass(frozen=True)
@@ -28,30 +80,22 @@ class Settings:
     ) or None
     proxmox_url: str = os.getenv("PROXMOX_URL", "https://172.30.1.12:8006").rstrip("/")
     proxmox_verify_tls: bool = _bool_env("PROXMOX_VERIFY_TLS", False)
-    proxmox_timeout: float = float(os.getenv("PROXMOX_TIMEOUT", "8"))
+    proxmox_timeout: float = _float_env("PROXMOX_TIMEOUT", PROXMOX_TIMEOUT_SECONDS)
 
     pve_api_token_id: str | None = os.getenv("PVE_API_TOKEN_ID")
     pve_api_token_secret: str | None = os.getenv("PVE_API_TOKEN_SECRET")
     pve_username: str | None = os.getenv("PVE_USERNAME")
     pve_password: str | None = os.getenv("PVE_PASSWORD")
 
-    cors_origins: tuple[str, ...] = tuple(
-        origin.strip()
-        for origin in os.getenv("OPS_API_CORS_ORIGINS", "*").split(",")
-        if origin.strip()
-    )
-    stream_interval_seconds: float = float(os.getenv("OPS_API_STREAM_INTERVAL_SECONDS", "5"))
+    cors_origins: tuple[str, ...] = _csv_env("OPS_API_CORS_ORIGINS", "*")
+    stream_interval_seconds: float = _float_env("OPS_API_STREAM_INTERVAL_SECONDS", 5.0)
     edge_proxy_metrics_file: str = os.getenv(
         "OPS_API_EDGE_PROXY_METRICS_FILE",
         "/run/iouring-runtime/tcp_reverse_proxy.metrics.json",
     )
-    edge_runtime_services: tuple[str, ...] = tuple(
-        service.strip()
-        for service in os.getenv(
-            "OPS_API_EDGE_RUNTIME_SERVICES",
-            "tcp_reverse_proxy.service,file_store_server.service,speedtest_server.service",
-        ).split(",")
-        if service.strip()
+    edge_runtime_services: tuple[str, ...] = _csv_env(
+        "OPS_API_EDGE_RUNTIME_SERVICES",
+        "tcp_reverse_proxy.service,file_store_server.service,speedtest_server.service",
     )
     edge_kubernetes_upstream: str = os.getenv(
         "OPS_API_EDGE_KUBERNETES_UPSTREAM",
@@ -60,17 +104,16 @@ class Settings:
     edge_node_address: str = os.getenv("OPS_API_EDGE_NODE_ADDRESS", "172.30.1.27")
     edge_public_entry: str = os.getenv("OPS_API_EDGE_PUBLIC_ENTRY", "WAN :80 / :443")
     edge_public_listen: str = os.getenv("OPS_API_EDGE_PUBLIC_LISTEN", "0.0.0.0:80 / 443")
-    edge_kubernetes_label: str = os.getenv("OPS_API_EDGE_KUBERNETES_LABEL", "MetalLB VIP 172.30.1.240")
-    kubernetes_api_endpoint: str = os.getenv("OPS_API_KUBERNETES_API_ENDPOINT", "172.30.1.27:6443")
-    kubernetes_control_plane_endpoints: tuple[str, ...] = tuple(
-        endpoint.strip()
-        for endpoint in os.getenv(
-            "OPS_API_KUBERNETES_CONTROL_PLANE_ENDPOINTS",
-            "172.30.1.231:6443,172.30.1.232:6443,172.30.1.233:6443",
-        ).split(",")
-        if endpoint.strip()
+    edge_kubernetes_label: str = os.getenv(
+        "OPS_API_EDGE_KUBERNETES_LABEL",
+        "MetalLB VIP 172.30.1.240",
     )
-    edge_probe_timeout: float = float(os.getenv("OPS_API_EDGE_PROBE_TIMEOUT", "2"))
+    kubernetes_api_endpoint: str = os.getenv("OPS_API_KUBERNETES_API_ENDPOINT", "172.30.1.27:6443")
+    kubernetes_control_plane_endpoints: tuple[str, ...] = _csv_env(
+        "OPS_API_KUBERNETES_CONTROL_PLANE_ENDPOINTS",
+        "172.30.1.231:6443,172.30.1.232:6443,172.30.1.233:6443",
+    )
+    edge_probe_timeout: float = _float_env("OPS_API_EDGE_PROBE_TIMEOUT", COMMAND_TIMEOUT_SECONDS)
     github_api_url: str = os.getenv("OPS_API_GITHUB_API_URL", "https://api.github.com").rstrip("/")
     github_token: str | None = os.getenv("OPS_API_GITHUB_TOKEN") or os.getenv("GITHUB_TOKEN")
     deploy_repo_owner: str = os.getenv("OPS_API_DEPLOY_REPO_OWNER", "mint-cocoa")
@@ -83,14 +126,17 @@ class Settings:
         "OPS_API_GITOPS_VALUES_PATH",
         "apps/portfolio/values.yaml",
     )
-    gitops_local_repo: str | None = os.getenv("OPS_API_GITOPS_LOCAL_REPO", "/home/cocoa/home-k8s-gitops")
+    gitops_local_repo: str | None = os.getenv(
+        "OPS_API_GITOPS_LOCAL_REPO",
+        "/home/cocoa/home-k8s-gitops",
+    )
     argocd_namespace: str = os.getenv("OPS_API_ARGOCD_NAMESPACE", "argocd")
     argocd_application: str = os.getenv("OPS_API_ARGOCD_APPLICATION", "portfolio")
     kubernetes_namespace: str = os.getenv("OPS_API_KUBERNETES_NAMESPACE", "portfolio")
     kubernetes_deployment: str = os.getenv("OPS_API_KUBERNETES_DEPLOYMENT", "portfolio")
     kubectl_bin: str = os.getenv(
         "OPS_API_KUBECTL_BIN",
-        "/home/cocoa/.local/bin/kubectl" if os.path.exists("/home/cocoa/.local/bin/kubectl") else "kubectl",
+        KUBECTL_LOCAL_BIN if os.path.exists(KUBECTL_LOCAL_BIN) else "kubectl",
     )
     live_dashboard_url: str = os.getenv(
         "OPS_API_LIVE_DASHBOARD_URL",
@@ -119,7 +165,7 @@ async def prometheus_get(path: str, params: dict[str, Any] | None = None) -> dic
     url = f"{settings.prometheus_url}{path}"
     headers = {"Host": settings.prometheus_host_header} if settings.prometheus_host_header else None
     try:
-        async with httpx.AsyncClient(timeout=8) as client:
+        async with httpx.AsyncClient(timeout=PROMETHEUS_TIMEOUT_SECONDS) as client:
             response = await client.get(url, params=params, headers=headers)
             response.raise_for_status()
             return response.json()
@@ -131,7 +177,7 @@ async def prometheus_ready() -> str:
     url = f"{settings.prometheus_url}/-/ready"
     headers = {"Host": settings.prometheus_host_header} if settings.prometheus_host_header else None
     try:
-        async with httpx.AsyncClient(timeout=8) as client:
+        async with httpx.AsyncClient(timeout=PROMETHEUS_TIMEOUT_SECONDS) as client:
             response = await client.get(url, headers=headers)
             response.raise_for_status()
             return response.text.strip()
@@ -192,11 +238,14 @@ class ProxmoxClient:
         except httpx.HTTPStatusError as exc:
             raise HTTPException(status_code=401, detail="Proxmox login failed") from exc
         except (httpx.HTTPError, KeyError) as exc:
-            raise HTTPException(status_code=502, detail=f"Proxmox login request failed: {exc}") from exc
+            raise HTTPException(
+                status_code=502,
+                detail=f"Proxmox login request failed: {exc}",
+            ) from exc
 
         self._ticket = payload["ticket"]
         self._csrf = payload.get("CSRFPreventionToken")
-        self._ticket_expiry = time.time() + 90 * 60
+        self._ticket_expiry = time.time() + PROXMOX_TICKET_TTL_SECONDS
 
     async def get(self, path: str, params: dict[str, Any] | None = None, auth: bool = True) -> Any:
         url = f"{self.config.proxmox_url}/api2/json{path}"
@@ -211,7 +260,10 @@ class ProxmoxClient:
                 return response.json().get("data")
         except httpx.HTTPStatusError as exc:
             if exc.response.status_code in {401, 403}:
-                raise HTTPException(status_code=401, detail="Proxmox authentication failed") from exc
+                raise HTTPException(
+                    status_code=401,
+                    detail="Proxmox authentication failed",
+                ) from exc
             raise HTTPException(status_code=502, detail=f"Proxmox API error: {exc}") from exc
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail=f"Proxmox request failed: {exc}") from exc
@@ -226,7 +278,12 @@ def _pack_result(value: Any) -> dict[str, Any]:
     return {"ok": True, "data": value}
 
 
-def _evidence_card(label: str, value: Any, detail: str = "", status: str | None = None) -> dict[str, Any]:
+def _evidence_card(
+    label: str,
+    value: Any,
+    detail: str = "",
+    status: str | None = None,
+) -> dict[str, Any]:
     return {
         "label": label,
         "value": "-" if value is None or value == "" else str(value),
@@ -236,25 +293,7 @@ def _evidence_card(label: str, value: Any, detail: str = "", status: str | None 
 
 
 def _pve_resource_view(resource: dict[str, Any]) -> dict[str, Any]:
-    allowed = {
-        "id",
-        "type",
-        "node",
-        "name",
-        "status",
-        "vmid",
-        "cpu",
-        "maxcpu",
-        "mem",
-        "maxmem",
-        "disk",
-        "maxdisk",
-        "uptime",
-        "template",
-        "storage",
-        "pool",
-    }
-    return {key: resource.get(key) for key in allowed if key in resource}
+    return {key: resource.get(key) for key in PVE_RESOURCE_FIELDS if key in resource}
 
 
 def _target_view(target: dict[str, Any]) -> dict[str, Any]:
@@ -279,7 +318,18 @@ def _parse_key_value_lines(text: str) -> dict[str, str]:
     return values
 
 
-async def _run_command(*args: str, timeout: float = 2.0) -> tuple[int, str, str]:
+def _json_object(text: str) -> dict[str, Any] | None:
+    try:
+        value = json.loads(text)
+    except json.JSONDecodeError:
+        return None
+    return value if isinstance(value, dict) else None
+
+
+async def _run_command(
+    *args: str,
+    timeout: float = COMMAND_TIMEOUT_SECONDS,
+) -> tuple[int, str, str]:
     process = await asyncio.create_subprocess_exec(
         *args,
         stdout=asyncio.subprocess.PIPE,
@@ -287,7 +337,7 @@ async def _run_command(*args: str, timeout: float = 2.0) -> tuple[int, str, str]
     )
     try:
         stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
-    except TimeoutError:
+    except asyncio.TimeoutError:
         process.kill()
         await process.communicate()
         return 124, "", "command timed out"
@@ -315,7 +365,10 @@ def _github_headers() -> dict[str, str]:
 
 async def _github_get(path: str, params: dict[str, Any] | None = None) -> Any:
     url = f"{settings.github_api_url}{path}"
-    async with httpx.AsyncClient(timeout=6, headers=_github_headers()) as client:
+    async with httpx.AsyncClient(
+        timeout=GITHUB_TIMEOUT_SECONDS,
+        headers=_github_headers(),
+    ) as client:
         response = await client.get(url, params=params)
         response.raise_for_status()
         return response.json()
@@ -327,13 +380,14 @@ def _status_from_action(status: str | None, conclusion: str | None) -> str:
     return status or "unknown"
 
 
-def _step_status(ok: bool, pending: bool = False) -> str:
-    if pending:
-        return "running"
+def _step_status(ok: bool) -> str:
     return "success" if ok else "unknown"
 
 
-async def _kubectl_json(*args: str, timeout: float = 3.0) -> dict[str, Any] | None:
+async def _kubectl_json(
+    *args: str,
+    timeout: float = KUBECTL_TIMEOUT_SECONDS,
+) -> dict[str, Any] | None:
     rc, stdout, _stderr = await _run_command(
         settings.kubectl_bin,
         *args,
@@ -343,32 +397,20 @@ async def _kubectl_json(*args: str, timeout: float = 3.0) -> dict[str, Any] | No
     )
     if rc != 0:
         return None
-    try:
-        value = json.loads(stdout)
-    except json.JSONDecodeError:
-        return None
-    return value if isinstance(value, dict) else None
+    return _json_object(stdout)
+
+
+def _systemctl_show_args(unit: str) -> tuple[str, ...]:
+    args = ["systemctl", "show", unit, "--no-pager"]
+    for property_name in SYSTEMD_SHOW_PROPERTIES:
+        args.extend(("-p", property_name))
+    return tuple(args)
 
 
 async def _systemd_unit_view(unit: str) -> dict[str, Any]:
     rc, stdout, stderr = await _run_command(
-        "systemctl",
-        "show",
-        unit,
-        "--no-pager",
-        "-p",
-        "ActiveState",
-        "-p",
-        "SubState",
-        "-p",
-        "MainPID",
-        "-p",
-        "Description",
-        "-p",
-        "FragmentPath",
-        "-p",
-        "EnvironmentFiles",
-        timeout=2.0,
+        *_systemctl_show_args(unit),
+        timeout=COMMAND_TIMEOUT_SECONDS,
     )
     if rc != 0:
         return {
@@ -399,7 +441,7 @@ async def _systemd_unit_view(unit: str) -> dict[str, Any]:
 
 async def _read_text_file(path: str) -> str | None:
     try:
-        return await asyncio.to_thread(lambda: open(path, encoding="utf-8").read())
+        return await asyncio.to_thread(Path(path).read_text, encoding="utf-8")
     except OSError:
         return None
 
@@ -408,11 +450,7 @@ async def _read_json_file(path: str) -> dict[str, Any] | None:
     text = await _read_text_file(path)
     if not text:
         return None
-    try:
-        value = json.loads(text)
-    except json.JSONDecodeError:
-        return None
-    return value if isinstance(value, dict) else None
+    return _json_object(text)
 
 
 def _first_host_port_from_env(env: dict[str, str]) -> tuple[str, int] | None:
@@ -579,7 +617,7 @@ async def _latest_workflow_runs() -> list[dict[str, Any]]:
             "event=push",
             "-f",
             "per_page=10",
-            timeout=4.0,
+            timeout=GITHUB_CLI_TIMEOUT_SECONDS,
         )
         if rc != 0 or not stdout.strip():
             return []
@@ -628,7 +666,7 @@ async def _latest_gitops_commit() -> dict[str, Any] | None:
         "per_page=1",
         "--jq",
         ".[0]",
-        timeout=4.0,
+        timeout=GITHUB_CLI_TIMEOUT_SECONDS,
     )
     if rc == 0 and stdout.strip():
         try:
@@ -656,7 +694,7 @@ async def _latest_gitops_commit() -> dict[str, Any] | None:
         "--format=%H%x1f%s%x1f%cI",
         "--",
         settings.gitops_values_path,
-        timeout=2.0,
+        timeout=COMMAND_TIMEOUT_SECONDS,
     )
     if rc != 0 or not stdout.strip():
         return None
@@ -665,7 +703,10 @@ async def _latest_gitops_commit() -> dict[str, Any] | None:
         "sha": sha,
         "shortSha": _short_sha(sha),
         "message": message,
-        "url": f"https://github.com/{settings.gitops_repo_owner}/{settings.gitops_repo_name}/commit/{sha}",
+        "url": (
+            f"https://github.com/{settings.gitops_repo_owner}/"
+            f"{settings.gitops_repo_name}/commit/{sha}"
+        ),
         "createdAt": created_at,
         "source": "local-git",
     }
@@ -727,9 +768,26 @@ async def _kubernetes_deployment_view() -> dict[str, Any] | None:
     }
 
 
+def _dashboard_assets(html: str) -> list[str]:
+    assets: list[str] = []
+    for marker in ('src="./assets/', 'href="./assets/'):
+        start = 0
+        while True:
+            index = html.find(marker, start)
+            if index == -1:
+                break
+            asset_start = index + len(marker)
+            asset_end = html.find('"', asset_start)
+            if asset_end == -1:
+                break
+            assets.append(html[asset_start:asset_end])
+            start = asset_end + 1
+    return assets
+
+
 async def _live_dashboard_view() -> dict[str, Any]:
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
+        async with httpx.AsyncClient(timeout=LIVE_DASHBOARD_TIMEOUT_SECONDS) as client:
             response = await client.get(
                 settings.live_dashboard_url,
                 headers={"Cache-Control": "no-cache"},
@@ -743,25 +801,11 @@ async def _live_dashboard_view() -> dict[str, Any]:
             "assets": [],
         }
 
-    assets = []
-    for marker in ('src="./assets/', 'href="./assets/'):
-        start = 0
-        while True:
-            index = response.text.find(marker, start)
-            if index == -1:
-                break
-            asset_start = index + len(marker)
-            asset_end = response.text.find('"', asset_start)
-            if asset_end == -1:
-                break
-            assets.append(response.text[asset_start:asset_end])
-            start = asset_end + 1
-
     return {
         "url": settings.live_dashboard_url,
         "ok": True,
         "statusCode": response.status_code,
-        "assets": assets,
+        "assets": _dashboard_assets(response.text),
     }
 
 
@@ -776,10 +820,13 @@ def _pipeline_steps(
     live: dict[str, Any],
 ) -> list[dict[str, Any]]:
     action_status = actions.get("status")
-    action_done = action_status == "success"
     image_matches_commit = bool(image.get("tag") and commit.get("sha") == image.get("tag"))
     gitops_matches = bool(gitops and argocd and gitops.get("sha") == argocd.get("revision"))
-    argocd_ok = argocd and argocd.get("syncStatus") == "Synced" and argocd.get("healthStatus") == "Healthy"
+    argocd_ok = bool(
+        argocd
+        and argocd.get("syncStatus") == "Synced"
+        and argocd.get("healthStatus") == "Healthy"
+    )
     replicas = kubernetes.get("replicas") if kubernetes else 0
     ready = kubernetes.get("readyReplicas") if kubernetes else 0
     rollout_ok = bool(kubernetes and replicas and ready == replicas and image_matches_commit)
@@ -833,7 +880,11 @@ def _pipeline_steps(
             "label": "K8s Rollout",
             "status": _step_status(rollout_ok),
             "primary": f"{ready}/{replicas}" if kubernetes else "-",
-            "secondary": kubernetes.get("shortImageTag") if kubernetes else "deployment unavailable",
+            "secondary": (
+                kubernetes.get("shortImageTag")
+                if kubernetes
+                else "deployment unavailable"
+            ),
             "details": kubernetes or {},
         },
         {
@@ -849,7 +900,13 @@ def _pipeline_steps(
 
 
 async def deploy_pipeline_snapshot() -> dict[str, Any]:
-    runs_result, gitops_result, argocd_result, kubernetes_result, live_result = await asyncio.gather(
+    (
+        runs_result,
+        gitops_result,
+        argocd_result,
+        kubernetes_result,
+        live_result,
+    ) = await asyncio.gather(
         _latest_workflow_runs(),
         _latest_gitops_commit(),
         _argocd_application_view(),
@@ -866,6 +923,11 @@ async def deploy_pipeline_snapshot() -> dict[str, Any]:
 
     head_commit = selected_run.get("head_commit") or {}
     sha = selected_run.get("head_sha") or deployed_tag
+    commit_url = (
+        f"https://github.com/{settings.deploy_repo_owner}/{settings.deploy_repo_name}/commit/{sha}"
+        if sha
+        else None
+    )
     commit = {
         "sha": sha,
         "shortSha": _short_sha(sha),
@@ -873,7 +935,7 @@ async def deploy_pipeline_snapshot() -> dict[str, Any]:
         "message": head_commit.get("message"),
         "author": (head_commit.get("author") or {}).get("name"),
         "createdAt": selected_run.get("created_at"),
-        "url": f"https://github.com/{settings.deploy_repo_owner}/{settings.deploy_repo_name}/commit/{sha}" if sha else None,
+        "url": commit_url,
     }
     actions = {
         "workflowName": selected_run.get("name"),
@@ -886,7 +948,11 @@ async def deploy_pipeline_snapshot() -> dict[str, Any]:
         "updatedAt": selected_run.get("updated_at"),
     }
     image_value = kubernetes.get("image") if kubernetes else None
-    image_repo = image_value.rsplit(":", 1)[0] if image_value and ":" in image_value else image_value
+    image_repo = (
+        image_value.rsplit(":", 1)[0]
+        if image_value and ":" in image_value
+        else image_value
+    )
     image = {
         "image": image_value,
         "repository": image_repo,
@@ -895,7 +961,11 @@ async def deploy_pipeline_snapshot() -> dict[str, Any]:
     }
     gitops = None if isinstance(gitops_result, Exception) else gitops_result
     argocd = None if isinstance(argocd_result, Exception) else argocd_result
-    live = {"ok": False, "assets": [], "error": str(live_result)} if isinstance(live_result, Exception) else live_result
+    live = (
+        {"ok": False, "assets": [], "error": str(live_result)}
+        if isinstance(live_result, Exception)
+        else live_result
+    )
 
     return {
         "generatedAt": int(time.time()),
@@ -1069,135 +1139,213 @@ async def deploy_pipeline() -> dict[str, Any]:
     return await deploy_pipeline_snapshot()
 
 
-@app.get("/api/portfolio/evidence")
-async def portfolio_evidence(
-    section: str = Query(
-        default="overview",
-        pattern="^(overview|deploy|infra|edge|apps|observability)$",
-    ),
+def _evidence_response(
+    section: str,
+    *,
+    title: str,
+    summary: str,
+    endpoints: list[str],
+    cards: list[dict[str, Any]],
+    sources: dict[str, Any],
 ) -> dict[str, Any]:
-    if section in {"deploy", "apps"}:
-        deploy_result, summary_result = await asyncio.gather(
-            deploy_pipeline_snapshot(),
-            ops_summary(),
-            return_exceptions=True,
-        )
-        deploy = deploy_result if isinstance(deploy_result, dict) else {}
-        steps = deploy.get("steps", [])
-        rollout = next((step for step in steps if step.get("id") == "rollout"), {})
-        argocd = next((step for step in steps if step.get("id") == "argocd"), {})
-        ok_steps = sum(1 for step in steps if step.get("status") in {"ok", "success"})
-        cards = [
+    return {
+        "section": section,
+        "generatedAt": int(time.time()),
+        "title": title,
+        "summary": summary,
+        "endpoints": endpoints,
+        "cards": cards,
+        "sources": sources,
+    }
+
+
+def _step_by_id(steps: list[dict[str, Any]], step_id: str) -> dict[str, Any]:
+    return next((step for step in steps if step.get("id") == step_id), {})
+
+
+def _healthy_target_count(targets: list[dict[str, Any]]) -> int:
+    return sum(1 for target in targets if target.get("health") == "up")
+
+
+def _running_vm_count(resources: list[dict[str, Any]]) -> int:
+    return sum(1 for vm in resources if vm.get("status") == "running")
+
+
+async def _deploy_evidence(section: str) -> dict[str, Any]:
+    deploy_result, summary_result = await asyncio.gather(
+        deploy_pipeline_snapshot(),
+        ops_summary(),
+        return_exceptions=True,
+    )
+    deploy = deploy_result if isinstance(deploy_result, dict) else {}
+    steps = deploy.get("steps", [])
+    rollout = _step_by_id(steps, "rollout")
+    argocd = _step_by_id(steps, "argocd")
+    ok_steps = sum(1 for step in steps if step.get("status") in {"ok", "success"})
+    endpoints = (
+        ["/deploy-pipeline"]
+        if section == "deploy"
+        else ["/deploy-pipeline", "/ops/summary"]
+    )
+
+    return _evidence_response(
+        section,
+        title="Deploy Pipeline" if section == "deploy" else "Prepared Workloads",
+        summary="GitHub Actions, GHCR image, GitOps promotion, Argo CD sync, rollout evidence.",
+        endpoints=endpoints,
+        cards=[
             _evidence_card("Pipeline", f"{ok_steps}/{len(steps) or '-'}", "ok steps"),
             _evidence_card("Rollout", rollout.get("primary"), rollout.get("secondary", "")),
             _evidence_card("Argo CD", argocd.get("primary"), argocd.get("secondary", "")),
-            _evidence_card("Commit", _short_sha(deploy.get("commit", {}).get("sha")), deploy.get("commit", {}).get("branch", "")),
-        ]
-        return {
-            "section": section,
-            "generatedAt": int(time.time()),
-            "title": "Deploy Pipeline" if section == "deploy" else "Prepared Workloads",
-            "summary": "GitHub Actions, GHCR image, GitOps promotion, Argo CD sync, rollout evidence.",
-            "endpoints": ["/deploy-pipeline"] if section == "deploy" else ["/deploy-pipeline", "/ops/summary"],
-            "cards": cards,
-            "sources": {
-                "deployPipeline": _pack_result(deploy_result),
-                "opsSummary": _pack_result(summary_result),
-            },
-        }
+            _evidence_card(
+                "Commit",
+                _short_sha(deploy.get("commit", {}).get("sha")),
+                deploy.get("commit", {}).get("branch", ""),
+            ),
+        ],
+        sources={
+            "deployPipeline": _pack_result(deploy_result),
+            "opsSummary": _pack_result(summary_result),
+        },
+    )
 
-    if section == "edge":
-        edge_result, health_result = await asyncio.gather(
-            edge_runtime_snapshot(),
-            health(),
-            return_exceptions=True,
-        )
-        edge = edge_result if isinstance(edge_result, dict) else {}
-        health_data = health_result if isinstance(health_result, dict) else {}
-        services = edge.get("services", [])
-        routes = edge.get("routes", [])
-        cards = [
-            _evidence_card("Runtime Services", len(services), ", ".join(filter(None, (service.get("runtime") or service.get("unit") for service in services)))),
-            _evidence_card("Routes", len(routes), " · ".join(f"{key}:{value}" for key, value in edge.get("destinationCounts", {}).items())),
-            _evidence_card("API", "ok" if health_data.get("ok") else "check", f"Prometheus {health_data.get('prometheus', '-')}"),
-            _evidence_card("Proxy", edge.get("proxy", {}).get("default_upstream"), "default upstream"),
-        ]
-        return {
-            "section": section,
-            "generatedAt": int(time.time()),
-            "title": "Edge Runtime",
-            "summary": "C++ RuntimeProxy/RuntimeWeb route, upstream, service health evidence.",
-            "endpoints": ["/edge-runtime", "/health"],
-            "cards": cards,
-            "sources": {
-                "edgeRuntime": _pack_result(edge_result),
-                "health": _pack_result(health_result),
-            },
-        }
 
-    if section == "infra":
-        nodes_result, resources_result, prom_result, targets_result = await asyncio.gather(
-            proxmox_nodes(),
-            proxmox_resources(type="vm"),
-            prometheus_summary(),
-            prometheus_targets(),
-            return_exceptions=True,
-        )
-        nodes = nodes_result.get("nodes", []) if isinstance(nodes_result, dict) else []
-        resources = resources_result.get("resources", []) if isinstance(resources_result, dict) else []
-        prom = prom_result if isinstance(prom_result, dict) else {}
-        targets = targets_result.get("targets", []) if isinstance(targets_result, dict) else []
-        cards = [
-            _evidence_card("PVE Nodes", len(nodes), nodes[0].get("node", "Proxmox API") if nodes else "Proxmox API"),
-            _evidence_card("Running VMs", sum(1 for vm in resources if vm.get("status") == "running"), f"{len(resources)} qemu resources"),
-            _evidence_card("Pods", prom.get("series", {}).get("pods"), f"{prom.get('series', {}).get('deployments', '-')} deployments"),
-            _evidence_card("Targets", f"{sum(1 for target in targets if target.get('health') == 'up')}/{len(targets)}", "healthy scrape targets"),
-        ]
-        return {
-            "section": section,
-            "generatedAt": int(time.time()),
-            "title": "Cluster Runtime",
-            "summary": "Proxmox VM inventory and Prometheus-observed Kubernetes runtime evidence.",
-            "endpoints": ["/proxmox/nodes", "/proxmox/resources?type=vm", "/prometheus/summary", "/prometheus/targets"],
-            "cards": cards,
-            "sources": {
-                "proxmoxNodes": _pack_result(nodes_result),
-                "proxmoxVMs": _pack_result(resources_result),
-                "prometheusSummary": _pack_result(prom_result),
-                "prometheusTargets": _pack_result(targets_result),
-            },
-        }
+async def _edge_evidence() -> dict[str, Any]:
+    edge_result, health_result = await asyncio.gather(
+        edge_runtime_snapshot(),
+        health(),
+        return_exceptions=True,
+    )
+    edge = edge_result if isinstance(edge_result, dict) else {}
+    health_data = health_result if isinstance(health_result, dict) else {}
+    services = edge.get("services", [])
+    routes = edge.get("routes", [])
+    runtimes = ", ".join(
+        filter(None, (service.get("runtime") or service.get("unit") for service in services))
+    )
+    destinations = " · ".join(
+        f"{key}:{value}" for key, value in edge.get("destinationCounts", {}).items()
+    )
 
-    if section == "observability":
-        prom_result, targets_result, health_result = await asyncio.gather(
-            prometheus_summary(),
-            prometheus_targets(),
-            health(),
-            return_exceptions=True,
-        )
-        prom = prom_result if isinstance(prom_result, dict) else {}
-        targets = targets_result.get("targets", []) if isinstance(targets_result, dict) else []
-        health_data = health_result if isinstance(health_result, dict) else {}
-        cards = [
+    return _evidence_response(
+        "edge",
+        title="Edge Runtime",
+        summary="C++ RuntimeProxy/RuntimeWeb route, upstream, service health evidence.",
+        endpoints=["/edge-runtime", "/health"],
+        cards=[
+            _evidence_card("Runtime Services", len(services), runtimes),
+            _evidence_card("Routes", len(routes), destinations),
+            _evidence_card(
+                "API",
+                "ok" if health_data.get("ok") else "check",
+                f"Prometheus {health_data.get('prometheus', '-')}",
+            ),
+            _evidence_card(
+                "Proxy",
+                edge.get("proxy", {}).get("default_upstream"),
+                "default upstream",
+            ),
+        ],
+        sources={
+            "edgeRuntime": _pack_result(edge_result),
+            "health": _pack_result(health_result),
+        },
+    )
+
+
+async def _infra_evidence() -> dict[str, Any]:
+    nodes_result, resources_result, prom_result, targets_result = await asyncio.gather(
+        proxmox_nodes(),
+        proxmox_resources(type="vm"),
+        prometheus_summary(),
+        prometheus_targets(),
+        return_exceptions=True,
+    )
+    nodes = nodes_result.get("nodes", []) if isinstance(nodes_result, dict) else []
+    resources = resources_result.get("resources", []) if isinstance(resources_result, dict) else []
+    prom = prom_result if isinstance(prom_result, dict) else {}
+    targets = targets_result.get("targets", []) if isinstance(targets_result, dict) else []
+
+    return _evidence_response(
+        "infra",
+        title="Cluster Runtime",
+        summary="Proxmox VM inventory and Prometheus-observed Kubernetes runtime evidence.",
+        endpoints=[
+            "/proxmox/nodes",
+            "/proxmox/resources?type=vm",
+            "/prometheus/summary",
+            "/prometheus/targets",
+        ],
+        cards=[
+            _evidence_card(
+                "PVE Nodes",
+                len(nodes),
+                nodes[0].get("node", "Proxmox API") if nodes else "Proxmox API",
+            ),
+            _evidence_card(
+                "Running VMs",
+                _running_vm_count(resources),
+                f"{len(resources)} qemu resources",
+            ),
+            _evidence_card(
+                "Pods",
+                prom.get("series", {}).get("pods"),
+                f"{prom.get('series', {}).get('deployments', '-')} deployments",
+            ),
+            _evidence_card(
+                "Targets",
+                f"{_healthy_target_count(targets)}/{len(targets)}",
+                "healthy scrape targets",
+            ),
+        ],
+        sources={
+            "proxmoxNodes": _pack_result(nodes_result),
+            "proxmoxVMs": _pack_result(resources_result),
+            "prometheusSummary": _pack_result(prom_result),
+            "prometheusTargets": _pack_result(targets_result),
+        },
+    )
+
+
+async def _observability_evidence() -> dict[str, Any]:
+    prom_result, targets_result, health_result = await asyncio.gather(
+        prometheus_summary(),
+        prometheus_targets(),
+        health(),
+        return_exceptions=True,
+    )
+    prom = prom_result if isinstance(prom_result, dict) else {}
+    targets = targets_result.get("targets", []) if isinstance(targets_result, dict) else []
+    health_data = health_result if isinstance(health_result, dict) else {}
+
+    return _evidence_response(
+        "observability",
+        title="Observability",
+        summary="Prometheus readiness, scrape target, pod, deployment evidence.",
+        endpoints=["/prometheus/summary", "/prometheus/targets", "/health"],
+        cards=[
             _evidence_card("Prometheus", health_data.get("prometheus"), "readiness"),
-            _evidence_card("Targets Up", f"{sum(1 for target in targets if target.get('health') == 'up')}/{len(targets)}", "scrape health"),
+            _evidence_card(
+                "Targets Up",
+                f"{_healthy_target_count(targets)}/{len(targets)}",
+                "scrape health",
+            ),
             _evidence_card("Pods", prom.get("series", {}).get("pods"), "observed series"),
-            _evidence_card("Deployments", prom.get("series", {}).get("deployments"), "kube-state-metrics"),
-        ]
-        return {
-            "section": section,
-            "generatedAt": int(time.time()),
-            "title": "Observability",
-            "summary": "Prometheus readiness, scrape target, pod, deployment evidence.",
-            "endpoints": ["/prometheus/summary", "/prometheus/targets", "/health"],
-            "cards": cards,
-            "sources": {
-                "prometheusSummary": _pack_result(prom_result),
-                "prometheusTargets": _pack_result(targets_result),
-                "health": _pack_result(health_result),
-            },
-        }
+            _evidence_card(
+                "Deployments",
+                prom.get("series", {}).get("deployments"),
+                "kube-state-metrics",
+            ),
+        ],
+        sources={
+            "prometheusSummary": _pack_result(prom_result),
+            "prometheusTargets": _pack_result(targets_result),
+            "health": _pack_result(health_result),
+        },
+    )
 
+
+async def _overview_evidence() -> dict[str, Any]:
     health_result, summary_result = await asyncio.gather(
         health(),
         ops_summary(),
@@ -1207,24 +1355,49 @@ async def portfolio_evidence(
     summary = summary_result if isinstance(summary_result, dict) else {}
     nodes = summary.get("proxmoxNodes", {}).get("data", {}).get("nodes", [])
     vms = summary.get("proxmoxVMs", {}).get("data", {}).get("resources", [])
-    cards = [
-        _evidence_card("Ops API", "ok" if health_data.get("ok") else "-", f"generated {summary.get('generatedAt', '-')}"),
-        _evidence_card("Prometheus", health_data.get("prometheus"), "readiness"),
-        _evidence_card("Proxmox", health_data.get("proxmox"), nodes[0].get("node", "node view") if nodes else "node view"),
-        _evidence_card("VMs", sum(1 for vm in vms if vm.get("status") == "running"), f"{len(vms)} observed"),
-    ]
-    return {
-        "section": section,
-        "generatedAt": int(time.time()),
-        "title": "Portfolio Health",
-        "summary": "Compact health evidence for the current portfolio operations surface.",
-        "endpoints": ["/health", "/ops/summary"],
-        "cards": cards,
-        "sources": {
+
+    return _evidence_response(
+        "overview",
+        title="Portfolio Health",
+        summary="Compact health evidence for the current portfolio operations surface.",
+        endpoints=["/health", "/ops/summary"],
+        cards=[
+            _evidence_card(
+                "Ops API",
+                "ok" if health_data.get("ok") else "-",
+                f"generated {summary.get('generatedAt', '-')}",
+            ),
+            _evidence_card("Prometheus", health_data.get("prometheus"), "readiness"),
+            _evidence_card(
+                "Proxmox",
+                health_data.get("proxmox"),
+                nodes[0].get("node", "node view") if nodes else "node view",
+            ),
+            _evidence_card("VMs", _running_vm_count(vms), f"{len(vms)} observed"),
+        ],
+        sources={
             "health": _pack_result(health_result),
             "opsSummary": _pack_result(summary_result),
         },
-    }
+    )
+
+
+@app.get("/api/portfolio/evidence")
+async def portfolio_evidence(
+    section: str = Query(
+        default="overview",
+        pattern="^(overview|deploy|infra|edge|apps|observability)$",
+    ),
+) -> dict[str, Any]:
+    if section in {"deploy", "apps"}:
+        return await _deploy_evidence(section)
+    if section == "edge":
+        return await _edge_evidence()
+    if section == "infra":
+        return await _infra_evidence()
+    if section == "observability":
+        return await _observability_evidence()
+    return await _overview_evidence()
 
 
 async def ops_snapshot() -> dict[str, Any]:
