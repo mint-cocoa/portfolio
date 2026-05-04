@@ -30,8 +30,8 @@
 
 ## 빌드와 배포
 
-DevOps 포트폴리오는 `dashboard/src/DevOpsInlinePortfolio.jsx`를 기준으로 한 React/Vite 페이지입니다.
-`docs/devops/DevOpsPortfolio.qmd`는 구형 문서이며 현재 공개 페이지의 canonical source가 아닙니다.
+DevOps 포트폴리오는 `docs/devops/DevOpsPortfolio.qmd`를 기준으로 렌더링합니다.
+운영 대시보드(`docs/devops/OpsDashboard.html`)는 `dashboard/`의 React/Vite 페이지입니다.
 
 ```bash
 ./scripts/render-devops.sh

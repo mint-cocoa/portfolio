@@ -1,15 +1,1464 @@
-<!doctype html>
-<html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>홈랩 DevOps 포트폴리오</title>
-    <script type="module" crossorigin src="./assets/DevOpsPortfolio-BmuEmnP7.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/api-CqIzucV6.js">
-    <link rel="stylesheet" crossorigin href="./assets/api-BF6Z-kM6.css">
-  </head>
-  <body>
-    <div id="devops-root"></div>
-  </body>
-</html>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ko" xml:lang="ko"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="배진후">
+
+<title>홈랩 DevOps 포트폴리오</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="DevOpsPortfolio_files/libs/clipboard/clipboard.min.js"></script>
+<script src="DevOpsPortfolio_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="DevOpsPortfolio_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="DevOpsPortfolio_files/libs/quarto-html/popper.min.js"></script>
+<script src="DevOpsPortfolio_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="DevOpsPortfolio_files/libs/quarto-html/anchor.min.js"></script>
+<link href="DevOpsPortfolio_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="DevOpsPortfolio_files/libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="DevOpsPortfolio_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="DevOpsPortfolio_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="DevOpsPortfolio_files/libs/bootstrap/bootstrap-b266025aee7dee100f5553a3ab926a66.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="DevOpsPortfolio_files/libs/quarto-diagram/mermaid.min.js"></script>
+<script src="DevOpsPortfolio_files/libs/quarto-diagram/mermaid-init.js"></script>
+<link href="DevOpsPortfolio_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
+
+
+<link rel="stylesheet" href="../portfolio.css">
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">목차</h2>
+
+  <ul>
+  <li><a href="#핵심-요약" id="toc-핵심-요약" class="nav-link active" data-scroll-target="#핵심-요약"><span class="header-section-number">1</span> 핵심 요약</a></li>
+  <li><a href="#개요" id="toc-개요" class="nav-link" data-scroll-target="#개요"><span class="header-section-number">2</span> 개요</a></li>
+  <li><a href="#문제-정의" id="toc-문제-정의" class="nav-link" data-scroll-target="#문제-정의"><span class="header-section-number">3</span> 문제 정의</a></li>
+  <li><a href="#전체-구조" id="toc-전체-구조" class="nav-link" data-scroll-target="#전체-구조"><span class="header-section-number">4</span> 전체 구조</a></li>
+  <li><a href="#배포-흐름" id="toc-배포-흐름" class="nav-link" data-scroll-target="#배포-흐름"><span class="header-section-number">5</span> 배포 흐름</a></li>
+  <li><a href="#kubernetes-ha-cluster" id="toc-kubernetes-ha-cluster" class="nav-link" data-scroll-target="#kubernetes-ha-cluster"><span class="header-section-number">6</span> Kubernetes HA Cluster</a></li>
+  <li><a href="#현재-workloads" id="toc-현재-workloads" class="nav-link" data-scroll-target="#현재-workloads"><span class="header-section-number">7</span> 현재 Workloads</a></li>
+  <li><a href="#c-런타임-기반-웹-서버와-프록시" id="toc-c-런타임-기반-웹-서버와-프록시" class="nav-link" data-scroll-target="#c-런타임-기반-웹-서버와-프록시"><span class="header-section-number">8</span> C++ 런타임 기반 웹 서버와 프록시</a></li>
+  <li><a href="#k8s-status" id="toc-k8s-status" class="nav-link" data-scroll-target="#k8s-status"><span class="header-section-number">9</span> k8s-status</a></li>
+  <li><a href="#dropapp" id="toc-dropapp" class="nav-link" data-scroll-target="#dropapp"><span class="header-section-number">10</span> dropapp</a></li>
+  <li><a href="#컨테이너-이미지" id="toc-컨테이너-이미지" class="nav-link" data-scroll-target="#컨테이너-이미지"><span class="header-section-number">11</span> 컨테이너 이미지</a></li>
+  <li><a href="#github-actions" id="toc-github-actions" class="nav-link" data-scroll-target="#github-actions"><span class="header-section-number">12</span> GitHub Actions</a></li>
+  <li><a href="#gitops와-argo-cd" id="toc-gitops와-argo-cd" class="nav-link" data-scroll-target="#gitops와-argo-cd"><span class="header-section-number">13</span> GitOps와 Argo CD</a></li>
+  <li><a href="#도메인과-ingress" id="toc-도메인과-ingress" class="nav-link" data-scroll-target="#도메인과-ingress"><span class="header-section-number">14</span> 도메인과 Ingress</a></li>
+  <li><a href="#storage-plane" id="toc-storage-plane" class="nav-link" data-scroll-target="#storage-plane"><span class="header-section-number">15</span> Storage Plane</a></li>
+  <li><a href="#observability" id="toc-observability" class="nav-link" data-scroll-target="#observability"><span class="header-section-number">16</span> Observability</a></li>
+  <li><a href="#verified-traffic-flows" id="toc-verified-traffic-flows" class="nav-link" data-scroll-target="#verified-traffic-flows"><span class="header-section-number">17</span> Verified Traffic Flows</a></li>
+  <li><a href="#live-ops-dashboard" id="toc-live-ops-dashboard" class="nav-link" data-scroll-target="#live-ops-dashboard"><span class="header-section-number">18</span> Live Ops Dashboard</a></li>
+  <li><a href="#운영-검증" id="toc-운영-검증" class="nav-link" data-scroll-target="#운영-검증"><span class="header-section-number">19</span> 운영 검증</a></li>
+  <li><a href="#운영-증거" id="toc-운영-증거" class="nav-link" data-scroll-target="#운영-증거"><span class="header-section-number">20</span> 운영 증거</a>
+  <ul class="collapse">
+  <li><a href="#gitops-sync" id="toc-gitops-sync" class="nav-link" data-scroll-target="#gitops-sync"><span class="header-section-number">20.1</span> GitOps Sync</a></li>
+  <li><a href="#cluster-runtime" id="toc-cluster-runtime" class="nav-link" data-scroll-target="#cluster-runtime"><span class="header-section-number">20.2</span> Cluster Runtime</a></li>
+  <li><a href="#ingress-and-retired-portfolio-host" id="toc-ingress-and-retired-portfolio-host" class="nav-link" data-scroll-target="#ingress-and-retired-portfolio-host"><span class="header-section-number">20.3</span> Ingress And Retired Portfolio Host</a></li>
+  <li><a href="#ci-to-gitops-rollout" id="toc-ci-to-gitops-rollout" class="nav-link" data-scroll-target="#ci-to-gitops-rollout"><span class="header-section-number">20.4</span> CI To GitOps Rollout</a></li>
+  <li><a href="#storage-and-observability" id="toc-storage-and-observability" class="nav-link" data-scroll-target="#storage-and-observability"><span class="header-section-number">20.5</span> Storage And Observability</a></li>
+  </ul></li>
+  <li><a href="#결과" id="toc-결과" class="nav-link" data-scroll-target="#결과"><span class="header-section-number">21</span> 결과</a></li>
+  <li><a href="#current-gaps" id="toc-current-gaps" class="nav-link" data-scroll-target="#current-gaps"><span class="header-section-number">22</span> Current Gaps</a></li>
+  <li><a href="#회고" id="toc-회고" class="nav-link" data-scroll-target="#회고"><span class="header-section-number">23</span> 회고</a></li>
+  <li><a href="#관련-레포" id="toc-관련-레포" class="nav-link" data-scroll-target="#관련-레포"><span class="header-section-number">24</span> 관련 레포</a></li>
+  <li><a href="#다음-문서" id="toc-다음-문서" class="nav-link" data-scroll-target="#다음-문서"><span class="header-section-number">25</span> 다음 문서</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">홈랩 DevOps 포트폴리오</h1>
+<p class="subtitle lead">NAS와 남은 PC 기반 Kubernetes GitOps 운영 경로</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">저자</div>
+    <div class="quarto-title-meta-contents">
+             <p>배진후 </p>
+          </div>
+  </div>
+
+
+
+  </div>
+
+
+
+</header>
+
+
+<section id="핵심-요약" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="핵심-요약"><span class="header-section-number">1</span> 핵심 요약</h2>
+<div class="summary-grid">
+<div class="summary-card">
+<p><strong>Infra</strong></p>
+<p>NAS와 남은 PC를 활용해 여러 컨테이너 이미지를 배포하고 운영할 수 있는 홈랩 인프라 구축</p>
+</div>
+<div class="summary-card">
+<p><strong>GitOps</strong></p>
+<p>Argo CD를 이용한 Git commit 기반 자동 배포</p>
+</div>
+<div class="summary-card">
+<p><strong>C++ Edge</strong></p>
+<p>nginx를 모방한 C++ 서버 런타임 위에 웹 서버와 HTTPS 프록시 구현</p>
+</div>
+<div class="summary-card">
+<p><strong>Operate</strong></p>
+<p>개인 도메인, Prometheus/Grafana, Terraform/Kubespray까지 연결한 운영 경로 정리</p>
+</div>
+</div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>항목</th>
+<th>내용</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>문서 역할</td>
+<td>NAS/PC 기반 홈랩에서 여러 컨테이너 이미지를 운영할 수 있는 인프라 증거 정리</td>
+</tr>
+<tr class="even">
+<td>현재 공개 문서</td>
+<td><code>mint-cocoa.github.io/portfolio</code></td>
+</tr>
+<tr class="odd">
+<td>사용 종료 안내</td>
+<td><code>portfolio.mintcocoa.cc</code></td>
+</tr>
+<tr class="even">
+<td>준비할 공개 앱</td>
+<td><code>k8s-status</code>(Gatus), <code>dropapp</code>(PairDrop)</td>
+</tr>
+<tr class="odd">
+<td>이미지 레지스트리</td>
+<td>GHCR</td>
+</tr>
+<tr class="even">
+<td>배포 제어</td>
+<td>GitOps + Argo CD automated sync</td>
+</tr>
+<tr class="odd">
+<td>실행 환경</td>
+<td>NAS + 남은 PC + Proxmox VM 기반 native Kubernetes HA cluster</td>
+</tr>
+<tr class="even">
+<td>구축 자동화</td>
+<td>Terraform + Kubespray</td>
+</tr>
+<tr class="odd">
+<td>모니터링</td>
+<td>Prometheus + Grafana lightweight profile</td>
+</tr>
+<tr class="even">
+<td>기준 공개 경로</td>
+<td><code>mint-cocoa.github.io/portfolio</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="개요" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="개요"><span class="header-section-number">2</span> 개요</h2>
+<p>이 문서는 NAS와 남은 PC를 활용해 여러 컨테이너 이미지를 배포하고 운영할 수 있는 인프라 환경을 구축한 과정을 정리한 운영 포트폴리오입니다. 컨테이너 이미지, GitHub Actions, GitOps, Argo CD, Kubernetes Ingress, NAS 기반 persistent storage를 하나의 홈랩 운영 경로로 연결했습니다.</p>
+<p>직접 만든 C++ <code>io_uring</code> 서버 런타임에서는 nginx를 모방한 웹 서버 기능과 HTTPS reverse proxy를 구현했습니다. 이 프록시는 개인 도메인, SNI 기반 route, SSL 인증서 발급 가능한 edge 경로를 담당했고, portfolio 정적 파일 서버와 Kubernetes ingress 앞단에서 실제 외부 접근 경로를 검증하는 데 사용했습니다. 현재 상세 문서의 기준 공개 경로는 GitHub Pages이며, <code>portfolio.mintcocoa.cc</code>는 사용 종료 안내 경로로 분리했습니다.</p>
+<p>현재 검증된 live workload는 <code>portfolio</code>입니다. 추가 공개 ingress는 <code>k8s.mintcocoa.cc</code>와 <code>dropapp.mintcocoa.cc</code>를 중심으로 정리하고, <code>webhook.mintcocoa.cc</code>는 공개 포트폴리오 경로에서 제외합니다.</p>
+<ul>
+<li><code>portfolio</code>: 과거 C++ 정적 파일 서버로 서빙하던 포트폴리오 문서 경로, 현재는 사용 종료 안내</li>
+<li><code>k8s-status</code>: Gatus 기반 공개 status page 후보</li>
+<li><code>dropapp</code>: PairDrop 기반 브라우저 파일 전송 앱 후보</li>
+</ul>
+</section>
+<section id="문제-정의" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="문제-정의"><span class="header-section-number">3</span> 문제 정의</h2>
+<p>기존 포트폴리오 문서는 게임 서버와 클라이언트 구현 중심이었습니다. 하지만 서버 런타임을 실제 운영 환경까지 연결했다는 증거는 별도로 정리되어 있지 않았습니다. 이번 작업의 핵심 질문은 다음과 같았습니다.</p>
+<ol type="1">
+<li>NAS와 남은 PC 자원을 묶어 여러 컨테이너 이미지를 안정적으로 운영할 수 있는가?</li>
+<li>Git commit을 단일 변경 기준으로 두고 Argo CD가 자동 배포를 수행할 수 있는가?</li>
+<li>직접 만든 C++ 서버 런타임이 웹 서버, HTTPS, SSL 인증서 발급 가능한 프록시 역할을 수행할 수 있는가?</li>
+<li>개인 도메인에서 포트폴리오와 운영 서비스 경로를 실제로 노출할 수 있는가?</li>
+<li>Prometheus/Grafana로 홈랩 규모에 맞는 경량 모니터링을 구성할 수 있는가?</li>
+<li>Terraform과 Kubespray로 클러스터 구축 절차를 반복 가능한 코드로 남길 수 있는가?</li>
+</ol>
+</section>
+<section id="전체-구조" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="전체-구조"><span class="header-section-number">4</span> 전체 구조</h2>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+    Internet[Internet] --&gt; Router[Home Router]
+    Router --&gt; Edge[Mini PC Edge Proxy&lt;br/&gt;172.30.1.27]
+    Edge --&gt; LB[MetalLB LoadBalancer IP&lt;br/&gt;172.30.1.240]
+    LB --&gt; Ingress[ingress-nginx]
+    Ingress --&gt; Service[Kubernetes Service]
+    Service --&gt; Pod[Pod]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>홈랩은 관리, edge, 가상화, workload, delivery, storage 계층을 분리해 운영합니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 23%">
+<col style="width: 23%">
+<col style="width: 30%">
+<col style="width: 23%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Layer</th>
+<th>Component</th>
+<th style="text-align: right;">Address</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Management Plane</td>
+<td>Odroid</td>
+<td style="text-align: right;"><code>172.30.1.83</code></td>
+<td>Terraform, Ansible, Kubespray, kubectl, Helm, GitOps bootstrap</td>
+</tr>
+<tr class="even">
+<td>Edge Plane</td>
+<td>Mini PC</td>
+<td style="text-align: right;"><code>172.30.1.27</code></td>
+<td>C++ HTTPS reverse proxy, certificate flow, Kubernetes API HAProxy</td>
+</tr>
+<tr class="odd">
+<td>Virtualization Plane</td>
+<td>Proxmox VE</td>
+<td style="text-align: right;"><code>172.30.1.12</code></td>
+<td>VM runtime, snapshots, backup base</td>
+</tr>
+<tr class="even">
+<td>Workload Plane</td>
+<td>Kubernetes VMs</td>
+<td style="text-align: right;"><code>172.30.1.231-235</code></td>
+<td>Application and platform workloads</td>
+</tr>
+<tr class="odd">
+<td>Delivery Plane</td>
+<td>GitHub Actions, GHCR, Argo CD</td>
+<td style="text-align: right;">external + cluster</td>
+<td>Image build, registry, GitOps deployment</td>
+</tr>
+<tr class="even">
+<td>Storage Plane</td>
+<td>NAS / OMV VM</td>
+<td style="text-align: right;"><code>172.30.1.52</code></td>
+<td>NFS backing store for Kubernetes PVCs and persistent data</td>
+</tr>
+</tbody>
+</table>
+<p>현재 Kubernetes cluster는 Proxmox VM 위에 Kubespray로 설치한 native Kubernetes HA cluster입니다. 과거 <code>k3s</code> 명칭이 남아 있는 Terraform 경로가 있지만, 현재 검증된 상태는 단일 control-plane k3s가 아닙니다.</p>
+</section>
+<section id="배포-흐름" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="배포-흐름"><span class="header-section-number">5</span> 배포 흐름</h2>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+    Dev[Developer PC] --&gt; GitHub[GitHub push]
+    GitHub --&gt; Actions[GitHub Actions]
+    Actions --&gt; GHCR[GHCR image push]
+    GHCR --&gt; GitOps[GitOps repository update]
+    GitOps --&gt; Argo[Argo CD sync]
+    Argo --&gt; Rollout[Kubernetes rollout]
+    Rollout --&gt; Exposure[ingress-nginx + MetalLB exposure]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>배포 흐름은 애플리케이션 코드와 운영 매니페스트를 분리했습니다.</p>
+<ul>
+<li>앱 코드는 <code>mint-cocoa/iouring-runtime</code> 또는 <code>mint-cocoa/portfolio</code>에 둡니다.</li>
+<li>컨테이너 이미지는 <code>ghcr.io/mint-cocoa/&lt;app&gt;:&lt;GITHUB_SHA&gt;</code>로 푸시합니다.</li>
+<li>GitHub Actions가 GitOps repo의 Helm values를 해당 SHA로 갱신합니다.</li>
+<li>Argo CD가 변경된 chart를 감지해 클러스터에 반영합니다.</li>
+</ul>
+<p>현재 검증된 Argo CD Applications는 <code>home-root</code>, <code>metallb-config</code>, <code>nfs-subdir-external-provisioner</code>, <code>prometheus</code>, <code>grafana</code>, <code>demo-whoami</code>, <code>portfolio</code>이며 모두 <code>Synced</code> / <code>Healthy</code> 상태입니다.</p>
+</section>
+<section id="kubernetes-ha-cluster" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="kubernetes-ha-cluster"><span class="header-section-number">6</span> Kubernetes HA Cluster</h2>
+<p>현재 workload plane은 Proxmox VM 위에서 동작하는 5-node native Kubernetes HA cluster입니다.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Host</th>
+<th style="text-align: right;">IP</th>
+<th>Role</th>
+<th>Status</th>
+<th>Runtime</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>k8s-cp-1</code></td>
+<td style="text-align: right;"><code>172.30.1.231</code></td>
+<td>control-plane</td>
+<td>Ready</td>
+<td>containerd</td>
+</tr>
+<tr class="even">
+<td><code>k8s-cp-2</code></td>
+<td style="text-align: right;"><code>172.30.1.232</code></td>
+<td>control-plane</td>
+<td>Ready</td>
+<td>containerd</td>
+</tr>
+<tr class="odd">
+<td><code>k8s-cp-3</code></td>
+<td style="text-align: right;"><code>172.30.1.233</code></td>
+<td>control-plane</td>
+<td>Ready</td>
+<td>containerd</td>
+</tr>
+<tr class="even">
+<td><code>k8s-worker-1</code></td>
+<td style="text-align: right;"><code>172.30.1.234</code></td>
+<td>worker</td>
+<td>Ready</td>
+<td>containerd</td>
+</tr>
+<tr class="odd">
+<td><code>k8s-worker-2</code></td>
+<td style="text-align: right;"><code>172.30.1.235</code></td>
+<td>worker</td>
+<td>Ready</td>
+<td>containerd</td>
+</tr>
+</tbody>
+</table>
+<p>검증된 버전은 다음과 같습니다.</p>
+<pre class="text"><code>Client Version: v1.34.7
+Server Version: v1.35.4</code></pre>
+<p>기본 구성은 Calico CNI, CoreDNS, NodeLocal DNS, kube-proxy, metrics-server를 포함합니다. 세 개의 control-plane node가 API server, scheduler, controller-manager, etcd를 담당하고, worker node가 application/platform workload를 수용합니다.</p>
+</section>
+<section id="현재-workloads" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="현재-workloads"><span class="header-section-number">7</span> 현재 Workloads</h2>
+<p>현재 live cluster에서 검증된 workload는 다음과 같습니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Namespace</th>
+<th>Workload</th>
+<th>Purpose</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>argocd</code></td>
+<td><code>argocd-*</code></td>
+<td>GitOps controller</td>
+<td>Running</td>
+</tr>
+<tr class="even">
+<td><code>demo</code></td>
+<td><code>demo-whoami</code></td>
+<td>Ingress demo app</td>
+<td>Running</td>
+</tr>
+<tr class="odd">
+<td><code>ingress-smoke</code></td>
+<td><code>echo</code></td>
+<td>Ingress smoke test</td>
+<td>Running</td>
+</tr>
+<tr class="even">
+<td><code>monitoring</code></td>
+<td><code>prometheus-server</code></td>
+<td>Metrics collection</td>
+<td>Running</td>
+</tr>
+<tr class="odd">
+<td><code>monitoring</code></td>
+<td><code>grafana</code></td>
+<td>Dashboard UI</td>
+<td>Running</td>
+</tr>
+<tr class="even">
+<td><code>portfolio</code></td>
+<td><code>portfolio</code></td>
+<td>Portfolio site</td>
+<td>Running</td>
+</tr>
+<tr class="odd">
+<td><code>storage-system</code></td>
+<td><code>nfs-subdir-external-provisioner</code></td>
+<td>Dynamic NFS PV provisioning</td>
+<td>Running</td>
+</tr>
+</tbody>
+</table>
+<p><code>k8s-status</code>와 <code>dropapp</code>은 공개 ingress에 연결할 OSS 앱 후보입니다. 현재 live cluster에는 아직 배포하지 않았기 때문에 포트폴리오에서는 검증된 운영 workload가 아니라 다음 배포 대상으로 구분합니다.</p>
+</section>
+<section id="c-런타임-기반-웹-서버와-프록시" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="c-런타임-기반-웹-서버와-프록시"><span class="header-section-number">8</span> C++ 런타임 기반 웹 서버와 프록시</h2>
+<p><code>iouring_runtime_web</code>는 <code>WebServer</code>, 라우터, request context, response builder, streaming upload API를 제공합니다. 웹 앱은 다음과 같은 형태로 작성했습니다.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>iouring_runtime<span class="op">::</span>web<span class="op">::</span>WebServer server<span class="op">(</span>config<span class="op">);</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>server<span class="op">.</span>Get<span class="op">(</span><span class="st">"/healthz"</span><span class="op">,</span> <span class="op">[](</span>RequestContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    ctx<span class="op">.</span>response<span class="op">.</span>ContentType<span class="op">(</span><span class="st">"text/plain; charset=utf-8"</span><span class="op">)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span>Body<span class="op">(</span><span class="st">"ok"</span><span class="op">)</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span>Send<span class="op">();</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="op">});</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>server<span class="op">.</span>Get<span class="op">(</span><span class="st">"/"</span><span class="op">,</span> <span class="op">[&amp;](</span>RequestContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    ServeStaticFile<span class="op">(</span>ctx<span class="op">,</span> static_root<span class="op">,</span> <span class="st">"index.html"</span><span class="op">);</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="op">});</span></span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
+<p>중요한 점은 단순히 TCP 서버를 만든 것이 아니라, HTTP 라우팅, 정적 파일 서빙, raw body upload, JSON API, 인증 헤더 처리까지 실제 웹 앱에 필요한 표면을 구현했다는 점입니다.</p>
+<p>또한 nginx를 모방한 C++ reverse proxy 경로를 별도로 구현했습니다. 이 edge proxy는 SNI/hostname 기반 upstream route를 읽고, 개인 도메인으로 들어온 HTTPS 트래픽을 Kubernetes ingress, local service, Docker app, RuntimeWeb service로 분기합니다. SSL 인증서를 발급하고 갱신할 수 있는 구조를 염두에 두고 edge entrypoint를 분리했기 때문에, 애플리케이션 컨테이너는 내부 HTTP endpoint로 남겨두고 public HTTPS 처리는 프록시 계층에서 담당하게 했습니다.</p>
+</section>
+<section id="k8s-status" class="level2" data-number="9">
+<h2 data-number="9" class="anchored" data-anchor-id="k8s-status"><span class="header-section-number">9</span> k8s-status</h2>
+<p><code>k8s-status</code>는 Gatus 기반 status page로 구성할 예정입니다. Kubernetes ingress와 공개 서비스 상태를 한눈에 볼 수 있어서 <code>k8s.mintcocoa.cc</code>의 성격에 잘 맞습니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>항목</th>
+<th>내용</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>OSS</td>
+<td>Gatus</td>
+</tr>
+<tr class="even">
+<td>공개 경로</td>
+<td><code>k8s.mintcocoa.cc</code></td>
+</tr>
+<tr class="odd">
+<td>역할</td>
+<td>portfolio, dropapp, Ops API, Prometheus 등 public endpoint 상태 표시</td>
+</tr>
+<tr class="even">
+<td>배포 상태</td>
+<td>후보 선정, live cluster 배포 전</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="dropapp" class="level2" data-number="10">
+<h2 data-number="10" class="anchored" data-anchor-id="dropapp"><span class="header-section-number">10</span> dropapp</h2>
+<p><code>dropapp</code>은 PairDrop 기반 브라우저 파일 전송 앱으로 구성할 예정입니다. <code>dropapp.mintcocoa.cc</code>라는 도메인과 서비스 목적이 직접 맞고, 공개 데모로 확인하기 좋은 작은 OSS 앱입니다.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>항목</th>
+<th>내용</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>OSS</td>
+<td>PairDrop</td>
+</tr>
+<tr class="even">
+<td>공개 경로</td>
+<td><code>dropapp.mintcocoa.cc</code></td>
+</tr>
+<tr class="odd">
+<td>역할</td>
+<td>브라우저 기반 파일 전송 데모</td>
+</tr>
+<tr class="even">
+<td>배포 상태</td>
+<td>후보 선정, live cluster 배포 전</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="컨테이너-이미지" class="level2" data-number="11">
+<h2 data-number="11" class="anchored" data-anchor-id="컨테이너-이미지"><span class="header-section-number">11</span> 컨테이너 이미지</h2>
+<p>추가 공개 앱은 직접 만든 이미지를 새로 빌드하기보다 검증된 OSS 이미지를 Kubernetes workload로 올리는 방향이 더 적절합니다. portfolio는 기존 C++ 정적 파일 서버 이미지를 유지하고, Gatus와 PairDrop은 upstream image를 pin 해서 GitOps values로 관리합니다.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>앱</th>
+<th>이미지 전략</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>portfolio</code></td>
+<td>GHCR에 push한 C++ RuntimeWeb 이미지</td>
+</tr>
+<tr class="even">
+<td><code>k8s-status</code></td>
+<td>Gatus upstream image pin</td>
+</tr>
+<tr class="odd">
+<td><code>dropapp</code></td>
+<td>PairDrop upstream image pin</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="github-actions" class="level2" data-number="12">
+<h2 data-number="12" class="anchored" data-anchor-id="github-actions"><span class="header-section-number">12</span> GitHub Actions</h2>
+<p><code>main</code> push 시 workflow가 다음 순서로 실행됩니다.</p>
+<ol type="1">
+<li>GHCR 로그인</li>
+<li>Docker image build/push</li>
+<li><code>home-k8s-gitops</code> checkout</li>
+<li>Helm values의 <code>image.tag</code>를 <code>${GITHUB_SHA}</code>로 갱신</li>
+<li>GitOps repo에 commit/push</li>
+</ol>
+<p>이 구조 덕분에 앱 repo의 commit SHA가 그대로 배포 이미지 tag가 됩니다. 문제가 생겼을 때 Kubernetes에서 실행 중인 이미지 tag만 봐도 어떤 commit인지 추적할 수 있습니다.</p>
+</section>
+<section id="gitops와-argo-cd" class="level2" data-number="13">
+<h2 data-number="13" class="anchored" data-anchor-id="gitops와-argo-cd"><span class="header-section-number">13</span> GitOps와 Argo CD</h2>
+<p>GitOps repo는 앱별 Helm chart와 cluster application manifest를 분리했습니다.</p>
+<pre class="text"><code>apps/
+  k8s-status/
+  dropapp/
+clusters/home/
+  k8s-status-application.yaml
+  dropapp-application.yaml</code></pre>
+<p>Application은 automated sync를 사용합니다.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">syncPolicy</span><span class="kw">:</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">automated</span><span class="kw">:</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">prune</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">selfHeal</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">syncOptions</span><span class="kw">:</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> CreateNamespace=true</span></span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
+<p>이 설정으로 GitOps repo가 바뀌면 Argo CD가 자동으로 Deployment, Service, Ingress, PVC를 맞춥니다.</p>
+</section>
+<section id="도메인과-ingress" class="level2" data-number="14">
+<h2 data-number="14" class="anchored" data-anchor-id="도메인과-ingress"><span class="header-section-number">14</span> 도메인과 Ingress</h2>
+<p>클러스터 내부에서는 nginx ingress와 MetalLB를 사용했습니다.</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+    Internet --&gt; Proxy[Mini PC Edge Proxy&lt;br/&gt;172.30.1.27]
+    Proxy --&gt; MetalLB[MetalLB&lt;br/&gt;172.30.1.240]
+    MetalLB --&gt; Nginx[nginx ingress]
+    Nginx --&gt; Portfolio[portfolio service]
+    Nginx --&gt; Demo[demo-whoami service]
+    Nginx --&gt; Grafana[grafana service]
+    Nginx --&gt; Argo[Argo CD service]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>현재 direct ingress path는 <code>172.30.1.240</code> 기준으로 정상입니다.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Host</th>
+<th>Direct ingress result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>portfolio.mintcocoa.cc</code></td>
+<td><code>200 OK</code> 사용 종료 안내</td>
+</tr>
+<tr class="even">
+<td><code>demo.mintcocoa.cc</code></td>
+<td><code>200 OK</code></td>
+</tr>
+<tr class="odd">
+<td><code>grafana.homelab.local</code></td>
+<td><code>302 /login</code></td>
+</tr>
+<tr class="even">
+<td><code>argocd.homelab.local</code></td>
+<td><code>200 OK</code></td>
+</tr>
+</tbody>
+</table>
+<p>Edge proxy path는 과거 <code>portfolio.mintcocoa.cc</code> HTTPS 경로가 portfolio service에 도달하는 것까지 검증했습니다. 현재 해당 호스트는 상세 문서가 아니라 사용 종료 안내를 내보내는 경로로 유지합니다. <code>demo.mintcocoa.cc</code>, <code>grafana.homelab.local</code>, <code>argocd.homelab.local</code>은 direct ingress에서는 동작하지만 edge proxy에서는 아직 proxy homepage로 라우팅되는 mismatch가 남아 있습니다.</p>
+<p>아래 route tree는 React Flow 페이지에서 보여주던 <strong>Published route tree</strong>의 정적 문서 버전입니다. <code>webhook.mintcocoa.cc</code> 같은 내부용 route는 공개 포트폴리오 route tree에서 숨기고, Kubernetes ingress, Docker/local service, C++ RuntimeWeb, Kubernetes API HA 경로를 목적지별로 묶었습니다.</p>
+<div class="published-route-tree">
+<div class="route-tree-header">
+  <div>
+    <p>Actual route tree</p>
+    <h3 class="anchored">Mini PC edge proxy에서 갈라지는 공개 경로</h3>
+  </div>
+  <span>1 private hidden</span>
+</div>
+<div class="route-tree-canvas" role="img" aria-label="C++ edge proxy에서 Kubernetes ingress, Docker/local service, C++ RuntimeWeb, Kubernetes API HA로 분기되는 published route tree">
+  <div class="route-root-node">
+    <small>Edge proxy</small>
+    <strong>tcp_reverse_proxy</strong>
+    <span>0.0.0.0:80 / 443</span>
+  </div>
+  <div class="route-tree-branches">
+    <section class="route-destination route-kubernetes">
+      <div class="route-destination-node">
+        <small>Kubernetes ingress</small>
+        <strong>MetalLB VIP 172.30.1.240</strong>
+        <span>ingress-nginx -&gt; Service -&gt; Pod</span>
+      </div>
+      <div class="route-leaf-list">
+        <div class="route-leaf live">
+          <small>retired public host</small>
+          <strong>portfolio.mintcocoa.cc</strong>
+          <span>portfolio service -&gt; 사용 종료 안내</span>
+        </div>
+        <div class="route-leaf live">
+          <small>ingress smoke</small>
+          <strong>demo.mintcocoa.cc</strong>
+          <span>demo-whoami service</span>
+        </div>
+        <div class="route-leaf planned">
+          <small>prepared route</small>
+          <strong>k8s.mintcocoa.cc</strong>
+          <span>k8s-status / Gatus</span>
+        </div>
+        <div class="route-leaf planned">
+          <small>prepared route</small>
+          <strong>dropapp.mintcocoa.cc</strong>
+          <span>dropapp / PairDrop</span>
+        </div>
+      </div>
+    </section>
+    <section class="route-destination route-runtime">
+      <div class="route-destination-node">
+        <small>C++ RuntimeWeb</small>
+        <strong>iouring_runtime_web</strong>
+        <span>static file server / health endpoint</span>
+      </div>
+      <div class="route-leaf-list">
+        <div class="route-leaf observed">
+          <small>container image</small>
+          <strong>ghcr.io/mint-cocoa/portfolio</strong>
+          <span>Git SHA tag -&gt; GitOps values</span>
+        </div>
+      </div>
+    </section>
+    <section class="route-destination route-local">
+      <div class="route-destination-node">
+        <small>Docker / local service</small>
+        <strong>edge-local upstreams</strong>
+        <span>local HTTP endpoints behind HTTPS proxy</span>
+      </div>
+      <div class="route-leaf-list">
+        <div class="route-leaf observed">
+          <small>ops read model</small>
+          <strong>ops-api.mintcocoa.cc</strong>
+          <span>Cloudflare Tunnel -&gt; FastAPI 127.0.0.1:18081</span>
+        </div>
+      </div>
+    </section>
+    <section class="route-destination route-api">
+      <div class="route-destination-node">
+        <small>Kubernetes API HA</small>
+        <strong>172.30.1.27:6443</strong>
+        <span>HAProxy virtual endpoint</span>
+      </div>
+      <div class="route-leaf-list route-api-leaves">
+        <div class="route-leaf observed">
+          <small>control-plane</small>
+          <strong>k8s-cp-1</strong>
+          <span>172.30.1.231:6443</span>
+        </div>
+        <div class="route-leaf observed">
+          <small>control-plane</small>
+          <strong>k8s-cp-2</strong>
+          <span>172.30.1.232:6443</span>
+        </div>
+        <div class="route-leaf observed">
+          <small>control-plane</small>
+          <strong>k8s-cp-3</strong>
+          <span>172.30.1.233:6443</span>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+</div>
+</section>
+<section id="storage-plane" class="level2" data-number="15">
+<h2 data-number="15" class="anchored" data-anchor-id="storage-plane"><span class="header-section-number">15</span> Storage Plane</h2>
+<p>Persistent storage는 OMV VM의 NFS export를 Kubernetes dynamic provisioning에 연결하는 방식으로 구성했습니다.</p>
+<pre class="text"><code>NFS server: 172.30.1.52:/export/k8s_pv
+Provisioner: cluster.local/nfs-subdir-external-provisioner
+StorageClass: nfs-client
+Default StorageClass: yes</code></pre>
+<p>검증된 PVC/PV 상태는 다음과 같습니다.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Namespace</th>
+<th>PVC</th>
+<th style="text-align: right;">Size</th>
+<th>Access Mode</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>monitoring</code></td>
+<td><code>grafana</code></td>
+<td style="text-align: right;">1Gi</td>
+<td>RWO</td>
+<td>Bound</td>
+</tr>
+<tr class="even">
+<td><code>monitoring</code></td>
+<td><code>prometheus-server</code></td>
+<td style="text-align: right;">2Gi</td>
+<td>RWO</td>
+<td>Bound</td>
+</tr>
+<tr class="odd">
+<td><code>storage-smoke</code></td>
+<td><code>nfs-smoke-pvc</code></td>
+<td style="text-align: right;">1Gi</td>
+<td>RWX</td>
+<td>Bound</td>
+</tr>
+</tbody>
+</table>
+<p>이 구성으로 application이 PVC만 요청하면 NFS provisioner가 PV를 생성하고, cluster 내 workload는 동일한 storage class를 통해 persistent volume을 사용할 수 있습니다.</p>
+</section>
+<section id="observability" class="level2" data-number="16">
+<h2 data-number="16" class="anchored" data-anchor-id="observability"><span class="header-section-number">16</span> Observability</h2>
+<p>관측성은 full <code>kube-prometheus-stack</code> 대신 Prometheus chart와 Grafana chart를 분리한 lightweight profile로 구성했습니다.</p>
+<p>이 선택의 이유는 다음과 같습니다.</p>
+<ul>
+<li>Proxmox host의 memory가 제한적입니다.</li>
+<li>이미 native HA control-plane을 운영하고 있어 control-plane overhead를 줄여야 합니다.</li>
+<li>현재 demo scope에서는 Prometheus Operator의 CRD와 controller overhead가 필수는 아닙니다.</li>
+</ul>
+<p>현재 구성은 다음과 같습니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 23%">
+<col style="width: 23%">
+<col style="width: 30%">
+<col style="width: 23%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>Chart</th>
+<th style="text-align: right;">Version</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Prometheus</td>
+<td><code>prometheus-community/prometheus</code></td>
+<td style="text-align: right;">29.2.1</td>
+<td>Metrics collection</td>
+</tr>
+<tr class="even">
+<td>Grafana</td>
+<td><code>grafana/grafana</code></td>
+<td style="text-align: right;">10.5.15</td>
+<td>Dashboard UI</td>
+</tr>
+<tr class="odd">
+<td>kube-state-metrics</td>
+<td>Prometheus subchart</td>
+<td style="text-align: right;">chart-managed</td>
+<td>Kubernetes object metrics</td>
+</tr>
+</tbody>
+</table>
+<p>Sizing은 짧은 보존 기간과 작은 PVC를 기준으로 잡았습니다.</p>
+<pre class="text"><code>Prometheus retention: 24h
+Prometheus retention size: 1GB
+Prometheus PVC: 2Gi on nfs-client
+Grafana PVC: 1Gi on nfs-client</code></pre>
+</section>
+<section id="verified-traffic-flows" class="level2" data-number="17">
+<h2 data-number="17" class="anchored" data-anchor-id="verified-traffic-flows"><span class="header-section-number">17</span> Verified Traffic Flows</h2>
+<p>Direct Kubernetes ingress flow는 다음 경로로 검증했습니다.</p>
+<pre class="text"><code>Client
+  -&gt; 172.30.1.240
+  -&gt; nginx ingress
+  -&gt; portfolio/demo/grafana/argocd Service
+  -&gt; Pod</code></pre>
+<p>Edge proxy flow는 과거 portfolio 경로에 대해 검증했습니다.</p>
+<pre class="text"><code>Client
+  -&gt; 172.30.1.27:443
+  -&gt; portfolio.mintcocoa.cc
+  -&gt; portfolio service
+  -&gt; 사용 종료 안내 페이지</code></pre>
+<p>즉, Kubernetes Ingress 자체는 여러 hostname에서 정상 동작하고 있으며, 남은 문제는 edge proxy의 virtual host 또는 upstream mapping입니다.</p>
+</section>
+<section id="live-ops-dashboard" class="level2" data-number="18">
+<h2 data-number="18" class="anchored" data-anchor-id="live-ops-dashboard"><span class="header-section-number">18</span> Live Ops Dashboard</h2>
+<p>운영 상태를 포트폴리오에서 바로 확인할 수 있도록 별도 read-only Ops API를 구성했습니다. 대시보드는 정적 Quarto dashboard로 렌더링되며, 브라우저에서 <code>https://ops-api.mintcocoa.cc</code>를 호출해 Prometheus와 Proxmox 요약 상태를 읽습니다.</p>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+    Portfolio[mint-cocoa.github.io/portfolio] --&gt; Dashboard[OpsDashboard.html]
+    Dashboard --&gt; Tunnel[ops-api.mintcocoa.cc&lt;br/&gt;Cloudflare Tunnel]
+    Tunnel --&gt; FastAPI[FastAPI&lt;br/&gt;127.0.0.1:18081]
+    FastAPI --&gt; Prometheus[Prometheus Ingress&lt;br/&gt;prometheus.homelab.local]
+    FastAPI --&gt; Proxmox[Proxmox API&lt;br/&gt;172.30.1.12:8006]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<p>이 경로는 기존 C++ TCP reverse proxy와 분리했습니다. <code>ops-api.mintcocoa.cc</code>는 Cloudflare Tunnel CNAME으로 연결되고, 로컬 FastAPI는 <code>127.0.0.1:18081</code>에만 바인딩됩니다. CORS는 <code>https://mint-cocoa.github.io</code>를 기준으로 허용합니다.</p>
+<p>대시보드: <a href="OpsDashboard.html">Live Ops Dashboard</a></p>
+</section>
+<section id="운영-검증" class="level2" data-number="19">
+<h2 data-number="19" class="anchored" data-anchor-id="운영-검증"><span class="header-section-number">19</span> 운영 검증</h2>
+<p>배포 후 다음을 검증했습니다.</p>
+<div class="evidence-block">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>검증 항목</th>
+<th>확인 기준</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Argo CD Application</td>
+<td>앱이 <code>Synced</code> / <code>Healthy</code> 상태로 수렴</td>
+</tr>
+<tr class="even">
+<td>Kubernetes resources</td>
+<td>Deployment, Service, Ingress, PVC가 namespace에 생성</td>
+</tr>
+<tr class="odd">
+<td>HTTP health check</td>
+<td>GitHub Pages 상세 문서 경로와 <code>portfolio.mintcocoa.cc</code> 사용 종료 안내 응답</td>
+</tr>
+<tr class="even">
+<td>Storage</td>
+<td>NFS provisioner가 PVC 요청으로 PV를 생성</td>
+</tr>
+<tr class="odd">
+<td>Image traceability</td>
+<td>실행 중인 image tag가 Git commit SHA와 일치</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="ex">kubectl</span> get application <span class="at">-n</span> argocd</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">kubectl</span> get nodes <span class="at">-o</span> wide</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="ex">kubectl</span> get all,ingress,pvc <span class="at">-A</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-sS</span> <span class="at">-I</span> https://mint-cocoa.github.io/portfolio/</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-k</span> <span class="at">-sS</span> <span class="at">--resolve</span> portfolio.mintcocoa.cc:443:172.30.1.27 <span class="dt">\</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  https://portfolio.mintcocoa.cc</span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
+<p>검증 포인트는 단순히 Pod가 뜨는지가 아니라, 실제 Ingress 경로로 HTTP API가 응답하고, Argo CD가 GitOps source에서 live cluster를 수렴시키며, storage와 edge path가 운영 가능한 상태인지까지 확인하는 것이었습니다.</p>
+</section>
+<section id="운영-증거" class="level2" data-number="20">
+<h2 data-number="20" class="anchored" data-anchor-id="운영-증거"><span class="header-section-number">20</span> 운영 증거</h2>
+<p>아래 캡처는 2026-04-26 기준 실제 홈랩 클러스터와 GitHub Actions에서 수집한 운영 증거입니다. Secret, token, repo credential 원문은 포함하지 않았습니다.</p>
+<section id="gitops-sync" class="level3" data-number="20.1">
+<h3 data-number="20.1" class="anchored" data-anchor-id="gitops-sync"><span class="header-section-number">20.1</span> GitOps Sync</h3>
+<p>Argo CD Application들이 <code>Synced / Healthy</code> 상태로 수렴했고, portfolio 앱의 Service, Deployment, Ingress 리소스도 같은 revision에서 동기화되어 있습니다.</p>
+<p><img src="assets/argocd-applications-synced.png" class="img-fluid"></p>
+<p><img src="assets/argocd-portfolio-tree.png" class="img-fluid"></p>
+</section>
+<section id="cluster-runtime" class="level3" data-number="20.2">
+<h3 data-number="20.2" class="anchored" data-anchor-id="cluster-runtime"><span class="header-section-number">20.2</span> Cluster Runtime</h3>
+<p>컨트롤 플레인 3대와 워커 2대로 구성된 5-node Kubernetes 클러스터가 모두 <code>Ready</code> 상태입니다.</p>
+<p><img src="assets/kubectl-nodes-wide.png" class="img-fluid"></p>
+</section>
+<section id="ingress-and-retired-portfolio-host" class="level3" data-number="20.3">
+<h3 data-number="20.3" class="anchored" data-anchor-id="ingress-and-retired-portfolio-host"><span class="header-section-number">20.3</span> Ingress And Retired Portfolio Host</h3>
+<p><code>portfolio.mintcocoa.cc</code> Ingress는 nginx class를 사용하고, MetalLB가 할당한 <code>172.30.1.240</code> LoadBalancer IP를 통해 서비스로 연결되도록 검증했습니다. 현재 이 호스트는 상세 문서가 아니라 사용 종료 안내 페이지를 내보내는 경로입니다.</p>
+<p><img src="assets/kubectl-ingress-wide.png" class="img-fluid"></p>
+<p><img src="assets/portfolio-workload-wide.png" class="img-fluid"></p>
+<p><img src="assets/portfolio-live-domain.png" class="img-fluid"></p>
+<p><img src="assets/portfolio-live-browser.png" class="img-fluid"></p>
+</section>
+<section id="ci-to-gitops-rollout" class="level3" data-number="20.4">
+<h3 data-number="20.4" class="anchored" data-anchor-id="ci-to-gitops-rollout"><span class="header-section-number">20.4</span> CI To GitOps Rollout</h3>
+<p>GitHub Actions의 <code>portfolio image</code> workflow가 commit SHA <code>6da88c60da7c1d2c8582e01130a0b1ff4e6bf1c8</code> 이미지를 GHCR에 push했고, GitOps repo의 <code>apps/portfolio/values.yaml</code> image tag를 같은 SHA로 갱신했습니다. Argo CD portfolio revision <code>adf1f540af7480826d0af76b818b367a32a67d5f</code>는 이 GitOps 변경 commit입니다.</p>
+<p><img src="assets/github-actions-portfolio-image.png" class="img-fluid"></p>
+<p><img src="assets/github-actions-image-push-log.png" class="img-fluid"></p>
+<p><img src="assets/gitops-portfolio-values-tag.png" class="img-fluid"></p>
+</section>
+<section id="storage-and-observability" class="level3" data-number="20.5">
+<h3 data-number="20.5" class="anchored" data-anchor-id="storage-and-observability"><span class="header-section-number">20.5</span> Storage And Observability</h3>
+<p>Prometheus와 Grafana는 <code>monitoring</code> namespace에서 실행 중이며, 기본 StorageClass는 <code>nfs-client</code>입니다. Grafana와 Prometheus PVC가 <code>Bound</code> 상태로 유지되어 stateless demo가 아니라 persistent storage까지 연결된 구성을 보여줍니다.</p>
+<p><img src="assets/monitoring-pods-pvc.png" class="img-fluid"></p>
+<p><img src="assets/storageclass-pv-pvc.png" class="img-fluid"></p>
+</section>
+</section>
+<section id="결과" class="level2" data-number="21">
+<h2 data-number="21" class="anchored" data-anchor-id="결과"><span class="header-section-number">21</span> 결과</h2>
+<p>이번 작업으로 다음을 달성했습니다.</p>
+<ul>
+<li>NAS와 남은 PC를 활용해 여러 컨테이너 이미지를 운영할 수 있는 Kubernetes 기반 홈랩을 구축했습니다.</li>
+<li>GitHub Actions가 GHCR image를 push하고 GitOps repo의 image tag를 갱신하는 경로를 구성했습니다.</li>
+<li>Argo CD automated sync로 Git commit 기반 자동 배포를 수행했습니다.</li>
+<li>nginx를 모방한 C++ 웹 서버/HTTPS 프록시 경로로 개인 도메인 트래픽을 검증했습니다.</li>
+<li>Proxmox VM 기반 5-node Kubernetes HA cluster에서 workload를 운영했습니다.</li>
+<li>Prometheus, Grafana, NFS dynamic provisioner로 경량 모니터링과 persistent storage 기반을 갖췄습니다.</li>
+<li>Terraform과 Kubespray를 이용해 VM/cluster 구축 절차를 자동화 가능한 형태로 정리했습니다.</li>
+</ul>
+</section>
+<section id="current-gaps" class="level2" data-number="22">
+<h2 data-number="22" class="anchored" data-anchor-id="current-gaps"><span class="header-section-number">22</span> Current Gaps</h2>
+<p>현재 남은 운영 gap은 다음과 같습니다.</p>
+<ol type="1">
+<li>Edge proxy routing을 정리해 <code>demo.mintcocoa.cc</code>, <code>grafana.homelab.local</code>, <code>argocd.homelab.local</code>도 <code>172.30.1.240</code>의 ingress backend로 라우팅해야 합니다.</li>
+<li><code>k8s-status</code>와 <code>dropapp</code>은 각각 Gatus, PairDrop 기반으로 GitOps 정의를 추가하고 live cluster에서 검증해야 합니다.</li>
+<li>Terraform state는 S3 backend scaffold를 추가했지만, 실제 bucket versioning, backend credential, <code>terraform init -backend-config=backend.home.hcl</code> 검증은 별도 작업으로 남아 있습니다.</li>
+<li>Kubespray source는 <code>ansible/kubespray.lock</code>으로 <code>v2.30.0</code> tag에 pin 했지만, 실제 cluster upgrade 전에는 release note와 live Kubernetes version을 다시 대조해야 합니다.</li>
+<li>Application secret은 SOPS/age 템플릿을 추가했지만, 실제 age recipient 등록, encrypted secret commit, Argo CD decryption integration은 아직 수행해야 합니다.</li>
+<li>NFS/PV 백업은 restic CronJob manifest를 추가했지만, encrypted restic secret 생성, 첫 backup job 실행, restore smoke test가 필요합니다.</li>
+<li>Edge proxy virtual host 정리 후 public DNS와 home router forwarding을 외부 네트워크에서 재검증해야 합니다.</li>
+</ol>
+</section>
+<section id="회고" class="level2" data-number="23">
+<h2 data-number="23" class="anchored" data-anchor-id="회고"><span class="header-section-number">23</span> 회고</h2>
+<p>가장 큰 성과는 NAS/PC 기반 인프라, C++ edge runtime, 컨테이너 이미지, GitOps, Kubernetes HA cluster, ingress, monitoring이 하나의 end-to-end 시스템으로 연결됐다는 점입니다. C++ 서버 구현만으로 끝내지 않고, 실제 운영에 필요한 배포 자동화, 관측 가능성, persistent storage, 개인 도메인 route까지 연결하면서 런타임과 인프라의 실사용성을 검증했습니다.</p>
+<p>다음 단계는 edge proxy virtual host mapping을 정리하고, Gatus 기반 <code>k8s-status</code>와 PairDrop 기반 <code>dropapp</code>을 Argo CD Application으로 활성화해 live workload로 검증하는 것입니다.</p>
+</section>
+<section id="관련-레포" class="level2" data-number="24">
+<h2 data-number="24" class="anchored" data-anchor-id="관련-레포"><span class="header-section-number">24</span> 관련 레포</h2>
+<div class="repo-links">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>레포</th>
+<th>역할</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://github.com/mint-cocoa/iouring-runtime">iouring-runtime</a></td>
+<td>C++ runtime, web module, proxy module</td>
+</tr>
+<tr class="even">
+<td><a href="https://github.com/mint-cocoa/portfolio">portfolio</a></td>
+<td>이 문서와 C++ 정적 파일 서버 이미지</td>
+</tr>
+<tr class="odd">
+<td><a href="https://github.com/mint-cocoa/home-k8s-gitops">home-k8s-gitops</a></td>
+<td>Helm values, Argo CD Application, cluster desired state</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="다음-문서" class="level2" data-number="25">
+<h2 data-number="25" class="anchored" data-anchor-id="다음-문서"><span class="header-section-number">25</span> 다음 문서</h2>
+<div class="next-docs">
+<p><a href="../index.html">포트폴리오 문서 인덱스</a> · <a href="../server/ServerCorePortfolio.html">서버 구현 포트폴리오</a> · <a href="../client/ClientPortfolio.html">클라이언트 구현 포트폴리오</a></p>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "복사완료!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "복사완료!");
+        tooltip = new bootstrap.Tooltip(button,
+          { trigger: "manual",
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+            // target, if specified
+            link.setAttribute("target", "_blank");
+            if (link.getAttribute("rel") === null) {
+              link.setAttribute("rel", "noopener");
+            }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config);
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined;
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              }
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            }
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

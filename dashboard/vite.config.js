@@ -23,7 +23,6 @@ export default defineConfig({
     emptyOutDir: false, // Do not delete other portfolio files
     rollupOptions: {
       input: {
-        DevOpsPortfolio: 'DevOpsPortfolio.html',
         OpsDashboard: 'OpsDashboard.html',
       },
       output: {
