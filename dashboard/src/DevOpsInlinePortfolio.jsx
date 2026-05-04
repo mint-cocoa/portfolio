@@ -234,37 +234,47 @@ const apiReads = [
 
 const runtimeSummaryCards = [
   {
-    title: 'Runtime',
-    body: 'C++ io_uring 기반 RuntimeWeb으로 portfolio 정적 파일 서버를 운영했던 경로를 문서화했습니다.',
+    title: 'Infra',
+    body: 'NAS와 남은 PC를 활용해 여러 컨테이너 이미지를 배포하고 운영할 수 있는 홈랩 인프라를 구축했습니다.',
   },
   {
-    title: 'Platform',
-    body: 'Proxmox VM 위에 3 control-plane + 2 worker native Kubernetes HA cluster를 구성했습니다.',
+    title: 'GitOps',
+    body: 'Argo CD가 Git commit을 기준으로 desired state를 추적하고 클러스터 배포를 자동화합니다.',
   },
   {
-    title: 'Deploy',
-    body: 'GitHub Actions가 GHCR image를 push한 뒤 GitOps repo의 Helm values image tag를 갱신합니다.',
+    title: 'C++ Edge',
+    body: 'nginx를 모방한 C++ 서버 런타임 위에 웹 서버와 HTTPS 프록시, SSL 인증서 발급 경로를 구현했습니다.',
   },
   {
-    title: 'Operate',
-    body: '상세 문서 기준 경로는 mint-cocoa.github.io/portfolio이고 portfolio.mintcocoa.cc는 사용 종료 안내로 분리했습니다.',
+    title: 'Domain',
+    body: '개인 도메인과 edge proxy route를 이용해 포트폴리오 사이트와 운영 경로를 외부에 노출했습니다.',
+  },
+  {
+    title: 'Observe',
+    body: 'Prometheus/Grafana 기반 경량 모니터링과 Ops API로 클러스터와 VM 상태를 확인합니다.',
+  },
+  {
+    title: 'Provision',
+    body: 'Terraform과 Kubespray로 VM과 Kubernetes 클러스터 구축 과정을 자동화 가능한 형태로 정리했습니다.',
   },
 ];
 
 const problemStatements = [
-  '직접 만든 C++ io_uring 런타임이 HTTP 앱을 안정적으로 서빙할 수 있는가?',
-  '앱을 이미지화하고 GHCR, GitOps, Argo CD로 자동 배포할 수 있는가?',
-  '배포 결과를 개인 도메인에서 실제 서비스로 노출할 수 있는가?',
-  '관리, edge, VM, workload, delivery, storage 계층을 분리해 운영할 수 있는가?',
+  'NAS와 남은 PC 자원을 묶어 여러 컨테이너 이미지를 안정적으로 운영할 수 있는가?',
+  'Git commit을 단일 변경 기준으로 두고 Argo CD가 배포를 자동 수렴시킬 수 있는가?',
+  '직접 만든 C++ 서버 런타임이 웹 서버, HTTPS, SSL 인증서 발급 가능한 프록시 역할을 수행할 수 있는가?',
+  '개인 도메인에서 포트폴리오와 운영 서비스 경로를 실제로 노출할 수 있는가?',
+  'Prometheus/Grafana로 홈랩 규모에 맞는 경량 모니터링을 구성할 수 있는가?',
+  'Terraform과 Kubespray로 클러스터 구축 절차를 반복 가능한 코드로 남길 수 있는가?',
 ];
 
 const platformLayers = [
   ['Management Plane', 'Odroid', '172.30.1.83', 'Terraform, Ansible, Kubespray, kubectl, Helm, GitOps bootstrap'],
-  ['Edge Plane', 'Mini PC', '172.30.1.27', 'External HTTPS entrypoint, Kubernetes API HAProxy'],
+  ['Edge Plane', 'Mini PC', '172.30.1.27', 'C++ HTTPS reverse proxy, certificate flow, Kubernetes API HAProxy'],
   ['Virtualization Plane', 'Proxmox VE', '172.30.1.12', 'VM runtime, snapshots, backup base'],
   ['Workload Plane', 'Kubernetes VMs', '172.30.1.231-235', 'Application and platform workloads'],
   ['Delivery Plane', 'GitHub Actions, GHCR, Argo CD', 'external + cluster', 'Image build, registry, GitOps deployment'],
-  ['Storage Plane', 'OMV VM', '172.30.1.52', 'NFS backing store for Kubernetes PVCs'],
+  ['Storage Plane', 'NAS / OMV VM', '172.30.1.52', 'NFS backing store for Kubernetes PVCs and persistent data'],
 ];
 
 const deploymentSteps = [
@@ -285,20 +295,24 @@ const clusterNodes = [
 
 const operationNotes = [
   {
-    title: 'C++ RuntimeWeb',
-    body: 'WebServer, router, request context, response builder, streaming upload API를 갖춘 HTTP 앱 표면을 구현했습니다.',
+    title: 'Argo CD GitOps',
+    body: 'GitOps repo의 Helm values와 Application manifest를 기준으로 Git commit 단위의 자동 배포 경로를 구성했습니다.',
   },
   {
-    title: 'Ingress',
-    body: 'Mini PC edge proxy에서 MetalLB LoadBalancer IP와 ingress-nginx를 거쳐 Service와 Pod로 요청을 전달합니다.',
+    title: 'C++ Web/Proxy Runtime',
+    body: 'HTTP 라우팅, 정적 파일 서빙, reverse proxy, SNI 기반 HTTPS 경로를 직접 구현한 서버 런타임 위에서 검증했습니다.',
   },
   {
-    title: 'Storage',
-    body: 'OMV VM의 NFS export를 nfs-subdir-external-provisioner와 연결해 PVC 요청으로 PV를 생성합니다.',
+    title: 'Published Routes',
+    body: '개인 도메인은 edge proxy route tree에서 runtime destination별로 분기되고, Kubernetes ingress 또는 로컬 서비스로 전달됩니다.',
   },
   {
     title: 'Observability',
     body: 'Prometheus와 Grafana를 lightweight profile로 구성해 클러스터 메트릭과 운영 대시보드의 근거를 제공합니다.',
+  },
+  {
+    title: 'Provisioning',
+    body: 'Terraform으로 VM 기반을 준비하고 Kubespray로 native Kubernetes HA cluster를 재현 가능한 절차로 구축했습니다.',
   },
 ];
 
@@ -353,16 +367,18 @@ const RuntimePlatformDocument = () => (
 
     <article className="runtime-doc-prose">
       <p className="card-eyebrow">Overview</p>
-      <h3>io_uring C++ 런타임에서 GitOps 운영 경로까지</h3>
+      <h3>NAS와 남은 PC에서 GitOps 운영 경로까지</h3>
       <p>
-        이 문서는 iouring-runtime 위에서 portfolio 정적 파일 서버를 만들고, 컨테이너 이미지,
-        GitHub Actions, GitOps, Argo CD, Kubernetes Ingress까지 연결한 과정을 정리한 운영
-        포트폴리오입니다. 과거 목표는 단순 예제 서버가 아니라 개인 도메인에서 접근 가능한
-        실사용 경로를 C++ 런타임 기반으로 배포하는 것이었습니다.
+        이 문서는 NAS와 남은 PC를 활용해 여러 컨테이너 이미지를 배포하고 운영할 수 있는
+        인프라 환경을 구축한 과정을 정리한 운영 포트폴리오입니다. 컨테이너 이미지,
+        GitHub Actions, GitOps, Argo CD, Kubernetes Ingress, NAS 기반 persistent storage를
+        하나의 홈랩 운영 경로로 연결했습니다.
       </p>
       <p>
-        현재 상세 문서의 기준 공개 경로는 GitHub Pages입니다. portfolio.mintcocoa.cc는
-        상세 포트폴리오가 아니라 사용 종료 안내 경로로 분리했습니다.
+        C++ io_uring 서버 런타임에서는 nginx를 모방한 웹 서버와 HTTPS reverse proxy를
+        구현했고, 개인 도메인과 SSL 인증서 발급 경로를 이용해 외부에서 접근 가능한
+        route tree까지 검증했습니다. 현재 상세 문서의 기준 공개 경로는 GitHub Pages이고,
+        route tree 시각화는 Ops API가 제공하는 edge runtime 데이터를 React Flow로 렌더링합니다.
       </p>
     </article>
 
@@ -1063,16 +1079,17 @@ export const DevOpsInlinePortfolio = () => {
             <span>운영 포트폴리오</span>
           </h1>
           <p className="lead">
-            홈랩 네트워크와 Kubernetes 실행 환경을 구축하고 GitHub Actions, GHCR, Argo CD로 배포를 자동화했습니다.
-            Prometheus와 Ops API로 실제 운영 상태를 이 페이지에 연결했습니다.
+            NAS와 남은 PC를 활용해 Kubernetes 실행 환경을 구축하고 GitHub Actions, GHCR, Argo CD로
+            컨테이너 배포를 자동화했습니다. C++ HTTPS 프록시와 Prometheus/Grafana 기반 운영 상태를
+            이 페이지의 React Flow route tree에 연결했습니다.
           </p>
           <div className="hero-document-card">
             <div className="hero-document-head">
               <Activity size={18} />
               <span>DevOps document</span>
             </div>
-            <h2>GitOps 기반 홈 Kubernetes 운영</h2>
-            <p>홈랩 계층, 배포 흐름, workload, ingress, observability를 실제 운영 API와 연결해 문서화했습니다.</p>
+            <h2>NAS/PC 기반 GitOps 홈 Kubernetes 운영</h2>
+            <p>클러스터 구축 자동화, C++ edge proxy, 개인 도메인 route, 모니터링을 실제 운영 API와 연결해 문서화했습니다.</p>
             <div className="hero-actions" aria-label="주요 링크">
               <a className="button" href="https://mint-cocoa.github.io/portfolio/devops/DevOpsPortfolio.html" target="_blank" rel="noreferrer">
                 GitHub Pages
@@ -1084,7 +1101,7 @@ export const DevOpsInlinePortfolio = () => {
               </a>
             </div>
             <div className="hero-tag-list" aria-label="기술 스택">
-              {['Kubernetes', 'GHCR', 'Argo CD', 'Prometheus'].map((tag) => (
+              {['Kubernetes', 'Argo CD', 'C++ HTTPS Proxy', 'Terraform', 'Kubespray'].map((tag) => (
                 <span key={tag}>{tag}</span>
               ))}
             </div>
@@ -1101,7 +1118,7 @@ export const DevOpsInlinePortfolio = () => {
                 <div className="pipeline-overview-title">
                   <div>
                     <p className="card-eyebrow">Pages Delivery</p>
-                    <h3>Source에서 GitHub Pages까지 이어지는 공개 문서 흐름</h3>
+                    <h3>Source commit에서 Argo CD와 공개 경로까지 이어지는 운영 흐름</h3>
                   </div>
                   <div className="pipeline-api-state">
                     <StatusPill value={data.health?.ok ? 'live API' : error ? 'partial API' : loading ? 'loading' : 'static overview'} />
@@ -1109,10 +1126,10 @@ export const DevOpsInlinePortfolio = () => {
                   </div>
                 </div>
                 <p className="pipeline-overview-copy">
-                  GitHub Actions가 상세 문서와 대시보드 산출물을 렌더링해 GitHub Pages의
-                  /portfolio 경로로 배포합니다. Ops API가 연결된 단계는 과거 RuntimeWeb/GitOps
-                  운영 경로의 commit, image tag, sync/health 같은 증거를 함께 보여줍니다.
-                  이 페이지는 정적 포트폴리오 문서 위에서 운영 API를 읽는 검증 표면으로 설계했습니다.
+                  GitHub Actions가 컨테이너 이미지를 만들고 GHCR에 push한 뒤 GitOps repo의
+                  image tag를 commit SHA로 갱신합니다. Argo CD는 해당 commit을 기준으로
+                  Kubernetes desired state를 수렴시키며, 공개 문서와 route tree는 GitHub Pages와
+                  Ops API를 통해 운영 증거를 함께 보여줍니다.
                 </p>
                 <dl className="overview-inline-facts">
                   <div>
@@ -1121,7 +1138,7 @@ export const DevOpsInlinePortfolio = () => {
                   </div>
                   <div>
                     <dt>Verification path</dt>
-                    <dd>{'commit -> render -> _site -> GitHub Pages -> Ops API'}</dd>
+                    <dd>{'commit -> image -> GitOps -> Argo CD -> route tree'}</dd>
                   </div>
                 </dl>
                 <PipelineOverview steps={data.overviewPipeline} />
@@ -1132,12 +1149,12 @@ export const DevOpsInlinePortfolio = () => {
           <Section
             number="2 Runtime Platform"
             title="Kubernetes 실행 환경"
-            kicker="DevOpsPortfolio.qmd의 설명을 HTML 안에서 바로 읽을 수 있도록 문서형 구조로 정리했습니다."
+            kicker="NAS와 남은 PC를 재활용해 여러 컨테이너 이미지를 운영할 수 있도록 계층을 나눠 구성했습니다."
           >
             <RuntimePlatformDocument />
           </Section>
 
-          <Section number="3 Network Path" title="외부 트래픽 경로">
+          <Section number="3 Network Path" title="외부 트래픽과 Published route tree">
             <NetworkTopologyMap data={data} />
           </Section>
 
