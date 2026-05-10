@@ -4,6 +4,9 @@ _site
 _freeze
 build
 cmake-build-*
+node_modules
+homepage/node_modules
+homepage/_site
 *.db
 *.docx
 _archive

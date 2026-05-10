@@ -35,19 +35,11 @@ RUN cmake -S . -B build -G Ninja \
 
 FROM node:24-bookworm-slim AS homepage
 
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates git \
-    && rm -rf /var/lib/apt/lists/*
-
-ARG HOMEPAGE_REF=f5d8b4eb4fa917926c7da7091ca5507755464df6
 WORKDIR /homepage
-RUN git init . \
-    && git remote add origin https://github.com/mint-cocoa/mint-cocoa.github.io.git \
-    && git fetch --depth 1 origin "${HOMEPAGE_REF}" \
-    && git checkout --detach FETCH_HEAD \
-    && npm ci \
-    && npm run build \
+COPY homepage/package*.json ./
+RUN npm ci
+COPY homepage ./
+RUN npm run build \
     && find _site -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' -o -name '*.map' \) \
         -exec sed -i \
             -e 's#https://mint-cocoa.github.io/portfolio/#/portfolio/#g' \
