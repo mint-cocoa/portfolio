@@ -243,18 +243,24 @@ figcaption {
 }
 
 .work-card-thumbnail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
   min-height: 100%;
+  padding: 0.6rem;
   border-right: 1px solid var(--line);
-  background: var(--wash);
+  background: #f8fafc;
 }
 
 .work-card-thumbnail img {
   width: 100%;
   height: 100%;
   min-height: 15.5rem;
-  object-fit: cover;
-  object-position: center top;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 6px;
+  background: #ffffff;
 }
 
 .work-card h2 {
@@ -440,6 +446,7 @@ figcaption {
   }
 
   .work-card-thumbnail {
+    padding: 0.5rem;
     border-right: 0;
     border-bottom: 1px solid var(--line);
   }
