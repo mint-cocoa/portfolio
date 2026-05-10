@@ -16,7 +16,6 @@ type WorkItem = {
   eyebrow: string;
   title: string;
   icon: Icon;
-  thumbnail?: string;
   summary: string;
   detailUrl: string;
   repoUrl?: string;
@@ -30,17 +29,13 @@ type WorkItem = {
   group?: "server-app";
 };
 
-const clientThumbnailUrl = "https://img.youtube.com/vi/pnr0sobe3ug/maxresdefault.jpg";
 const liveOpsDashboardUrl = "/portfolio/devops/OpsDashboard.html";
-const serverThumbnailUrl = "/thumbnails/server-core-iouring-section.png";
-const devopsThumbnailUrl = "/thumbnails/devops-dashboard.png";
 
 const workItems: WorkItem[] = [
   {
     eyebrow: "Server Core",
     title: "io_uring 런타임",
     icon: Server,
-    thumbnail: serverThumbnailUrl,
     summary:
       "io_uring 기반의 C++ 라이브러리/ 런타임",
     detailUrl: "/portfolio/server/ServerCorePortfolio.html#sec-iouring",
@@ -88,7 +83,6 @@ const workItems: WorkItem[] = [
     eyebrow: "DevOps / Live Ops",
     title: "홈랩 DevOps와 운영 대시보드",
     icon: Activity,
-    thumbnail: devopsThumbnailUrl,
     summary:
       "C++ 런타임 기반 앱을 GitOps, Argo CD, Kubernetes로 배포하고 Ops API 대시보드에서 상태를 확인합니다.",
     detailUrl: "/portfolio/devops/DevOpsPortfolio.html",
@@ -105,7 +99,6 @@ const workItems: WorkItem[] = [
     eyebrow: "Client Document",
     title: "멀티플레이 던전 RPG 클라이언트",
     icon: MonitorPlay,
-    thumbnail: clientThumbnailUrl,
     summary:
       "C++ DirectX 11 클라이언트의 렌더링, 네트워크, 씬 전환, 전투/상호작용 구조를 정리했습니다.",
     detailUrl: "/portfolio/client/ClientPortfolio.html",
@@ -138,12 +131,7 @@ function App() {
           <div className="work-grid">
             {primaryWorkItems.map((item) => (
               <div className="work-group" key={item.title}>
-                <article className={`work-card${item.thumbnail ? " has-thumbnail" : ""}${item.eyebrow === "Server Core" ? " server-core-card" : ""}`}>
-                  {item.thumbnail ? (
-                    <div className="work-card-thumbnail">
-                      <img src={item.thumbnail} alt="" aria-hidden="true" />
-                    </div>
-                  ) : null}
+                <article className={`work-card${item.eyebrow === "Server Core" ? " server-core-card" : ""}`}>
                   <div className="work-card-body">
                     <p className="card-eyebrow">
                       <item.icon size={17} />
