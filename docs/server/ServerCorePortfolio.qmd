@@ -32,7 +32,7 @@ Multishot Accept/Recv, Provided Buffer, MSG_RING 기반 이벤트 처리
 ::: {.summary-card}
 **Lifecycle**
 
-`self_ref_`, `pending_io_`, `keep_alive`로 CQE 지연과 UAF 문제 대응
+owned op context와 auto-delete로 CQE 지연, cancel race, UAF 문제 대응
 :::
 
 ::: {.summary-card}
@@ -192,8 +192,11 @@ bool IoRing::Dispatch(std::chrono::milliseconds timeout) {
             auto* ev = reinterpret_cast<IoEvent*>(data);
             auto owner = ev->Owner();
             if (owner) {
-                keep_alive.push_back(owner);  // 배치 중 소멸 방지
+                keep_alive.push_back(owner);  // handler 수명 유지
                 owner->Dispatch(ev, result, flags);
+            }
+            if (ev->ShouldDeleteAfterDispatch(result, flags)) {
+                delete ev;
             }
         }
         ++count;
@@ -203,7 +206,7 @@ bool IoRing::Dispatch(std::chrono::milliseconds timeout) {
 }
 ```
 
-MSG_RING 태스크는 힙에 할당된 `move_only_function`의 주소에 bit 0을 세팅해 `user_data`에 인코딩합니다. 일반 I/O 이벤트는 `IoEvent*`를 통해 소유 핸들러로 디스패치되며, `keep_alive` 벡터는 배치 처리 중 핸들러가 먼저 파괴되는 일을 막습니다.
+MSG_RING 태스크는 힙에 할당된 `move_only_function`의 주소에 bit 0을 세팅해 `user_data`에 인코딩합니다. 일반 I/O 이벤트는 heap op context인 `IoEvent*`를 통해 소유 핸들러로 디스패치됩니다. op는 `strong_owner_`로 handler 수명을 붙잡고, `ShouldDeleteAfterDispatch()`가 true를 반환하는 최종 CQE에서 삭제됩니다.
 
 ```{mermaid}
 %%| label: fig-dispatch
@@ -216,7 +219,7 @@ sequenceDiagram
     participant H as Handler
 
     IW->>D: Dispatch(1ms)
-    Note over D: keep_alive 벡터 생성
+    Note over D: CQE 배치 순회 시작
     D->>CQ: for_each_cqe()
     CQ-->>D: CQE 배치
 
@@ -226,18 +229,23 @@ sequenceDiagram
             D->>MR: 포인터 복원
             MR->>MR: (*task)(), delete task
         else bit = 0
-            D->>H: weak_ptr → shared_ptr 승격
+            D->>H: IoEvent::Owner()
             alt owner 유효
                 H->>H: Dispatch(ev, result, flags)
-                Note over H: keep_alive.push(owner)
+                D->>D: ShouldDeleteAfterDispatch()
+                alt op 완료
+                    D->>D: delete ev
+                else multishot/재제출
+                    Note over D: op 유지
+                end
             else owner == nullptr
-                Note over D,H: 파괴된 세션 → skip
+                Note over D,H: owner 없는 이벤트 → skip
             end
         end
     end
 
     D->>CQ: cq_advance(count)
-    Note over D: keep_alive 소멸 →<br/>이 시점에서야 Session 파괴 가능
+    Note over D: 완료된 op는 dispatch 후 삭제
 ```
 
 ### Provided Buffer Ring {#sec-provided-buffer}
@@ -256,39 +264,86 @@ Provided Buffer Ring을 실제 트래픽에 붙이면서 두 가지 문제가 �
 
 두 번째는 **패킷 단편화**입니다. TCP 스트림 특성상 하나의 게임 패킷이 여러 CQE에 걸쳐 도착하는데, provided buffer는 CQE 단위로 잘려 나오므로 단편화된 패킷을 zero-copy로 바로 조립할 수 없습니다. 이 경우에는 별도의 재조립 버퍼가 필요합니다.
 
-`Session::OnRecv()`에서는 이 두 경우를 Fast Path / Slow Path로 분리해 처리합니다. 완전한 패킷이 하나의 CQE에 담겨 오는 일반 경로(Fast Path)에서는 `F_MORE` 플래그를 확인해 `--pending_io_`를 갱신하고, 커널 버퍼를 `span`으로 직접 참조해 파싱한 뒤 즉시 `Return()`으로 반납합니다. 패킷이 단편화된 경우(Slow Path)에는 서브클래스 `PacketSession`이 별도의 `RecvBuffer`에 복사해 완전한 패킷이 모일 때까지 재조립하고, `ENOBUFS` 복구는 `RegisterRecv()`를 다시 호출해 Multishot Recv를 재등록하는 방식으로 처리합니다. 수신 직후 버퍼를 반납해 커널 버퍼 점유 시간을 짧게 유지하면, 특정 세션의 지연이 다른 세션의 버퍼 고갈로 이어지는 상황을 줄일 수 있습니다.
+`Session::OnRecv()`에서는 이 두 경우를 Fast Path / Slow Path로 분리해 처리합니다. 완전한 패킷이 하나의 CQE에 담겨 오는 일반 경로(Fast Path)에서는 커널 버퍼를 `span`으로 직접 참조해 파싱한 뒤 즉시 `Return()`으로 반납하고, Multishot Recv op는 `IORING_CQE_F_MORE`가 사라지는 마지막 CQE에서만 완료된 것으로 처리합니다. 패킷이 단편화된 경우(Slow Path)에는 서브클래스 `PacketSession`이 별도의 `RecvBuffer`에 복사해 완전한 패킷이 모일 때까지 재조립하고, `ENOBUFS` 복구는 `RegisterRecv()`를 다시 호출해 Multishot Recv를 재등록하는 방식으로 처리합니다. 수신 직후 버퍼를 반납해 커널 버퍼 점유 시간을 짧게 유지하면, 특정 세션의 지연이 다른 세션의 버퍼 고갈로 이어지는 상황을 줄일 수 있습니다.
 
 ## 세션 수명관리 {#sec-session}
 
-### self_ref\_ + pending_io\_ 패턴 {#sec-session-lifecycle}
+### Owned Op Context 패턴 {#sec-session-lifecycle}
 
 클라이언트 대량 접속·해제를 반복하는 스트레스 테스트에서 SEGFAULT가 간헐적으로 발생했습니다. 크래시 지점은 항상 CQE 콜백에서 `Session` 멤버에 접근하는 시점이었지만, 재현 빈도가 불안정해 원인 특정에 시간이 걸렸습니다.
 
-원인은 **세션 수명과 커널 I/O 완료 타이밍의 불일치**였습니다. 클라이언트가 연결을 끊으면 애플리케이션은 `Session` 객체를 즉시 파괴하지만, 커널에는 아직 완료되지 않은 SQE(Multishot Recv, Send 등)가 남아 있습니다. 이후 커널이 해당 SQE의 CQE를 발행하면 **이미 해제된 메모리에 커널이 데이터를 덮어쓰는 Use-After-Free**가 발생합니다. 해제된 영역이 아직 다른 객체로 재할당되지 않은 상태에서는 조용히 지나가고, 재할당된 뒤에야 크래시로 드러나기 때문에 재현이 불규칙했던 것입니다.
+원인은 세션 수명과 커널 I/O 완료 타이밍의 불일치였습니다. 클라이언트가 연결을 끊으면 애플리케이션은 `Session`을 닫고 싶어 하지만, 커널에는 아직 완료되지 않은 SQE(Multishot Recv, Send, Timeout, Cancel 등)가 남아 있습니다. 이후 커널이 해당 SQE의 CQE를 발행했을 때 `user_data`가 세션 내부 멤버나 이미 해제된 객체를 가리키면 Use-After-Free가 발생합니다. 특히 cancel은 cancel 요청 자체의 CQE와 cancel 대상 SQE의 CQE가 따로 오며 순서도 보장되지 않기 때문에, 단순히 cancel을 제출하는 것만으로는 수명이 안전해지지 않습니다.
 
-해결의 핵심은 **세션 파괴 시점을 애플리케이션이 아니라 커널의 I/O 완료 신호가 결정하도록 구조를 뒤집는 것**이었습니다. 이를 위해 `Session`에 두 개의 멤버를 추가했습니다.
+현재 구현은 `user_data = Session*`나 `Session` 내부 이벤트 멤버 재사용 방식을 버리고, 각 SQE가 자기 수명을 가진 heap operation context를 `user_data`로 전달합니다. 공통 기반인 `IoEvent`는 CQE가 도착할 때까지 owner를 `shared_ptr`로 붙잡고, dispatch가 완료 시점을 판단해 자동 삭제합니다.
 
-```{.cpp filename="include/servercore/io/Session.h"}
-// Counts in-flight io_uring ops whose CQEs reference Session members.
-// self_ref_ must not be released until this reaches zero.
-// Accessed from I/O thread only — no synchronization needed.
-int pending_io_ = 0;
+```{.cpp filename="include/iouring_runtime/core/RingEvent.h"}
+class IoEvent {
+public:
+    EventHandlerRef Owner() const { return strong_owner_; }
+    void SetStrongOwner(EventHandlerRef o) {
+        strong_owner_ = std::move(o);
+    }
 
-// Self-ownership: keeps Session alive during active I/O.
-// Released only via TryRelease() after all in-flight ops complete.
-std::shared_ptr<Session> self_ref_;
+    void SetAutoDelete(bool value) noexcept {
+        auto_delete_ = value;
+    }
+
+    bool ShouldDeleteAfterDispatch(std::int32_t result,
+                                   std::uint32_t flags) noexcept {
+        if (!auto_delete_)
+            return false;
+        if (retain_after_dispatch_) {
+            retain_after_dispatch_ = false;
+            return false;
+        }
+        return Complete(result, flags);
+    }
+
+private:
+    EventHandlerRef strong_owner_;
+    bool auto_delete_{false};
+    bool retain_after_dispatch_{false};
+};
 ```
 
-- **`self_ref_`** — 세션이 자기 자신을 소유하는 `shared_ptr`입니다. 외부에서 모든 참조를 놓더라도 `self_ref_`가 남아 있는 동안 세션은 유지됩니다.
-- **`pending_io_`** — 커널에 제출됐지만 아직 CQE를 받지 못한 SQE의 수입니다. SQE 제출 시 `++pending_io_`, CQE 수신 시 `--pending_io_`를 수행합니다.
+`IoRing::Dispatch()`는 CQE의 `user_data`를 `IoEvent*`로 꺼내 owner에게 전달한 뒤, 해당 op가 완료됐으면 삭제합니다. 단발성 op는 CQE 하나로 끝나지만, Multishot Recv/Accept는 `IORING_CQE_F_MORE`가 없는 마지막 CQE에서만 완료됩니다.
 
-세션의 실제 소멸 시점은 애플리케이션이 아니라 커널의 완료 신호에 의해 결정됩니다. `TryRelease()`는 `pending_io_ > 0`이면 그대로 반환하고, `pending_io_`가 0이 되는 순간 — 즉 커널이 모든 in-flight I/O를 완료한 시점 — `OnDisconnected()` 콜백을 호출한 뒤 `self_ref_.reset()`으로 자기 소유를 해제합니다. 이렇게 수명의 최종 결정권을 커널 쪽에 넘겨두면, 애플리케이션 타임라인과 커널 타임라인이 어긋나 발생하던 UAF가 원리적으로 생길 수 없게 됩니다.
+```{.cpp filename="src/runtime/ring/IoRing.cpp"}
+auto* ev = reinterpret_cast<IoEvent*>(data);
+auto owner = ev->Owner();
+if (owner) {
+    keep_alive.push_back(owner);
+    owner->Dispatch(ev, result, flags);
+}
+if (ev->ShouldDeleteAfterDispatch(result, flags)) {
+    delete ev;
+}
+```
 
-`pending_io_`가 0이 되지 않으면 세션이 영원히 살아남아 누적되는 문제를 해결하기 위해 `Disconnect()`는 단순 cancel이 아니라 `shutdown(SHUT_RDWR)`을 SQE로 제출합니다. 커널이 소켓을 shutdown하면 Multishot Recv는 EOF(`res == 0`)로 반드시 종료 CQE를 발행하고, in-flight Send도 에러 CQE로 즉시 종료되므로, 모든 SQE가 유한 시간 안에 회수됩니다. 
+세션은 이제 `self_ref_` 하나에 모든 I/O 수명을 몰아넣지 않습니다. 각 SQE는 자기 op context가 Session과 버퍼 수명을 직접 잡고, `Session`은 현재 살아 있는 op 포인터와 drain 카운터만 추적합니다.
+
+```{.cpp filename="include/iouring_runtime/core/Session.h"}
+ring::RecvEvent* active_recv_ev_ = nullptr;
+ring::TimeoutEvent* active_timeout_ev_ = nullptr;
+
+struct SendOp final : ring::SendEvent {
+    struct msghdr msg{};
+    std::vector<struct iovec> iovecs;
+    std::vector<SendBufferRef> bufs;
+};
+
+SendOp* active_send_ev_ = nullptr;
+```
+
+- `pending_io_`는 여전히 close drain을 위한 accounting 값으로 남아 있습니다. 차이는 CQE의 `user_data`가 더 이상 `Session` 내부 이벤트 멤버를 가리키지 않고, CQE까지 살아 있는 heap op context를 가리킨다는 점입니다.
+- Recv op — `RecvEvent`를 heap에 만들고 `SetStrongOwner(session)`, `SetAutoDelete(true)`를 설정한 뒤 Multishot Recv의 `user_data`로 넣습니다. `F_MORE`가 없는 마지막 CQE에서만 `active_recv_ev_`를 비웁니다.
+- Send op — `SendOp`이 `msghdr`, `iovec`, `SendBufferRef` 목록을 직접 소유합니다. 따라서 send CQE 전까지 payload 메모리가 유지되고, partial send가 발생하면 같은 op를 조정해 재제출합니다.
+- Timeout/Shutdown op — 각각 별도 heap event로 제출되며 CQE 이후 자동 삭제됩니다.
+- Cancel op — cancel 요청 자체도 `CancelEvent`로 제출해 cancel CQE까지 명시적으로 drain합니다. cancel CQE가 왔다고 target op가 끝난 것은 아니므로, target op는 자기 CQE가 올 때까지 별도로 살아 있습니다.
 
 ```{mermaid}
 %%| label: fig-session-lifecycle
-%%| fig-cap: "세션 수명관리 전체 흐름"
+%%| fig-cap: "Owned Op Context 기반 세션 수명관리"
 sequenceDiagram
     participant App as Application
     participant Sess as Session
@@ -296,43 +351,43 @@ sequenceDiagram
     participant Kern as Kernel
     participant Disp as Dispatch
 
-    Note over App,Disp: Phase 1 — 세션 생성
+    Note over App,Disp: Phase 1 — 세션 생성과 Recv 등록
     App->>Sess: Accept → 세션 생성
-    Note over Sess: self_ref_ = shared_from_this()<br/>pending_io_ = 0
-
-    Note over App,Disp: Phase 2 — I/O 등록
     Sess->>Ring: RegisterRecv()
-    Note over Sess: ++pending_io_
-    Ring->>Kern: io_uring_submit(SQE)
+    Note over Sess: new RecvEvent<br/>strong_owner = Session
+    Ring->>Kern: submit recv_multishot<br/>user_data = RecvEvent*
 
-    Note over App,Disp: Phase 3 — CQE 수신
+    Note over App,Disp: Phase 2 — Recv CQE 처리
     Kern-->>Disp: CQE 발생
-    Disp->>Disp: keep_alive.push(owner)
-    Disp->>Sess: Dispatch(ev, result, flags)
-    Note over Sess: !more → --pending_io_
+    Disp->>Sess: Dispatch(RecvEvent, res, flags)
+    Sess->>Sess: buffer 처리 후 Return()
+    Note over Disp: F_MORE 있으면 op 유지<br/>없으면 delete RecvEvent
 
-    Note over App,Disp: Phase 4 — 연결 해제
+    Note over App,Disp: Phase 3 — 연결 해제
     Sess->>Ring: Disconnect()
-    Ring->>Kern: PrepCancel + PrepShutdown
-    Note over Sess: ++pending_io_ (각각)
+    Ring->>Kern: submit ShutdownEvent
+    Ring->>Kern: submit CancelEvent(target=Recv/Timeout)
 
-    Note over App,Disp: Phase 5 — 해제
-    Kern-->>Disp: Cancel/Shutdown CQE
-    Note over Sess: --pending_io_ (각 CQE)
-    Sess->>Sess: TryRelease()<br/>pending_io_ == 0 →<br/>self_ref_.reset()
+    Note over App,Disp: Phase 4 — 모든 op CQE drain
+    Kern-->>Disp: Cancel CQE
+    Disp->>Sess: OnCancel()
+    Note over Disp: cancel 요청 op 삭제<br/>target op는 아직 별도 대기
+    Kern-->>Disp: target Recv/Send/Timeout CQE
+    Disp->>Sess: OnRecv/OnSend/OnTimeout()
+    Note over Disp: 각 op의 최종 CQE 후 delete
 ```
 
-### CQE 배치 처리와 소멸 지연 {#sec-keep-alive}
+### CQE 배치 처리와 op 자동 삭제 {#sec-keep-alive}
 
-앞 절의 `pending_io_` 메커니즘만으로는 부족한 경계 케이스가 하나 더 있었습니다. `Dispatch()`는 성능을 위해 여러 CQE를 한 번에 배치로 가져와 순회하는데, 이 배치 안에는 **동일 세션의 이벤트가 여러 개 섞여 있을 수 있습니다**. 앞쪽 이벤트를 처리하는 과정에서 해당 세션이 `TryRelease()`로 파괴 조건을 만족하면, 같은 배치의 뒤쪽 이벤트가 이미 소멸한 객체를 참조하는 UAF가 다시 발생합니다.
+`Dispatch()`는 성능을 위해 여러 CQE를 한 번에 배치로 가져와 순회합니다. 현재 구조에서는 각 CQE가 독립 op context를 가리키므로, 앞쪽 CQE가 처리되면서 세션 close가 진행되더라도 뒤쪽 CQE의 `user_data` 자체가 세션 내부 메모리에 의존하지 않습니다. 또한 op가 가진 `strong_owner_`가 handler 실행 동안 세션을 유지하므로, CQE 처리 중 세션이 사라지는 문제도 피할 수 있습니다.
 
-해결책은 배치 순회 동안 참조 카운트를 임시로 +1 유지하는 것입니다. CQE마다 `IoEvent::Owner()`로 `weak_ptr`를 `shared_ptr`로 승격해 로컬 `keep_alive` 벡터에 보관하면, 처리 중간에 `self_ref_.reset()`이 호출되더라도 세션은 배치가 끝날 때까지 살아 있습니다. 배치 순회가 완료되고 `keep_alive`가 스코프를 벗어나는 시점에서야 실제 소멸이 일어나므로, 뒤쪽 이벤트도 항상 유효한 객체를 참조합니다.
+다만 handler 내부에서 partial send처럼 같은 op를 다시 제출하는 경우에는 그 op를 바로 삭제하면 안 됩니다. 이때 `RetainAfterDispatch()`를 호출해 현재 CQE 처리 후 자동 삭제를 한 번 미루고, 재제출된 send CQE가 다시 도착했을 때 삭제 여부를 판단합니다. 반대로 정상 완료, 에러 완료, cancel 요청 완료처럼 op가 더 이상 커널에 걸려 있지 않은 경우에는 dispatch 끝에서 바로 삭제됩니다.
 
-### IoEvent의 weak_ptr 참조 {#sec-weak-ptr}
+### close는 상태 전환이고, free는 CQE drain 이후 {#sec-weak-ptr}
 
-`pending_io_` 메커니즘과 `keep_alive` 배치 보호까지 갖춘 뒤에도, 한 가지 시나리오에서는 세션이 **논리적으로 죽었지만 물리적으로 살아남는 구간**이 발생했습니다. Heartbeat 타임아웃이나 강제 킥처럼 커널 I/O가 끝나기 전에 세션을 끊어야 하는 상황에서, 만약 `IoEvent`가 소유자를 `shared_ptr`로 붙잡고 있으면 in-flight I/O가 전부 완료될 때까지 세션 객체가 불필요하게 유지됩니다.
+`Disconnect()`는 세션 객체를 즉시 파괴하지 않고 `disconnecting_ = true`로 상태를 전환합니다. 이후 새 recv/send 제출을 막고, shutdown op와 cancel op를 제출합니다. 중요한 점은 cancel CQE와 cancel 대상 CQE를 분리해서 본다는 것입니다. cancel 요청이 완료돼도 target recv/send/timeout op의 CQE가 아직 남아 있을 수 있으므로, 각 op context가 자기 최종 CQE까지 살아 있어야 합니다.
 
-이를 피하기 위해 `IoEvent`는 소유자를 `weak_ptr`로만 참조합니다. CQE 처리 시 `Owner()`에서 `weak_ptr` → `shared_ptr` 승격을 시도해 `nullptr`가 반환되면 해당 이벤트는 건너뜁니다. 이벤트 객체가 세션의 수명을 연장하지 않으므로, 세션이 논리적으로 종료된 뒤에 도착하는 CQE도 자연스럽게 무시됩니다.
+이 구조에서 Session free 시점은 애플리케이션이 disconnect를 호출한 시점이 아니라, 해당 Session을 strong owner로 잡고 있던 op context들이 모두 CQE를 받고 삭제된 뒤입니다. 따라서 커널이 늦게 CQE를 발행하거나 send/recv 버퍼를 참조하더라도, CQE handler가 접근하는 객체와 버퍼의 수명은 op context가 보장합니다.
 
 ## 멀티스레드 아키텍처 {#sec-multithread}
 
@@ -583,7 +638,13 @@ sequenceDiagram
 
 ## 선택 모듈과 예제 앱의 역할 {#sec-example-surface}
 
-예제 앱은 포트폴리오의 중심 구현이라기보다, 기본 `Runtime`이 서로 다른 프로토콜 계층에서도 같은 방식으로 동작하는지 확인하기 위한 실행 가능한 검증 표면입니다. 세부 기능 소개는 최소화하고, 어떤 런타임 기능을 검증했는지만 남겼습니다.
+선택 모듈은 서비스 앱을 직접 의미하지 않습니다. 기본 `Runtime` 위에 붙는 프로토콜별 라이브러리 계층이며, 예제 앱은 이 모듈들이 실제 프로세스에서 링크되고 동작하는지 확인하는 소비자입니다. 따라서 문서에서는 `RuntimeWeb`, `RuntimeProxy`, `RuntimeGame`의 모듈 경계를 먼저 설명하고, 앱 이름은 검증 표면으로만 다룹니다.
+
+선택 모듈 상세 구현은 본문에서 분리했습니다. 각 모듈 문서는 다음 위치에서 별도로 설명합니다.
+
+- [RuntimeWeb 모듈 구현 포트폴리오](./RuntimeWebPortfolio.html) - HTTP parser, router, `HttpSession`, 파일/스트리밍 응답, request timeout, send backpressure
+- [RuntimeProxy 모듈 구현 포트폴리오](./RuntimeProxyPortfolio.html) - TCP bridge, upstream connector, TLS/SNI route, ACME challenge, metrics snapshot
+- [RuntimeGame 모듈 구현 포트폴리오](./RuntimeGamePortfolio.html) - packet framing, `PacketSession`, `Room`, `RoomManager`, Room job queue 실행 모델
 
 | 영역 | 예제 위치 | 검증한 런타임 표면 |
 |------|-----------|--------------------|

@@ -48,8 +48,8 @@ Cloudflare Tunnel 뒤의 Ops API로 Prometheus와 Proxmox 상태 표시
 ### [서버 구현 포트폴리오](server/ServerCorePortfolio.html)
 
 `iouring-runtime`의 core Runtime 위에 `RuntimeWeb`, `RuntimeProxy`, `RuntimeGame`을
-분리하고, 실제 실행 앱 기준으로 web 앱 6종, TCP reverse proxy, dungeon 서버
-예제를 나눠 설명한 C++ 서버 런타임 구현 문서입니다.
+분리하고, `io_uring` 네트워크 엔진과 세션 수명관리, 멀티스레드 실행 모델,
+벤치마크를 중심으로 정리한 C++ 서버 런타임 구현 문서입니다.
 
 ::: {.serve-path}
 **서빙 경로**
@@ -60,7 +60,13 @@ Cloudflare Tunnel 뒤의 Ops API로 Prometheus와 Proxmox 상태 표시
 :::
 
 ::: {.serve-path .runtime-example}
-**연결되는 런타임 예제**
+**연결 문서와 런타임 예제**
+
+[RuntimeWeb 모듈 구현](server/RuntimeWebPortfolio.html)
+
+[RuntimeProxy 모듈 구현](server/RuntimeProxyPortfolio.html)
+
+[RuntimeGame 모듈 구현](server/RuntimeGamePortfolio.html)
 
 [`iouring-runtime/examples/web`](https://github.com/mint-cocoa/iouring-runtime/tree/main/examples/web)
 
@@ -75,6 +81,66 @@ Cloudflare Tunnel 뒤의 Ops API로 Prometheus와 Proxmox 상태 표시
 
 ::: {.tag-row}
 `C++` `io_uring` `Linux` `Web` `Proxy` `Game Server`
+:::
+:::
+
+::: {.doc-card}
+### [RuntimeWeb 모듈 구현](server/RuntimeWebPortfolio.html)
+
+`RuntimeWeb`을 서비스 앱이 아니라 HTTP 서버 선택 모듈 기준으로 분리해 설명한
+문서입니다. `WebServer`, `HttpSession`, `HttpParser`, `Router`, `RadixTree`,
+`HttpResponse`, 파일/스트리밍 응답, timeout/backpressure 정책을 다룹니다.
+
+::: {.serve-path}
+**서빙 경로**
+
+`mint-cocoa.github.io/portfolio/server/RuntimeWebPortfolio.html`
+
+`GitHub Actions` → `_site/portfolio` → `GitHub Pages`
+:::
+
+::: {.tag-row}
+`C++` `RuntimeWeb` `HTTP` `Streaming` `Backpressure`
+:::
+:::
+
+::: {.doc-card}
+### [RuntimeProxy 모듈 구현](server/RuntimeProxyPortfolio.html)
+
+`RuntimeProxy`를 TCP reverse proxy 선택 모듈 기준으로 분리해 설명한 문서입니다.
+`TcpProxyServer`, `ProxyBridge`, `ProxyConnector`, TLS/SNI 라우팅, ACME challenge,
+metrics snapshot, stream backpressure 정책을 다룹니다.
+
+::: {.serve-path}
+**서빙 경로**
+
+`mint-cocoa.github.io/portfolio/server/RuntimeProxyPortfolio.html`
+
+`GitHub Actions` → `_site/portfolio` → `GitHub Pages`
+:::
+
+::: {.tag-row}
+`C++` `RuntimeProxy` `TCP` `TLS` `SNI`
+:::
+:::
+
+::: {.doc-card}
+### [RuntimeGame 모듈 구현](server/RuntimeGamePortfolio.html)
+
+`RuntimeGame`을 게임 서비스 앱이 아니라 packet session과 Room 실행 모듈 기준으로
+분리해 설명한 문서입니다. `PacketSession`, `PacketBuilder`, `PlayerRegistry`,
+`Room`, `RoomManager`, `JobQueue` 기반 Room 직렬 실행을 다룹니다.
+
+::: {.serve-path}
+**서빙 경로**
+
+`mint-cocoa.github.io/portfolio/server/RuntimeGamePortfolio.html`
+
+`GitHub Actions` → `_site/portfolio` → `GitHub Pages`
+:::
+
+::: {.tag-row}
+`C++` `RuntimeGame` `PacketSession` `Room` `JobQueue`
 :::
 :::
 
