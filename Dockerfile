@@ -40,7 +40,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates git \
     && rm -rf /var/lib/apt/lists/*
 
-ARG HOMEPAGE_REF=0dd85aa5c776036b15720c50eb4ae543b305485f
+ARG HOMEPAGE_REF=2caa67160dbbc8ffa5a5e007ebbde2329292373c
 WORKDIR /homepage
 RUN git init . \
     && git remote add origin https://github.com/mint-cocoa/mint-cocoa.github.io.git \
