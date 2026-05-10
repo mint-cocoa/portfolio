@@ -16,6 +16,7 @@ type WorkItem = {
   eyebrow: string;
   title: string;
   icon: Icon;
+  tone: "core" | "web" | "proxy" | "game" | "ops" | "client";
   summary: string;
   detailUrl: string;
   repoUrl?: string;
@@ -36,6 +37,7 @@ const workItems: WorkItem[] = [
     eyebrow: "Server Core",
     title: "io_uring 런타임",
     icon: Server,
+    tone: "core",
     summary:
       "io_uring 기반의 C++ 라이브러리/ 런타임",
     detailUrl: "/portfolio/server/ServerCorePortfolio.html#sec-iouring",
@@ -47,6 +49,7 @@ const workItems: WorkItem[] = [
     eyebrow: "RuntimeWeb",
     title: "웹 서버",
     icon: Server,
+    tone: "web",
     summary:
       "RuntimeWeb 위에서 HTTP 라우팅, 파일 서빙, 운영용 웹 앱 예제 ",
     detailUrl: "/portfolio/server/RuntimeWebPortfolio.html",
@@ -59,6 +62,7 @@ const workItems: WorkItem[] = [
     eyebrow: "RuntimeProxy",
     title: "리버스 프록시 서버",
     icon: Server,
+    tone: "proxy",
     summary:
       "RuntimeProxy 위에서 TCP 리버스 프록시, TLS 종료, SNI 기반 라우팅을 검증했습니다.",
     detailUrl: "/portfolio/server/RuntimeProxyPortfolio.html",
@@ -71,6 +75,7 @@ const workItems: WorkItem[] = [
     eyebrow: "RuntimeGame",
     title: "멀티플레이 게임 서버",
     icon: Server,
+    tone: "game",
     summary:
       "PacketSession, Room, RoomManager로 패킷 처리와 룸 단위 게임 서버 구조를 구성했습니다.",
     detailUrl: "/portfolio/server/RuntimeGamePortfolio.html",
@@ -83,6 +88,7 @@ const workItems: WorkItem[] = [
     eyebrow: "DevOps / Live Ops",
     title: "홈랩 DevOps와 운영 대시보드",
     icon: Activity,
+    tone: "ops",
     summary:
       "C++ 런타임 기반 앱을 GitOps, Argo CD, Kubernetes로 배포하고 Ops API 대시보드에서 상태를 확인합니다.",
     detailUrl: "/portfolio/devops/DevOpsPortfolio.html",
@@ -99,6 +105,7 @@ const workItems: WorkItem[] = [
     eyebrow: "Client Document",
     title: "멀티플레이 던전 RPG 클라이언트",
     icon: MonitorPlay,
+    tone: "client",
     summary:
       "C++ DirectX 11 클라이언트의 렌더링, 네트워크, 씬 전환, 전투/상호작용 구조를 정리했습니다.",
     detailUrl: "/portfolio/client/ClientPortfolio.html",
@@ -116,22 +123,29 @@ function App() {
     <div className="app-shell">
       <main>
         <section className="section projects-section">
-          <div className="section-title project-title">
-            <p>
-              <Layers3 size={17} />
-              Core Projects
-            </p>
-            <h1>주요 프로젝트</h1>
-          </div>
-          <div className="project-intro">
-            <p className="section-lead">
-                  C++ io_uring 런타임을 중심으로 서버와 게임 클라이언트 개발, 홈랩 DevOps까지 진행했던 여러 프로젝트
-            </p>
+          <div className="hero-panel">
+            <div className="section-title project-title">
+              <p>
+                <Layers3 size={17} />
+                Core Projects
+              </p>
+              <h1>주요 프로젝트</h1>
+            </div>
+            <div className="project-intro">
+              <p className="section-lead">
+                C++ io_uring 런타임을 중심으로 서버 모듈, 게임 클라이언트, 홈랩 DevOps까지 이어지는 구현 기록입니다.
+              </p>
+              <div className="project-intro-facts" aria-label="포트폴리오 구성">
+                <span>Runtime Core</span>
+                <span>3 Server Modules</span>
+                <span>Client + Ops</span>
+              </div>
+            </div>
           </div>
           <div className="work-grid">
             {primaryWorkItems.map((item) => (
               <div className="work-group" key={item.title}>
-                <article className={`work-card${item.eyebrow === "Server Core" ? " server-core-card" : ""}`}>
+                <article className={`work-card tone-${item.tone}${item.eyebrow === "Server Core" ? " server-core-card" : ""}`}>
                   <div className="work-card-body">
                     <p className="card-eyebrow">
                       <item.icon size={17} />
@@ -164,7 +178,7 @@ function App() {
                 {item.eyebrow === "Server Core" ? (
                   <div className="server-app-grid" aria-label="서버 예제 애플리케이션 문서">
                     {serverAppItems.map((app) => (
-                      <article className="server-app-card" key={app.title}>
+                      <article className={`server-app-card tone-${app.tone}`} key={app.title}>
                         <p className="card-eyebrow">
                           <app.icon size={17} />
                           {app.eyebrow}
