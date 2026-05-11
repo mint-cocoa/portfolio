@@ -21,7 +21,7 @@ div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
   width: 0.8em;
-  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
 /* CSS for syntax highlighting */
@@ -87,7 +87,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
   <nav id="TOC" role="doc-toc" class="toc-active">
     <h2 id="toc-title">목차</h2>
-
+   
   <ul>
   <li><a href="#핵심-요약" id="toc-핵심-요약" class="nav-link active" data-scroll-target="#핵심-요약"><span class="header-section-number">1</span> 핵심 요약</a></li>
   <li><a href="#개요" id="toc-개요" class="nav-link" data-scroll-target="#개요"><span class="header-section-number">2</span> 개요</a></li>
@@ -142,11 +142,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
              <p>배진후 </p>
           </div>
   </div>
-
-
-
+    
+  
+    
   </div>
-
+  
 
 
 </header>
@@ -165,7 +165,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="summary-card">
 <p><strong>C++ Edge</strong></p>
-<p>nginx를 모방한 C++ 서버 런타임 위에 웹 서버와 HTTPS 프록시 구현</p>
+<p>직접 만든 C++ 서버 엔진 위에 웹 서버와 HTTPS 프록시 구현</p>
 </div>
 <div class="summary-card">
 <p><strong>Operate</strong></p>
@@ -229,8 +229,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="개요" class="level2" data-number="2">
 <h2 data-number="2" class="anchored" data-anchor-id="개요"><span class="header-section-number">2</span> 개요</h2>
-<p>이 문서는 NAS와 남은 PC를 활용해 여러 컨테이너 이미지를 배포하고 운영할 수 있는 인프라 환경을 구축한 과정을 정리한 운영 포트폴리오입니다. 컨테이너 이미지, GitHub Actions, GitOps, Argo CD, Kubernetes Ingress, NAS 기반 persistent storage를 하나의 홈랩 운영 경로로 연결했습니다.</p>
-<p>직접 만든 C++ <code>io_uring</code> 서버 런타임에서는 nginx를 모방한 웹 서버 기능과 HTTPS reverse proxy를 구현했습니다. 이 프록시는 개인 도메인, SNI 기반 route, SSL 인증서 발급 가능한 edge 경로를 담당했고, portfolio 정적 파일 서버와 Kubernetes ingress 앞단에서 실제 외부 접근 경로를 검증하는 데 사용했습니다. 현재 상세 문서의 기준 공개 경로는 GitHub Pages이며, <code>portfolio.mintcocoa.cc</code>는 <code>mint-cocoa.github.io</code> 루트 허브와 <code>/portfolio/</code> 상세 문서를 함께 서빙하는 홈랩 미러 경로로 운영합니다.</p>
+<p>이 문서는 NAS와 남은 PC를 활용해 직접 만든 C++ 서버 엔진 기반 서비스를 배포하고 운영할 수 있는 홈랩 인프라를 구축한 과정을 정리한 운영 포트폴리오입니다. 컨테이너 이미지, GitHub Actions, GitOps, Argo CD, Kubernetes Ingress, NAS 기반 persistent storage를 하나의 홈랩 운영 경로로 연결했습니다.</p>
+<p>직접 개발한 C++ <code>io_uring</code> 서버 엔진에 웹 서버 기능과 reverse proxy를 구현하고, 이를 포트폴리오, 운영용 API, 대시보드, 프록시 같은 실제 홈랩 서비스의 기반 구조로 활용했습니다. 이 프록시는 개인 도메인, SNI 기반 route, SSL 인증서 발급 가능한 edge 경로를 담당했고, portfolio 정적 파일 서버와 Kubernetes ingress 앞단에서 실제 외부 접근 경로를 검증하는 데 사용했습니다. 현재 상세 문서의 기준 공개 경로는 GitHub Pages이며, <code>portfolio.mintcocoa.cc</code>는 <code>mint-cocoa.github.io</code> 루트 허브와 <code>/portfolio/</code> 상세 문서를 함께 서빙하는 홈랩 미러 경로로 운영합니다.</p>
 <p>현재 검증된 live workload는 <code>portfolio</code>입니다. 추가 공개 ingress는 <code>k8s.mintcocoa.cc</code>와 <code>dropapp.mintcocoa.cc</code>를 중심으로 정리하고, <code>webhook.mintcocoa.cc</code>는 공개 포트폴리오 경로에서 제외합니다.</p>
 <ul>
 <li><code>portfolio</code>: <code>mint-cocoa.github.io</code> 루트 허브와 <code>/portfolio/</code> 상세 문서를 C++ RuntimeWeb 컨테이너로 서빙하는 홈랩 미러</li>
@@ -492,7 +492,7 @@ Server Version: v1.35.4</code></pre>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>server<span class="op">.</span>Get<span class="op">(</span><span class="st">"/"</span><span class="op">,</span> <span class="op">[&amp;](</span>RequestContext<span class="op">&amp;</span> ctx<span class="op">)</span> <span class="op">{</span></span>
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    ServeStaticFile<span class="op">(</span>ctx<span class="op">,</span> static_root<span class="op">,</span> <span class="st">"index.html"</span><span class="op">);</span></span>
 <span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="op">});</span></span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
-<p>중요한 점은 단순히 TCP 서버를 만든 것이 아니라, HTTP 라우팅, 정적 파일 서빙, raw body upload, JSON API, 인증 헤더 처리까지 실제 웹 앱에 필요한 표면을 구현했다는 점입니다.</p>
+<p>중요한 점은 단순히 TCP 서버 예제를 만든 것이 아니라, HTTP 라우팅, 정적 파일 서빙, raw body upload, JSON API, 인증 헤더 처리까지 실제 홈랩 서비스에 필요한 표면을 공통 서버 엔진 위에 확장했다는 점입니다.</p>
 <p>또한 nginx를 모방한 C++ reverse proxy 경로를 별도로 구현했습니다. 이 edge proxy는 SNI/hostname 기반 upstream route를 읽고, 개인 도메인으로 들어온 HTTPS 트래픽을 Kubernetes ingress, local service, Docker app, RuntimeWeb service로 분기합니다. SSL 인증서를 발급하고 갱신할 수 있는 구조를 염두에 두고 edge entrypoint를 분리했기 때문에, 애플리케이션 컨테이너는 내부 HTTP endpoint로 남겨두고 public HTTPS 처리는 프록시 계층에서 담당하게 했습니다.</p>
 </section>
 <section id="k8s-status" class="level2" data-number="9">
@@ -1062,7 +1062,7 @@ Grafana PVC: 1Gi on nfs-client</code></pre>
     anchorJS.add('.anchored');
     const isCodeAnnotation = (el) => {
       for (const clz of el.classList) {
-        if (clz.startsWith('code-annotation-')) {
+        if (clz.startsWith('code-annotation-')) {                     
           return true;
         }
       }
@@ -1082,11 +1082,11 @@ Grafana PVC: 1Gi on nfs-client</code></pre>
         button.setAttribute("data-bs-toggle", "tooltip");
         button.setAttribute("data-bs-placement", "left");
         button.setAttribute("data-bs-title", "복사완료!");
-        tooltip = new bootstrap.Tooltip(button,
-          { trigger: "manual",
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
             customClass: "code-copy-button-tooltip",
             offset: [0, -8]});
-        tooltip.show();
+        tooltip.show();    
       }
       setTimeout(function() {
         if (tooltip) {
@@ -1168,7 +1168,7 @@ Grafana PVC: 1Gi on nfs-client</code></pre>
       if (onUntriggerFn) {
         config.onUntrigger = onUntriggerFn;
       }
-      window.tippy(el, config);
+      window.tippy(el, config); 
     }
     const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
     for (var i=0; i<noterefs.length; i++) {
@@ -1243,7 +1243,7 @@ Grafana PVC: 1Gi on nfs-client</code></pre>
       tippyHover(xref, undefined, function(instance) {
         instance.disable();
         let url = xref.getAttribute('href');
-        let hash = undefined;
+        let hash = undefined; 
         if (url.startsWith('#')) {
           hash = url;
         } else {
@@ -1271,7 +1271,7 @@ Grafana PVC: 1Gi on nfs-client</code></pre>
               if (note !== null) {
                 const html = processXRef(id, note);
                 instance.setContent(html);
-              }
+              } 
             }).finally(() => {
               instance.enable();
               instance.show();
@@ -1295,7 +1295,7 @@ Grafana PVC: 1Gi on nfs-client</code></pre>
               }
               const html = processXRef(null, note);
               instance.setContent(html);
-            }
+            } 
           }).finally(() => {
             instance.enable();
             instance.show();
@@ -1335,7 +1335,7 @@ Grafana PVC: 1Gi on nfs-client</code></pre>
               height = bottom - top;
             }
             if (top !== null && height !== null && parent !== null) {
-              // cook up a div (if necessary) and position it
+              // cook up a div (if necessary) and position it 
               let div = window.document.getElementById("code-annotation-line-highlight");
               if (div === null) {
                 div = window.document.createElement("div");

@@ -78,7 +78,7 @@ ul.task-list li input[type="checkbox"] {
 <div class="summary-grid">
 <div class="summary-card">
 <p><strong>서버</strong></p>
-<p><code>io_uring</code> 기반 C++ 네트워크 런타임과 web/proxy/game 서버 구현</p>
+<p><code>io_uring</code> 기반 C++ 서버 엔진과 web/proxy/game 서비스 확장</p>
 </div>
 <div class="summary-card">
 <p><strong>클라이언트</strong></p>
@@ -102,7 +102,7 @@ ul.task-list li input[type="checkbox"] {
 <div class="doc-grid">
 <section id="서버-구현-포트폴리오" class="level3 doc-card" data-number="1.1">
 <h3 data-number="1.1" class="anchored" data-anchor-id="서버-구현-포트폴리오"><span class="header-section-number">1.1</span> <a href="server/ServerCorePortfolio.html">서버 구현 포트폴리오</a></h3>
-<p><code>iouring-runtime</code>의 core Runtime 위에 <code>RuntimeWeb</code>, <code>RuntimeProxy</code>, <code>RuntimeGame</code>을 분리하고, <code>io_uring</code> 네트워크 엔진과 세션 수명관리, 멀티스레드 실행 모델, 벤치마크를 중심으로 정리한 C++ 서버 런타임 구현 문서입니다.</p>
+<p><code>iouring-runtime</code>을 단순 예제가 아니라 홈랩 서비스의 기반 서버 엔진으로 삼아 <code>RuntimeWeb</code>, <code>RuntimeProxy</code>, <code>RuntimeGame</code>을 분리 확장한 구현 문서입니다. <code>io_uring</code> 비동기 I/O, 세션 수명관리, 서버 모듈화, 멀티스레드 실행 모델, 벤치마크를 중심으로 C++ 서버 엔진의 구조와 운영 연결 지점을 정리했습니다.</p>
 <div class="serve-path">
 <p><strong>서빙 경로</strong></p>
 <p><code>mint-cocoa.github.io/portfolio/server/ServerCorePortfolio.html</code></p>
@@ -173,7 +173,7 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="홈랩-devops-포트폴리오" class="level3 doc-card devops" data-number="1.6">
 <h3 data-number="1.6" class="anchored" data-anchor-id="홈랩-devops-포트폴리오"><span class="header-section-number">1.6</span> <a href="devops/DevOpsPortfolio.html">홈랩 DevOps 포트폴리오</a></h3>
-<p>C++ 웹 런타임으로 만든 앱을 컨테이너 이미지, GitOps, Argo CD, Kubernetes로 배포한 운영 문서입니다.</p>
+<p>직접 만든 C++ 서버 엔진 기반 앱을 컨테이너 이미지, GitOps, Argo CD, Kubernetes로 배포하고 운영 자동화까지 연결한 홈랩 운영 문서입니다.</p>
 <div class="serve-path">
 <p><strong>서빙 경로</strong></p>
 <p><code>mint-cocoa.github.io/portfolio/devops/DevOpsPortfolio.html</code></p>

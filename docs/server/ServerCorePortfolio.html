@@ -144,7 +144,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">서버 런타임 구현 포트폴리오</h1>
-<p class="subtitle lead">io_uring 기반 C++ 기본 런타임과 선택형 web/proxy/game 모듈</p>
+<p class="subtitle lead">io_uring 기반 C++ 서버 엔진과 홈랩 서비스 확장 구조</p>
 </div>
 
 
@@ -172,7 +172,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="summary-grid">
 <div class="summary-card">
 <p><strong>Runtime</strong></p>
-<p>프로토콜에 독립적인 <code>Runtime</code>이 <code>IoRing</code>, <code>Listener</code>, <code>Session</code>, <code>JobQueue</code>, <code>JobTimer</code>를 제공</p>
+<p>프로토콜에 독립적인 C++ 서버 엔진이 <code>IoRing</code>, <code>Listener</code>, <code>Session</code>, <code>JobQueue</code>, <code>JobTimer</code>를 제공</p>
 </div>
 <div class="summary-card">
 <p><strong>I/O</strong></p>
@@ -184,9 +184,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <div class="summary-card">
 <p><strong>Apps</strong></p>
-<p>Web/Proxy/Game은 기본 런타임 위에서 동작을 검증하는 선택형 모듈로 분리</p>
+<p>Web/Proxy/Game은 같은 서버 엔진 위에서 홈랩 서비스로 확장 가능한 모듈로 분리</p>
 </div>
 </div>
+<p>이 문서는 <code>io_uring</code> 기반 비동기 서버 엔진을 직접 구현하고, 이를 홈랩 환경의 기반 서버 엔진으로 활용해 TCP 서버, 웹 서버, 프록시, 운영용 서비스로 확장한 과정을 정리합니다. 단순 예제 구현에 그치지 않고 실제 서비스 운영 기반으로 발전시키며 세션 관리, 비동기 I/O, 서버 모듈화, 컨테이너 배포와 운영 자동화까지 연결한 흐름을 중심으로 설명합니다.</p>
 </section>
 <section id="sec-overview" class="level2" data-number="2">
 <h2 data-number="2" class="anchored" data-anchor-id="sec-overview"><span class="header-section-number">2</span> 프로젝트 개요</h2>
@@ -206,11 +207,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><strong>프로젝트명</strong></td>
-<td>iouring-runtime — io_uring 기반 C++ 서버 런타임</td>
+<td>iouring-runtime — io_uring 기반 C++ 서버 엔진</td>
 </tr>
 <tr class="even">
 <td><strong>개발 범위</strong></td>
-<td>기본 <code>Runtime</code> + <code>RuntimeObservability</code>/<code>RuntimeMedia</code> + 선택형 <code>RuntimeWeb</code>/<code>RuntimeProxy</code>/<code>RuntimeGame</code></td>
+<td>기본 서버 엔진 + <code>RuntimeObservability</code>/<code>RuntimeMedia</code> + 선택형 <code>RuntimeWeb</code>/<code>RuntimeProxy</code>/<code>RuntimeGame</code></td>
 </tr>
 <tr class="odd">
 <td><strong>연동 클라이언트</strong></td>
@@ -231,13 +232,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <section id="io_uring-기반-서버를-직접-만든-이유" class="level3" data-number="2.1">
 <h3 data-number="2.1" class="anchored" data-anchor-id="io_uring-기반-서버를-직접-만든-이유"><span class="header-section-number">2.1</span> io_uring 기반 서버를 직접 만든 이유</h3>
-<p>Linux 환경에서 서버를 개발하면서, 기존 epoll 기반 네트워크 라이브러리를 사용하는 대신 Linux의 커널 I/O 인터페이스인 <code>io_uring</code>을 직접 활용해 공통 서버 런타임을 구현해보고 싶었습니다.</p>
-<p>epoll은 readiness를 통지받은 뒤에도 별도의 <code>read</code>/<code>write</code> 시스템콜을 호출해야 합니다. 반면 <code>io_uring</code>은 Submission Queue와 Completion Queue를 커널과 공유 메모리로 매핑하고, Multishot Accept/Recv를 활용하면 하나의 SQE로 여러 연결과 수신 이벤트를 처리할 수 있습니다. 이 특성을 앱 하나에 묶어두지 않고, TCP 세션 수명관리와 버퍼 관리, 크로스 링 태스크 전달, 타이머와 작업 큐까지 포함한 재사용 가능한 기본 런타임으로 정리하는 것이 이 프로젝트의 핵심이었습니다.</p>
+<p>Linux 환경에서 서버를 개발하면서, 기존 epoll 기반 네트워크 라이브러리를 사용하는 대신 Linux의 커널 I/O 인터페이스인 <code>io_uring</code>을 직접 활용해 공통 서버 엔진을 구현해보고 싶었습니다.</p>
+<p>epoll은 readiness를 통지받은 뒤에도 별도의 <code>read</code>/<code>write</code> 시스템콜을 호출해야 합니다. 반면 <code>io_uring</code>은 Submission Queue와 Completion Queue를 커널과 공유 메모리로 매핑하고, Multishot Accept/Recv를 활용하면 하나의 SQE로 여러 연결과 수신 이벤트를 처리할 수 있습니다. 이 특성을 앱 하나에 묶어두지 않고, TCP 세션 수명관리와 버퍼 관리, 크로스 링 태스크 전달, 타이머와 작업 큐까지 포함한 재사용 가능한 서버 엔진으로 정리하는 것이 이 프로젝트의 핵심이었습니다.</p>
 </section>
 <section id="런타임과-애플리케이션을-분리한-이유" class="level3" data-number="2.2">
 <h3 data-number="2.2" class="anchored" data-anchor-id="런타임과-애플리케이션을-분리한-이유"><span class="header-section-number">2.2</span> 런타임과 애플리케이션을 분리한 이유</h3>
 <p>초기 ServerCore는 런타임 계층(<code>IoRing</code>, <code>Session</code>, <code>BufferPool</code>)과 애플리케이션 계층(<code>IoLoop</code>, <code>GameRoom</code>, <code>PacketSession</code>)이 한 레이어에 혼재되어 있었습니다. <code>PlayerId</code>, <code>RoomId</code> 같은 게임 전용 타입까지 코어에 포함되어 있어, HTTP 서버나 프록시처럼 게임과 무관한 서버를 만들 때도 불필요한 게임 의존성을 함께 가져와야 했습니다.</p>
-<p>이 문제를 해결하기 위해 <code>include/iouring_runtime/core</code>와 <code>src/runtime</code>에는 네트워크 I/O, 세션 관리, 버퍼 관리, 이벤트 디스패치, 타이머와 작업 큐 같은 범용 기능만 남겼습니다. HTTP 라우팅과 정적 파일 응답은 <code>RuntimeWeb</code>, TCP/TLS 중계는 <code>RuntimeProxy</code>, 패킷 프레이밍과 Room 계층은 <code>RuntimeGame</code>이 담당합니다. 예제 앱들은 이 모듈들이 실제로 링크되고 실행되는지 보여주는 검증 표면이며, 문서의 중심은 기본 런타임의 구조와 문제 해결 과정입니다.</p>
+<p>이 문제를 해결하기 위해 <code>include/iouring_runtime/core</code>와 <code>src/runtime</code>에는 네트워크 I/O, 세션 관리, 버퍼 관리, 이벤트 디스패치, 타이머와 작업 큐 같은 범용 기능만 남겼습니다. HTTP 라우팅과 정적 파일 응답은 <code>RuntimeWeb</code>, TCP/TLS 중계는 <code>RuntimeProxy</code>, 패킷 프레이밍과 Room 계층은 <code>RuntimeGame</code>이 담당합니다. 예제 앱들은 같은 서버 엔진이 웹 서버, 프록시, 게임 서버, 운영용 서비스로 확장될 수 있음을 검증하는 표면이며, 문서의 중심은 서버 엔진의 구조와 실제 운영 기반으로 발전시킨 문제 해결 과정입니다.</p>
 </section>
 <section id="구현-계층과-문서-범위" class="level3" data-number="2.3">
 <h3 data-number="2.3" class="anchored" data-anchor-id="구현-계층과-문서-범위"><span class="header-section-number">2.3</span> 구현 계층과 문서 범위</h3>

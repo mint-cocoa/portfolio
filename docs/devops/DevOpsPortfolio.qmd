@@ -28,7 +28,7 @@ Argo CD를 이용한 Git commit 기반 자동 배포
 ::: {.summary-card}
 **C++ Edge**
 
-nginx를 모방한 C++ 서버 런타임 위에 웹 서버와 HTTPS 프록시 구현
+직접 만든 C++ 서버 엔진 위에 웹 서버와 HTTPS 프록시 구현
 :::
 
 ::: {.summary-card}
@@ -53,15 +53,16 @@ nginx를 모방한 C++ 서버 런타임 위에 웹 서버와 HTTPS 프록시 구
 
 ## 개요
 
-이 문서는 NAS와 남은 PC를 활용해 여러 컨테이너 이미지를 배포하고 운영할 수 있는
-인프라 환경을 구축한 과정을 정리한 운영 포트폴리오입니다. 컨테이너 이미지,
+이 문서는 NAS와 남은 PC를 활용해 직접 만든 C++ 서버 엔진 기반 서비스를 배포하고
+운영할 수 있는 홈랩 인프라를 구축한 과정을 정리한 운영 포트폴리오입니다. 컨테이너 이미지,
 GitHub Actions, GitOps, Argo CD, Kubernetes Ingress, NAS 기반 persistent storage를
 하나의 홈랩 운영 경로로 연결했습니다.
 
-직접 만든 C++ `io_uring` 서버 런타임에서는 nginx를 모방한 웹 서버 기능과 HTTPS
-reverse proxy를 구현했습니다. 이 프록시는 개인 도메인, SNI 기반 route, SSL 인증서
-발급 가능한 edge 경로를 담당했고, portfolio 정적 파일 서버와 Kubernetes ingress
-앞단에서 실제 외부 접근 경로를 검증하는 데 사용했습니다. 현재 상세 문서의 기준 공개
+직접 개발한 C++ `io_uring` 서버 엔진에 웹 서버 기능과 reverse proxy를 구현하고,
+이를 포트폴리오, 운영용 API, 대시보드, 프록시 같은 실제 홈랩 서비스의 기반 구조로
+활용했습니다. 이 프록시는 개인 도메인, SNI 기반 route, SSL 인증서 발급 가능한 edge
+경로를 담당했고, portfolio 정적 파일 서버와 Kubernetes ingress 앞단에서 실제 외부
+접근 경로를 검증하는 데 사용했습니다. 현재 상세 문서의 기준 공개
 경로는 GitHub Pages이며, `portfolio.mintcocoa.cc`는 `mint-cocoa.github.io` 루트
 허브와 `/portfolio/` 상세 문서를 함께 서빙하는 홈랩 미러 경로로 운영합니다.
 
@@ -199,9 +200,9 @@ server.Get("/", [&](RequestContext& ctx) {
 });
 ```
 
-중요한 점은 단순히 TCP 서버를 만든 것이 아니라, HTTP 라우팅, 정적 파일 서빙,
-raw body upload, JSON API, 인증 헤더 처리까지 실제 웹 앱에 필요한 표면을
-구현했다는 점입니다.
+중요한 점은 단순히 TCP 서버 예제를 만든 것이 아니라, HTTP 라우팅, 정적 파일 서빙,
+raw body upload, JSON API, 인증 헤더 처리까지 실제 홈랩 서비스에 필요한 표면을
+공통 서버 엔진 위에 확장했다는 점입니다.
 
 또한 nginx를 모방한 C++ reverse proxy 경로를 별도로 구현했습니다. 이 edge proxy는
 SNI/hostname 기반 upstream route를 읽고, 개인 도메인으로 들어온 HTTPS 트래픽을

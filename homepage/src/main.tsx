@@ -37,7 +37,7 @@ const workItems: WorkItem[] = [
     title: "io_uring 런타임",
     icon: Server,
     summary:
-      "io_uring 기반의 C++ 라이브러리/ 런타임",
+      "io_uring 기반 C++ 서버 엔진과 홈랩 서비스 확장 구조",
     detailUrl: "/portfolio/server/ServerCorePortfolio.html#sec-iouring",
     repoUrl: "https://github.com/mint-cocoa/iouring-runtime",
     repoName: "iouring-runtime",
@@ -48,7 +48,7 @@ const workItems: WorkItem[] = [
     title: "웹 서버",
     icon: Server,
     summary:
-      "RuntimeWeb 위에서 HTTP 라우팅, 파일 서빙, 운영용 웹 앱 예제 ",
+      "공통 서버 엔진 위에 HTTP 라우팅, 파일 서빙, 운영용 웹 앱 기능을 확장했습니다.",
     detailUrl: "/portfolio/server/RuntimeWebPortfolio.html",
     repoUrl: "https://github.com/mint-cocoa/iouring-runtime",
     repoName: "iouring-runtime",
@@ -60,7 +60,7 @@ const workItems: WorkItem[] = [
     title: "리버스 프록시 서버",
     icon: Server,
     summary:
-      "RuntimeProxy 위에서 TCP 리버스 프록시, TLS 종료, SNI 기반 라우팅을 검증했습니다.",
+      "공통 서버 엔진 위에서 TCP 리버스 프록시, TLS 종료, SNI 기반 라우팅을 검증했습니다.",
     detailUrl: "/portfolio/server/RuntimeProxyPortfolio.html",
     repoUrl: "https://github.com/mint-cocoa/iouring-runtime",
     repoName: "iouring-runtime",
@@ -84,7 +84,7 @@ const workItems: WorkItem[] = [
     title: "홈랩 DevOps와 운영 대시보드",
     icon: Activity,
     summary:
-      "C++ 런타임 기반 앱을 GitOps, Argo CD, Kubernetes로 배포하고 Ops API 대시보드에서 상태를 확인합니다.",
+      "C++ 서버 엔진 기반 앱을 GitOps, Argo CD, Kubernetes로 배포하고 Ops API 대시보드에서 상태를 확인합니다.",
     detailUrl: "/portfolio/devops/DevOpsPortfolio.html",
     chips: ["인프라", "배포 흐름", "워크로드", "인그레스", "관측성"],
     extraLinks: [
@@ -125,7 +125,7 @@ function App() {
           </div>
           <div className="project-intro">
             <p className="section-lead">
-                  C++ io_uring 런타임을 중심으로 서버와 게임 클라이언트 개발, 홈랩 DevOps까지 진행했던 여러 프로젝트
+                  io_uring 기반 C++ 서버 엔진을 중심으로 TCP 서버, 웹 서버, 프록시, 운영용 서비스와 홈랩 DevOps까지 확장한 프로젝트
             </p>
           </div>
           <div className="work-grid">

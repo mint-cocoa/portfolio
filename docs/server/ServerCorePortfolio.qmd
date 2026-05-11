@@ -1,6 +1,6 @@
 ---
 title: "서버 런타임 구현 포트폴리오"
-subtitle: "io_uring 기반 C++ 기본 런타임과 선택형 web/proxy/game 모듈"
+subtitle: "io_uring 기반 C++ 서버 엔진과 홈랩 서비스 확장 구조"
 author: "배진후"
 lang: ko
 format:
@@ -20,7 +20,7 @@ format:
 ::: {.summary-card}
 **Runtime**
 
-프로토콜에 독립적인 `Runtime`이 `IoRing`, `Listener`, `Session`, `JobQueue`, `JobTimer`를 제공
+프로토콜에 독립적인 C++ 서버 엔진이 `IoRing`, `Listener`, `Session`, `JobQueue`, `JobTimer`를 제공
 :::
 
 ::: {.summary-card}
@@ -38,16 +38,22 @@ owned op context와 auto-delete로 CQE 지연, cancel race, UAF 문제 대응
 ::: {.summary-card}
 **Apps**
 
-Web/Proxy/Game은 기본 런타임 위에서 동작을 검증하는 선택형 모듈로 분리
+Web/Proxy/Game은 같은 서버 엔진 위에서 홈랩 서비스로 확장 가능한 모듈로 분리
 :::
 :::
+
+이 문서는 `io_uring` 기반 비동기 서버 엔진을 직접 구현하고, 이를 홈랩 환경의
+기반 서버 엔진으로 활용해 TCP 서버, 웹 서버, 프록시, 운영용 서비스로 확장한
+과정을 정리합니다. 단순 예제 구현에 그치지 않고 실제 서비스 운영 기반으로
+발전시키며 세션 관리, 비동기 I/O, 서버 모듈화, 컨테이너 배포와 운영 자동화까지
+연결한 흐름을 중심으로 설명합니다.
 
 ## 프로젝트 개요 {#sec-overview}
 
 | 항목 | 내용 |
 |------|------|
-| **프로젝트명** | iouring-runtime — io_uring 기반 C++ 서버 런타임 |
-| **개발 범위** | 기본 `Runtime` + `RuntimeObservability`/`RuntimeMedia` + 선택형 `RuntimeWeb`/`RuntimeProxy`/`RuntimeGame` |
+| **프로젝트명** | iouring-runtime — io_uring 기반 C++ 서버 엔진 |
+| **개발 범위** | 기본 서버 엔진 + `RuntimeObservability`/`RuntimeMedia` + 선택형 `RuntimeWeb`/`RuntimeProxy`/`RuntimeGame` |
 | **연동 클라이언트** | C++ DirectX 11 아이소메트릭 던전 크롤러 — [클라이언트 포트폴리오](../client/ClientPortfolio.html) |
 | **공개 저장소** | [iouring-runtime](https://github.com/mint-cocoa/iouring-runtime) 중심. 기존 [libiouring-core](https://github.com/mint-cocoa/libiouring-core), [libiouringweb](https://github.com/mint-cocoa/libiouringweb), [multiplayer-dungeon-rpg-server](https://github.com/mint-cocoa/multiplayer-dungeon-rpg-server) 기능을 통합 런타임/예제로 흡수 |
 | **게임 프로토콜** | Binary Header `[size:uint16][msgId:uint16]` + Protobuf 3 payload |
@@ -56,15 +62,15 @@ Web/Proxy/Game은 기본 런타임 위에서 동작을 검증하는 선택형 �
 
 ### io_uring 기반 서버를 직접 만든 이유
 
-Linux 환경에서 서버를 개발하면서, 기존 epoll 기반 네트워크 라이브러리를 사용하는 대신 Linux의 커널 I/O 인터페이스인 `io_uring`을 직접 활용해 공통 서버 런타임을 구현해보고 싶었습니다.
+Linux 환경에서 서버를 개발하면서, 기존 epoll 기반 네트워크 라이브러리를 사용하는 대신 Linux의 커널 I/O 인터페이스인 `io_uring`을 직접 활용해 공통 서버 엔진을 구현해보고 싶었습니다.
 
-epoll은 readiness를 통지받은 뒤에도 별도의 `read`/`write` 시스템콜을 호출해야 합니다. 반면 `io_uring`은 Submission Queue와 Completion Queue를 커널과 공유 메모리로 매핑하고, Multishot Accept/Recv를 활용하면 하나의 SQE로 여러 연결과 수신 이벤트를 처리할 수 있습니다. 이 특성을 앱 하나에 묶어두지 않고, TCP 세션 수명관리와 버퍼 관리, 크로스 링 태스크 전달, 타이머와 작업 큐까지 포함한 재사용 가능한 기본 런타임으로 정리하는 것이 이 프로젝트의 핵심이었습니다.
+epoll은 readiness를 통지받은 뒤에도 별도의 `read`/`write` 시스템콜을 호출해야 합니다. 반면 `io_uring`은 Submission Queue와 Completion Queue를 커널과 공유 메모리로 매핑하고, Multishot Accept/Recv를 활용하면 하나의 SQE로 여러 연결과 수신 이벤트를 처리할 수 있습니다. 이 특성을 앱 하나에 묶어두지 않고, TCP 세션 수명관리와 버퍼 관리, 크로스 링 태스크 전달, 타이머와 작업 큐까지 포함한 재사용 가능한 서버 엔진으로 정리하는 것이 이 프로젝트의 핵심이었습니다.
 
 ### 런타임과 애플리케이션을 분리한 이유
 
 초기 ServerCore는 런타임 계층(`IoRing`, `Session`, `BufferPool`)과 애플리케이션 계층(`IoLoop`, `GameRoom`, `PacketSession`)이 한 레이어에 혼재되어 있었습니다. `PlayerId`, `RoomId` 같은 게임 전용 타입까지 코어에 포함되어 있어, HTTP 서버나 프록시처럼 게임과 무관한 서버를 만들 때도 불필요한 게임 의존성을 함께 가져와야 했습니다.
 
-이 문제를 해결하기 위해 `include/iouring_runtime/core`와 `src/runtime`에는 네트워크 I/O, 세션 관리, 버퍼 관리, 이벤트 디스패치, 타이머와 작업 큐 같은 범용 기능만 남겼습니다. HTTP 라우팅과 정적 파일 응답은 `RuntimeWeb`, TCP/TLS 중계는 `RuntimeProxy`, 패킷 프레이밍과 Room 계층은 `RuntimeGame`이 담당합니다. 예제 앱들은 이 모듈들이 실제로 링크되고 실행되는지 보여주는 검증 표면이며, 문서의 중심은 기본 런타임의 구조와 문제 해결 과정입니다.
+이 문제를 해결하기 위해 `include/iouring_runtime/core`와 `src/runtime`에는 네트워크 I/O, 세션 관리, 버퍼 관리, 이벤트 디스패치, 타이머와 작업 큐 같은 범용 기능만 남겼습니다. HTTP 라우팅과 정적 파일 응답은 `RuntimeWeb`, TCP/TLS 중계는 `RuntimeProxy`, 패킷 프레이밍과 Room 계층은 `RuntimeGame`이 담당합니다. 예제 앱들은 같은 서버 엔진이 웹 서버, 프록시, 게임 서버, 운영용 서비스로 확장될 수 있음을 검증하는 표면이며, 문서의 중심은 서버 엔진의 구조와 실제 운영 기반으로 발전시킨 문제 해결 과정입니다.
 
 ### 구현 계층과 문서 범위
 
