@@ -2,13 +2,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="ko" xml:lang="ko"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.9.37">
+<meta name="generator" content="quarto-1.9.38">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="배진후">
 
-<title>포트폴리오 문서</title>
+<title>서버 런타임 구현 포트폴리오</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -24,6 +24,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -34,30 +69,91 @@ ul.task-list li input[type="checkbox"] {
 <script src="index_files/libs/quarto-html/tippy.umd.min.js"></script>
 <script src="index_files/libs/quarto-html/anchor.min.js"></script>
 <link href="index_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="index_files/libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="index_files/libs/quarto-html/quarto-syntax-highlighting-de63f62b328812d8e578a4d74e282472.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="index_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="index_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="index_files/libs/bootstrap/bootstrap-b266025aee7dee100f5553a3ab926a66.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="index_files/libs/bootstrap/bootstrap-be7d3c0fb1756a18a5de4690bfe8a63d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 
 
-<link rel="stylesheet" href="portfolio.css">
+<link rel="stylesheet" href="portfolio-index.css">
 </head>
 
 <body class="quarto-light">
 
-<div id="quarto-content" class="page-columns page-rows-contents page-layout-full">
-
-<main class="content column-page" id="quarto-document-content">
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">목차</h2>
+   
+  <ul>
+  <li><a href="#문서-구성" id="toc-문서-구성" class="nav-link active" data-scroll-target="#문서-구성"><span class="header-section-number">2</span> 문서 구성</a></li>
+  <li><a href="#runtime-설계와-실행-모델" id="toc-runtime-설계와-실행-모델" class="nav-link" data-scroll-target="#runtime-설계와-실행-모델"><span class="header-section-number">3</span> Runtime 설계와 실행 모델</a>
+  <ul class="collapse">
+  <li><a href="#전체-구조" id="toc-전체-구조" class="nav-link" data-scroll-target="#전체-구조"><span class="header-section-number">3.1</span> 전체 구조</a></li>
+  <li><a href="#주요-클래스" id="toc-주요-클래스" class="nav-link" data-scroll-target="#주요-클래스"><span class="header-section-number">3.2</span> 주요 클래스</a></li>
+  <li><a href="#실행-루프" id="toc-실행-루프" class="nav-link" data-scroll-target="#실행-루프"><span class="header-section-number">3.3</span> 실행 루프</a></li>
+  </ul></li>
+  <li><a href="#수명-관리" id="toc-수명-관리" class="nav-link" data-scroll-target="#수명-관리"><span class="header-section-number">4</span> 수명 관리</a>
+  <ul class="collapse">
+  <li><a href="#제출된-io와-콜백-대상-생존" id="toc-제출된-io와-콜백-대상-생존" class="nav-link" data-scroll-target="#제출된-io와-콜백-대상-생존"><span class="header-section-number">4.1</span> 제출된 I/O와 콜백 대상 생존</a></li>
+  <li><a href="#dispatchresult와-pending_io_" id="toc-dispatchresult와-pending_io_" class="nav-link" data-scroll-target="#dispatchresult와-pending_io_"><span class="header-section-number">4.2</span> <code>DispatchResult</code>와 <code>pending_io_</code></a></li>
+  <li><a href="#종료-가능-상태" id="toc-종료-가능-상태" class="nav-link" data-scroll-target="#종료-가능-상태"><span class="header-section-number">4.3</span> 종료 가능 상태</a></li>
+  <li><a href="#해제-조건" id="toc-해제-조건" class="nav-link" data-scroll-target="#해제-조건"><span class="header-section-number">4.4</span> 해제 조건</a></li>
+  <li><a href="#결론" id="toc-결론" class="nav-link" data-scroll-target="#결론"><span class="header-section-number">4.5</span> 결론</a></li>
+  </ul></li>
+  <li><a href="#버퍼-관리" id="toc-버퍼-관리" class="nav-link" data-scroll-target="#버퍼-관리"><span class="header-section-number">5</span> 버퍼 관리</a>
+  <ul class="collapse">
+  <li><a href="#수신-버퍼" id="toc-수신-버퍼" class="nav-link" data-scroll-target="#수신-버퍼"><span class="header-section-number">5.1</span> 수신 버퍼</a></li>
+  <li><a href="#버퍼-복사와-비용" id="toc-버퍼-복사와-비용" class="nav-link" data-scroll-target="#버퍼-복사와-비용"><span class="header-section-number">5.2</span> 버퍼 복사와 비용</a></li>
+  <li><a href="#수신-경로-분리" id="toc-수신-경로-분리" class="nav-link" data-scroll-target="#수신-경로-분리"><span class="header-section-number">5.3</span> 수신 경로 분리</a></li>
+  <li><a href="#송신-버퍼" id="toc-송신-버퍼" class="nav-link" data-scroll-target="#송신-버퍼"><span class="header-section-number">5.4</span> 송신 버퍼</a></li>
+  <li><a href="#요청한-길이와-실제-처리된-길이의-불일치" id="toc-요청한-길이와-실제-처리된-길이의-불일치" class="nav-link" data-scroll-target="#요청한-길이와-실제-처리된-길이의-불일치"><span class="header-section-number">5.5</span> 요청한 길이와 실제 처리된 길이의 불일치</a></li>
+  <li><a href="#애플리케이션이-의도한-순서-보장-불가" id="toc-애플리케이션이-의도한-순서-보장-불가" class="nav-link" data-scroll-target="#애플리케이션이-의도한-순서-보장-불가"><span class="header-section-number">5.6</span> 애플리케이션이 의도한 순서 보장 불가</a></li>
+  <li><a href="#세션당-단일-활성-송신-작업" id="toc-세션당-단일-활성-송신-작업" class="nav-link" data-scroll-target="#세션당-단일-활성-송신-작업"><span class="header-section-number">5.7</span> 세션당 단일 활성 송신 작업</a></li>
+  </ul></li>
+  <li><a href="#room과-session-직렬화" id="toc-room과-session-직렬화" class="nav-link" data-scroll-target="#room과-session-직렬화"><span class="header-section-number">6</span> Room과 Session 직렬화</a>
+  <ul class="collapse">
+  <li><a href="#room-상태-결정의-직렬화-단위" id="toc-room-상태-결정의-직렬화-단위" class="nav-link" data-scroll-target="#room-상태-결정의-직렬화-단위"><span class="header-section-number">6.1</span> Room: 상태 결정의 직렬화 단위</a></li>
+  <li><a href="#session-송신-순서의-직렬화-단위" id="toc-session-송신-순서의-직렬화-단위" class="nav-link" data-scroll-target="#session-송신-순서의-직렬화-단위"><span class="header-section-number">6.2</span> Session: 송신 순서의 직렬화 단위</a></li>
+  <li><a href="#직렬화-경계가-필요한-이유" id="toc-직렬화-경계가-필요한-이유" class="nav-link" data-scroll-target="#직렬화-경계가-필요한-이유"><span class="header-section-number">6.3</span> 직렬화 경계가 필요한 이유</a></li>
+  <li><a href="#room-출력-순서-보장" id="toc-room-출력-순서-보장" class="nav-link" data-scroll-target="#room-출력-순서-보장"><span class="header-section-number">6.4</span> Room 출력 순서 보장</a></li>
+  </ul></li>
+  <li><a href="#생산소비-백프레셔" id="toc-생산소비-백프레셔" class="nav-link" data-scroll-target="#생산소비-백프레셔"><span class="header-section-number">7</span> 생산/소비 백프레셔</a>
+  <ul class="collapse">
+  <li><a href="#sendqueue를-메모리-압력-경계로-보기" id="toc-sendqueue를-메모리-압력-경계로-보기" class="nav-link" data-scroll-target="#sendqueue를-메모리-압력-경계로-보기"><span class="header-section-number">7.1</span> SendQueue를 메모리 압력 경계로 보기</a></li>
+  <li><a href="#write-압력을-read-쪽으로-되돌리기" id="toc-write-압력을-read-쪽으로-되돌리기" class="nav-link" data-scroll-target="#write-압력을-read-쪽으로-되돌리기"><span class="header-section-number">7.2</span> write 압력을 read 쪽으로 되돌리기</a></li>
+  <li><a href="#paused-recv-queue-pause-이후-이미-도착한-데이터-보존" id="toc-paused-recv-queue-pause-이후-이미-도착한-데이터-보존" class="nav-link" data-scroll-target="#paused-recv-queue-pause-이후-이미-도착한-데이터-보존"><span class="header-section-number">7.3</span> Paused recv queue: pause 이후 이미 도착한 데이터 보존</a></li>
+  <li><a href="#http-큰-응답을-drain-속도에-맞춰-생산" id="toc-http-큰-응답을-drain-속도에-맞춰-생산" class="nav-link" data-scroll-target="#http-큰-응답을-drain-속도에-맞춰-생산"><span class="header-section-number">7.4</span> HTTP: 큰 응답을 drain 속도에 맞춰 생산</a></li>
+  <li><a href="#정리" id="toc-정리" class="nav-link" data-scroll-target="#정리"><span class="header-section-number">7.5</span> 정리</a></li>
+  </ul></li>
+  <li><a href="#선택-모듈-검증-최종-정리" id="toc-선택-모듈-검증-최종-정리" class="nav-link" data-scroll-target="#선택-모듈-검증-최종-정리"><span class="header-section-number">8</span> 선택 모듈, 검증, 최종 정리</a>
+  <ul class="collapse">
+  <li><a href="#선택-모듈로-확장한-결과" id="toc-선택-모듈로-확장한-결과" class="nav-link" data-scroll-target="#선택-모듈로-확장한-결과"><span class="header-section-number">8.1</span> 선택 모듈로 확장한 결과</a></li>
+  <li><a href="#모듈별-검증" id="toc-모듈별-검증" class="nav-link" data-scroll-target="#모듈별-검증"><span class="header-section-number">8.2</span> 모듈별 검증</a></li>
+  <li><a href="#runtimeweb" id="toc-runtimeweb" class="nav-link" data-scroll-target="#runtimeweb"><span class="header-section-number">8.3</span> RuntimeWeb</a></li>
+  <li><a href="#runtimeproxy" id="toc-runtimeproxy" class="nav-link" data-scroll-target="#runtimeproxy"><span class="header-section-number">8.4</span> RuntimeProxy</a></li>
+  <li><a href="#runtimegame" id="toc-runtimegame" class="nav-link" data-scroll-target="#runtimegame"><span class="header-section-number">8.5</span> RuntimeGame</a></li>
+  <li><a href="#검증과-벤치마크" id="toc-검증과-벤치마크" class="nav-link" data-scroll-target="#검증과-벤치마크"><span class="header-section-number">8.6</span> 검증과 벤치마크</a></li>
+  <li><a href="#core-echo-벤치마크" id="toc-core-echo-벤치마크" class="nav-link" data-scroll-target="#core-echo-벤치마크"><span class="header-section-number">8.7</span> Core echo 벤치마크</a></li>
+  <li><a href="#game-브로드캐스트-벤치마크" id="toc-game-브로드캐스트-벤치마크" class="nav-link" data-scroll-target="#game-브로드캐스트-벤치마크"><span class="header-section-number">8.8</span> Game 브로드캐스트 벤치마크</a></li>
+  <li><a href="#room-분산-결과" id="toc-room-분산-결과" class="nav-link" data-scroll-target="#room-분산-결과"><span class="header-section-number">8.9</span> Room 분산 결과</a></li>
+  <li><a href="#결과-해석" id="toc-결과-해석" class="nav-link" data-scroll-target="#결과-해석"><span class="header-section-number">8.10</span> 결과 해석</a></li>
+  <li><a href="#최종-정리" id="toc-최종-정리" class="nav-link" data-scroll-target="#최종-정리"><span class="header-section-number">8.11</span> 최종 정리</a></li>
+  </ul></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">포트폴리오 문서</h1>
-<p class="subtitle lead">서버, 클라이언트, 홈랩 DevOps 구현 문서 모음</p>
+<h1 class="title">서버 런타임 구현 포트폴리오</h1>
+<p class="subtitle lead">io_uring 기반 프로토콜 독립 전송 런타임 설계와 구현</p>
 </div>
 
 
 
-<div class="quarto-title-meta column-page">
+<div class="quarto-title-meta">
 
     <div>
     <div class="quarto-title-meta-heading">저자</div>
@@ -75,173 +171,1575 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<div class="summary-grid">
-<div class="summary-card">
-<p><strong>서버</strong></p>
-<p><code>io_uring</code> 기반 C++ 서버 엔진과 web/proxy/game 서비스 확장</p>
+<div class="portfolio-hero">
+<div class="hero-kicker">
+<p>ServerCore / io_uring / Runtime Modules</p>
 </div>
-<div class="summary-card">
-<p><strong>클라이언트</strong></p>
-<p>DirectX 11 아이소메트릭 멀티플레이 던전 RPG 클라이언트</p>
+<section id="프로토콜-독립-전송-런타임" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="프로토콜-독립-전송-런타임"><span class="header-section-number">1</span> 프로토콜 독립 전송 런타임</h2>
+<p>게임 서버에서 시작한 네트워크 구현을 HTTP 서버, TCP/TLS 프록시, 패킷 게임 서버가 공유할 수 있는 Core 런타임으로 분리한 문서입니다. 핵심은 특정 프로토콜 기능이 아니라 완료 통지 기반 I/O에서 세션 수명, 버퍼, 송신 순서, 백프레셔, 워커 간 직렬화 경계를 고정한 과정입니다.</p>
+<div class="hero-meta">
+<div class="hero-meta-item">
+<p><strong>Runtime</strong><br>
+Linux io_uring 기반 TCP 비동기 I/O</p>
 </div>
-<div class="summary-card">
-<p><strong>운영</strong></p>
-<p>GHCR, GitOps, Argo CD, Kubernetes Ingress까지 연결한 홈랩 배포 경로</p>
+<div class="hero-meta-item">
+<p><strong>Core Boundary</strong><br>
+Session, IoEvent, SendQueue, owner ring</p>
 </div>
-<div class="summary-card">
-<p><strong>대시보드</strong></p>
-<p>Cloudflare Tunnel 뒤의 Ops API로 Prometheus와 Proxmox 상태 표시</p>
+<div class="hero-meta-item">
+<p><strong>Modules</strong><br>
+RuntimeWeb, RuntimeProxy, RuntimeGame</p>
 </div>
-</div>
-<section id="문서-서빙-위치" class="level2" data-number="1">
-<h2 data-number="1" class="anchored" data-anchor-id="문서-서빙-위치"><span class="header-section-number">1</span> 문서 서빙 위치</h2>
-<div class="exposure-map pages-note">
-<p><strong>현재 canonical 문서 경로</strong></p>
-<p><code>https://mint-cocoa.github.io/portfolio/</code>는 이 저장소의 GitHub Actions가 <code>docs/</code> 빌드 결과를 <code>_site/</code> Pages artifact로 배포한 상세 포트폴리오 기준 경로입니다. <code>https://portfolio.mintcocoa.cc/</code>는 <code>https://mint-cocoa.github.io/</code> 루트 허브를 C++ <code>RuntimeWeb</code> 컨테이너로 서빙하는 홈랩 미러 경로이며, 상세 문서는 <code>https://portfolio.mintcocoa.cc/portfolio/</code> 아래에 함께 제공합니다.</p>
-</div>
-<div class="doc-grid">
-<section id="서버-구현-포트폴리오" class="level3 doc-card" data-number="1.1">
-<h3 data-number="1.1" class="anchored" data-anchor-id="서버-구현-포트폴리오"><span class="header-section-number">1.1</span> <a href="server/ServerCorePortfolio.html">서버 구현 포트폴리오</a></h3>
-<p><code>iouring-runtime</code>을 단순 예제가 아니라 홈랩 서비스의 기반 서버 엔진으로 삼아 <code>RuntimeWeb</code>, <code>RuntimeProxy</code>, <code>RuntimeGame</code>을 분리 확장한 구현 문서입니다. <code>io_uring</code> 비동기 I/O, 세션 수명관리, 서버 모듈화, 멀티스레드 실행 모델, 벤치마크를 중심으로 C++ 서버 엔진의 구조와 운영 연결 지점을 정리했습니다.</p>
-<div class="serve-path">
-<p><strong>서빙 경로</strong></p>
-<p><code>mint-cocoa.github.io/portfolio/server/ServerCorePortfolio.html</code></p>
-<p><code>GitHub Actions</code> → <code>_site/portfolio</code> → <code>GitHub Pages</code></p>
-</div>
-<div class="serve-path runtime-example">
-<p><strong>연결 문서와 런타임 예제</strong></p>
-<p><a href="server/RuntimeWebPortfolio.html">RuntimeWeb 모듈 구현</a></p>
-<p><a href="server/RuntimeProxyPortfolio.html">RuntimeProxy 모듈 구현</a></p>
-<p><a href="server/RuntimeGamePortfolio.html">RuntimeGame 모듈 구현</a></p>
-<p><a href="https://github.com/mint-cocoa/iouring-runtime/tree/main/examples/web"><code>iouring-runtime/examples/web</code></a></p>
-<p><code>hello_http</code>, <code>status_server</code>, <code>file_store_server</code>, <code>speedtest_server</code>, <code>dropapp</code></p>
-<p><a href="https://github.com/mint-cocoa/iouring-runtime/tree/main/examples/proxy/tcp_reverse_proxy"><code>iouring-runtime/examples/proxy/tcp_reverse_proxy</code></a></p>
-<p><a href="https://github.com/mint-cocoa/iouring-runtime/tree/main/examples/game/dungeon_full_server"><code>iouring-runtime/examples/game/dungeon_full_server</code></a></p>
-<p><a href="https://github.com/mint-cocoa/iouring-runtime/tree/main/examples/game/dungeon_packet_echo"><code>iouring-runtime/examples/game/dungeon_packet_echo</code></a></p>
-</div>
-<div class="tag-row">
-<p><code>C++</code> <code>io_uring</code> <code>Linux</code> <code>Web</code> <code>Proxy</code> <code>Game Server</code></p>
-</div>
-</section>
-<section id="runtimeweb-모듈-구현" class="level3 doc-card" data-number="1.2">
-<h3 data-number="1.2" class="anchored" data-anchor-id="runtimeweb-모듈-구현"><span class="header-section-number">1.2</span> <a href="server/RuntimeWebPortfolio.html">RuntimeWeb 모듈 구현</a></h3>
-<p><code>RuntimeWeb</code>을 서비스 앱이 아니라 HTTP 서버 선택 모듈 기준으로 분리해 설명한 문서입니다. <code>WebServer</code>, <code>HttpSession</code>, <code>HttpParser</code>, <code>Router</code>, <code>RadixTree</code>, <code>HttpResponse</code>, 파일/스트리밍 응답, timeout/backpressure 정책을 다룹니다.</p>
-<div class="serve-path">
-<p><strong>서빙 경로</strong></p>
-<p><code>mint-cocoa.github.io/portfolio/server/RuntimeWebPortfolio.html</code></p>
-<p><code>GitHub Actions</code> → <code>_site/portfolio</code> → <code>GitHub Pages</code></p>
-</div>
-<div class="tag-row">
-<p><code>C++</code> <code>RuntimeWeb</code> <code>HTTP</code> <code>Streaming</code> <code>Backpressure</code></p>
-</div>
-</section>
-<section id="runtimeproxy-모듈-구현" class="level3 doc-card" data-number="1.3">
-<h3 data-number="1.3" class="anchored" data-anchor-id="runtimeproxy-모듈-구현"><span class="header-section-number">1.3</span> <a href="server/RuntimeProxyPortfolio.html">RuntimeProxy 모듈 구현</a></h3>
-<p><code>RuntimeProxy</code>를 TCP reverse proxy 선택 모듈 기준으로 분리해 설명한 문서입니다. <code>TcpProxyServer</code>, <code>ProxyBridge</code>, <code>ProxyConnector</code>, TLS/SNI 라우팅, ACME challenge, metrics snapshot, stream backpressure 정책을 다룹니다.</p>
-<div class="serve-path">
-<p><strong>서빙 경로</strong></p>
-<p><code>mint-cocoa.github.io/portfolio/server/RuntimeProxyPortfolio.html</code></p>
-<p><code>GitHub Actions</code> → <code>_site/portfolio</code> → <code>GitHub Pages</code></p>
-</div>
-<div class="tag-row">
-<p><code>C++</code> <code>RuntimeProxy</code> <code>TCP</code> <code>TLS</code> <code>SNI</code></p>
-</div>
-</section>
-<section id="runtimegame-모듈-구현" class="level3 doc-card" data-number="1.4">
-<h3 data-number="1.4" class="anchored" data-anchor-id="runtimegame-모듈-구현"><span class="header-section-number">1.4</span> <a href="server/RuntimeGamePortfolio.html">RuntimeGame 모듈 구현</a></h3>
-<p><code>RuntimeGame</code>을 게임 서비스 앱이 아니라 packet session과 Room 실행 모듈 기준으로 분리해 설명한 문서입니다. <code>PacketSession</code>, <code>PacketBuilder</code>, <code>PlayerRegistry</code>, <code>Room</code>, <code>RoomManager</code>, <code>JobQueue</code> 기반 Room 직렬 실행을 다룹니다.</p>
-<div class="serve-path">
-<p><strong>서빙 경로</strong></p>
-<p><code>mint-cocoa.github.io/portfolio/server/RuntimeGamePortfolio.html</code></p>
-<p><code>GitHub Actions</code> → <code>_site/portfolio</code> → <code>GitHub Pages</code></p>
-</div>
-<div class="tag-row">
-<p><code>C++</code> <code>RuntimeGame</code> <code>PacketSession</code> <code>Room</code> <code>JobQueue</code></p>
-</div>
-</section>
-<section id="클라이언트-구현-포트폴리오" class="level3 doc-card client" data-number="1.5">
-<h3 data-number="1.5" class="anchored" data-anchor-id="클라이언트-구현-포트폴리오"><span class="header-section-number">1.5</span> <a href="client/ClientPortfolio.html">클라이언트 구현 포트폴리오</a></h3>
-<p>DirectX 11 렌더링, 씬 전환, TCP 패킷 처리, 게임 UI를 직접 구현한 클라이언트 문서입니다.</p>
-<div class="serve-path">
-<p><strong>서빙 경로</strong></p>
-<p><code>mint-cocoa.github.io/portfolio/client/ClientPortfolio.html</code></p>
-<p><code>GitHub Actions</code> → <code>_site/portfolio</code> → <code>GitHub Pages</code></p>
-</div>
-<div class="tag-row">
-<p><code>C++</code> <code>DirectX 11</code> <code>Protobuf</code> <code>RPG Client</code></p>
-</div>
-</section>
-<section id="홈랩-devops-포트폴리오" class="level3 doc-card devops" data-number="1.6">
-<h3 data-number="1.6" class="anchored" data-anchor-id="홈랩-devops-포트폴리오"><span class="header-section-number">1.6</span> <a href="devops/DevOpsPortfolio.html">홈랩 DevOps 포트폴리오</a></h3>
-<p>직접 만든 C++ 서버 엔진 기반 앱을 컨테이너 이미지, GitOps, Argo CD, Kubernetes로 배포하고 운영 자동화까지 연결한 홈랩 운영 문서입니다.</p>
-<div class="serve-path">
-<p><strong>서빙 경로</strong></p>
-<p><code>mint-cocoa.github.io/portfolio/devops/DevOpsPortfolio.html</code></p>
-<p><code>GitHub Actions</code> → <code>_site/portfolio</code> → <code>GitHub Pages</code></p>
-</div>
-<div class="tag-row">
-<p><code>Kubernetes</code> <code>GitOps</code> <code>Argo CD</code> <code>GHCR</code></p>
-</div>
-</section>
-<section id="live-ops-dashboard" class="level3 doc-card ops" data-number="1.7">
-<h3 data-number="1.7" class="anchored" data-anchor-id="live-ops-dashboard"><span class="header-section-number">1.7</span> <a href="devops/OpsDashboard.html">Live Ops Dashboard</a></h3>
-<p><code>ops-api.mintcocoa.cc</code>를 통해 Prometheus target, Kubernetes workload, Proxmox node/VM 상태를 실시간으로 읽는 대시보드입니다.</p>
-<div class="serve-path">
-<p><strong>서빙/조회 경로</strong></p>
-<p><code>mint-cocoa.github.io/portfolio/devops/OpsDashboard.html</code></p>
-<p><code>browser</code> → <code>GitHub Pages static page</code> → <code>https://ops-api.mintcocoa.cc/api/*</code></p>
-</div>
-<div class="tag-row">
-<p><code>Quarto Dashboard</code> <code>Prometheus</code> <code>Proxmox</code> <code>Cloudflare Tunnel</code></p>
 </div>
 </section>
 </div>
-<div class="exposure-map">
-<p><strong>공개 문서 노출 경로</strong></p>
-<p><code>GitHub push</code> → <code>GitHub Actions</code> → <code>docs/</code> render → <code>_site/</code> Pages artifact → <code>https://mint-cocoa.github.io/portfolio/</code></p>
-<p><code>portfolio.mintcocoa.cc</code>는 GitHub Pages custom domain이 아니라 홈랩 edge proxy 뒤의 C++ <code>RuntimeWeb</code> 미러입니다. 루트는 <code>mint-cocoa.github.io</code> 허브 앱과 같은 React/Vite 산출물을 서빙하고, 상세 문서는 같은 컨테이너의 <code>/portfolio/</code> 아래에 포함합니다. Live Ops Dashboard는 GitHub Pages와 홈랩 미러 두 경로 모두에서 <code>https://ops-api.mintcocoa.cc/api/*</code>를 호출해 Prometheus와 Proxmox 상태를 읽습니다.</p>
+<div class="signal-strip">
+<div class="signal-item">
+<p><strong>Completion first</strong></p>
+<p>SQE 제출보다 CQE가 늦게 도착하는 상황의 수명 판단을 먼저 고정합니다.</p>
 </div>
-</section>
-<section id="관련-레포" class="level2" data-number="2">
-<h2 data-number="2" class="anchored" data-anchor-id="관련-레포"><span class="header-section-number">2</span> 관련 레포</h2>
+<div class="signal-item">
+<p><strong>One active send</strong></p>
+<p>세션당 하나의 활성 송신 작업으로 부분 송신과 메시지 순서 뒤섞임을 막습니다.</p>
+</div>
+<div class="signal-item">
+<p><strong>Bounded pressure</strong></p>
+<p>느린 소비자 앞에서는 생산 위치를 늦추고 보류 queue에는 한도를 둡니다.</p>
+</div>
+<div class="signal-item">
+<p><strong>Protocol outside Core</strong></p>
+<p>HTTP, Proxy, Game 의미는 Core 밖 모듈에서 해석합니다.</p>
+</div>
+</div>
+<section id="문서-구성" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="문서-구성"><span class="header-section-number">2</span> 문서 구성</h2>
+<div class="chapter-map">
+<div class="chapter-card">
+<p><a href="#runtime-설계와-실행-모델" class="chapter-number">01</a></p>
+<p class="chapter-title">
+Runtime 설계와 실행 모델
+</p>
+<p>io_uring 기반 Core가 소켓, CQE, Session을 어떻게 하나의 실행 모델로 묶는지 정리합니다.</p>
+</div>
+<div class="chapter-card">
+<p><a href="#수명-관리" class="chapter-number">02</a></p>
+<p class="chapter-title">
+수명 관리
+</p>
+<p>SessionManager, IoEvent, pending_io_, SessionState가 각각 어느 생존 범위를 판단하는지 분리합니다.</p>
+</div>
+<div class="chapter-card">
+<p><a href="#버퍼-관리" class="chapter-number">03</a></p>
+<p class="chapter-title">
+버퍼 관리
+</p>
+<p>수신 fast/slow path와 송신 순서 보장, 부분 송신 복구를 설명합니다.</p>
+</div>
+<div class="chapter-card">
+<p><a href="#room과-session-직렬화" class="chapter-number">04</a></p>
+<p class="chapter-title">
+Room과 Session 직렬화
+</p>
+<p>Room 상태 순서, WorkerOutbox, Session owner ring이 서로 다른 순서를 보장하는 이유를 다룹니다.</p>
+</div>
+<div class="chapter-card">
+<p><a href="#생산-소비-백프레셔" class="chapter-number">05</a></p>
+<p class="chapter-title">
+생산/소비 백프레셔
+</p>
+<p>SendQueue, Proxy, Paused recv, HTTP streaming에서 느린 소비자 앞의 생산 위치를 조절합니다.</p>
+</div>
+<div class="chapter-card">
+<p><a href="#선택-모듈-검증-최종-정리" class="chapter-number">06</a></p>
+<p class="chapter-title">
+선택 모듈, 검증, 최종 정리
+</p>
+<p>Web/Proxy/Game 모듈과 검증 결과를 통해 Core 불변식이 유지되는지 확인합니다.</p>
+</div>
+</div>
+<div class="repo-links">
 <table class="caption-top table">
 <thead>
 <tr class="header">
-<th>레포</th>
-<th>역할</th>
+<th>항목</th>
+<th>링크</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="https://github.com/mint-cocoa/portfolio">portfolio</a></td>
-<td>이 문서 묶음과 C++ 정적 파일 서버 이미지</td>
-</tr>
-<tr class="even">
+<td>구현 저장소</td>
 <td><a href="https://github.com/mint-cocoa/iouring-runtime">iouring-runtime</a></td>
-<td>최신 <code>io_uring</code> Runtime, <code>RuntimeWeb</code>, <code>RuntimeProxy</code>, <code>RuntimeGame</code>, 웹/프록시/게임 예제</td>
-</tr>
-<tr class="odd">
-<td><a href="https://github.com/mint-cocoa/libiouring-core">libiouring-core</a></td>
-<td>통합 이전 코어 런타임 히스토리</td>
 </tr>
 <tr class="even">
-<td><a href="https://github.com/mint-cocoa/libiouringweb">libiouringweb</a></td>
-<td>통합 이전 HTTP/web 계층 히스토리</td>
+<td>공개 문서 기준 URL</td>
+<td><a href="https://mint-cocoa.github.io/portfolio/">mint-cocoa.github.io/portfolio/</a></td>
 </tr>
 <tr class="odd">
-<td><a href="https://github.com/mint-cocoa/multiplayer-dungeon-rpg-server">multiplayer-dungeon-rpg-server</a></td>
-<td><code>dungeon_full_server</code>로 흡수된 멀티플레이 던전 RPG 서버 히스토리</td>
-</tr>
-<tr class="even">
-<td><a href="https://github.com/mint-cocoa/game-client">game-client</a></td>
-<td>DirectX 11 게임 클라이언트</td>
-</tr>
-<tr class="odd">
-<td><a href="https://github.com/mint-cocoa/home-k8s-gitops">home-k8s-gitops</a></td>
-<td>홈 Kubernetes desired state</td>
+<td>기존 세부 서버 문서</td>
+<td><a href="server/ServerCorePortfolio.html">ServerCorePortfolio.html</a></td>
 </tr>
 </tbody>
 </table>
+</div>
+</section>
+<section id="runtime-설계와-실행-모델" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="runtime-설계와-실행-모델"><span class="header-section-number">3</span> Runtime 설계와 실행 모델</h2>
+<section id="전체-구조" class="level3" data-number="3.1">
+<h3 data-number="3.1" class="anchored" data-anchor-id="전체-구조"><span class="header-section-number">3.1</span> 전체 구조</h3>
+<p><code>ServerCore</code>는 Linux <code>io_uring</code>을 기반으로 구현한 비동기 서버 런타임입니다.</p>
+<p>처음에는 게임 서버를 만들기 위한 기반 코드로 시작했지만, 구현을 진행하면서 TCP 연결 수락, 수신/송신, 시간 초과와 취소, 버퍼 소유권, 세션 수명주기, 스레드 간 작업 전달과 같은 요소들이 특정 게임 로직에만 종속되는 기능이 아니라는 점을 알게 되었습니다. 이들은 여러 서버 애플리케이션에서 공통적으로 필요한 실행 기반에 가깝다고 판단했고, 해당 기능들을 게임 서버 코드에 직접 묶어두지 않고 여러 프로토콜과 서비스가 공유할 수 있는 Core 런타임으로 분리했습니다.</p>
+<p>Core의 역할은 바이트 스트림을 수신하고 송신하며, 비동기 I/O 완료 통지를 처리하는 것입니다. 다만 수신된 바이트가 HTTP 요청인지, 프록시 스트림인지, 게임 패킷인지는 Core가 해석하지 않습니다. HTTP, Proxy, Game은 Core 위에 올라가는 선택 모듈로 분리되며, 각 모듈은 자신에게 필요한 파서, 라우팅, 패킷 프레이밍, Room 실행 모델과 같은 기능만 추가합니다.</p>
+<p>따라서 <code>ServerCore</code>의 책임은 특정 프로토콜을 처리하는 서버 자체를 구현하는 것이 아니라, 여러 프로토콜이 공통으로 사용할 수 있는 비동기 I/O와 세션 실행 기반을 제공하는 것입니다.</p>
+<p>구현된 런타임은 <code>io_uring</code> 기반 TCP 비동기 I/O 처리와 그 수명주기를 관리합니다. 각 소켓은 <code>Session</code> 단위로 감싸지며, 연결 수락, 수신/송신, 버퍼 관리, 시간 초과, 취소, 동시성 제어, 세션 수명주기 처리는 Core에서 담당합니다.</p>
+<p>프로토콜 해석과 애플리케이션 정책은 상위 모듈로 분리됩니다. 예를 들어 Web 요청은 Core의 <code>Session</code>을 통해 수신된 뒤 <code>HttpSession::OnRecv()</code>로 전달되고, HTTP 파싱, 라우팅, 핸들러 실행은 Web 모듈에서 처리됩니다. 응답 데이터는 다시 Core의 <code>Session::Send()</code>를 통해 송신 경로로 내려갑니다.</p>
+<p><code>HttpSession</code>과 <code>PacketSession</code>은 모두 Core의 <code>Session</code>을 기반으로 동작하지만, 수신된 TCP 바이트 스트림을 메시지 단위로 해석하는 방식이 다릅니다. <code>PacketSession</code>은 <code>[size][id][payload]</code> 형식의 고정 헤더를 기준으로 패킷 경계를 판단하고, <code>HttpSession</code>은 HTTP 파서 상태를 유지하며 헤더 종료, <code>Content-Length</code>, chunked 본문, 파이프라이닝 여부를 해석합니다.</p>
+<p>즉, Core는 연결 수명주기와 비동기 I/O 처리, 버퍼 및 완료 이벤트 관리를 공통으로 담당하고, 스트림을 어떤 메시지 모델로 변환할지는 각 프로토콜 세션이 담당합니다. 이를 통해 게임 서버뿐 아니라 HTTP 서버, 프록시 서버, 패킷 기반 서비스 등 다양한 서버 모듈이 동일한 Core 런타임 위에서 동작할 수 있도록 설계했습니다.</p>
+</section>
+<section id="주요-클래스" class="level3" data-number="3.2">
+<h3 data-number="3.2" class="anchored" data-anchor-id="주요-클래스"><span class="header-section-number">3.2</span> 주요 클래스</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Core</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Listener</code></td>
+<td>소켓 bind/listen, 다중 완료 연결 수락, 연결 분산</td>
+</tr>
+<tr class="even">
+<td><code>Session</code></td>
+<td>fd 상태, 수신/송신 흐름, 닫힘 상태 전환</td>
+</tr>
+<tr class="odd">
+<td><code>IoRing</code></td>
+<td>SQE 제출, CQE 비우기, <code>user_data</code> 기반 이벤트 복원</td>
+</tr>
+<tr class="even">
+<td><code>RingBuffer</code></td>
+<td>제공 버퍼 관리, 뷰 생성, 반환 정책</td>
+</tr>
+<tr class="odd">
+<td><code>SendQueue</code></td>
+<td>대기 중인 송신 관리, 부분 송신 재시도, watermark</td>
+</tr>
+<tr class="even">
+<td><code>Timeout / Cancel</code></td>
+<td>비활성 시간, deadline, 취소 요청</td>
+</tr>
+<tr class="odd">
+<td><code>Owner Ring</code></td>
+<td>세션 I/O 상태 직렬화</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="실행-루프" class="level3" data-number="3.3">
+<h3 data-number="3.3" class="anchored" data-anchor-id="실행-루프"><span class="header-section-number">3.3</span> 실행 루프</h3>
+<p>실행 흐름의 중심은 <code>IoRing</code>입니다. <code>IoRing</code>은 사용자 객체를 <code>IoEvent</code>로 감싼 뒤 SQE에 연결해 커널에 제출하고, CQE가 도착하면 <code>user_data</code>에서 다시 <code>IoEvent</code>를 복원합니다. 복원된 이벤트는 해당 <code>Session</code> 또는 <code>Listener</code>로 dispatch됩니다.</p>
+<p>이때 <code>IoRing</code>은 완료 통지를 사용자 객체로 되돌리는 실행 장치이고, <code>Session</code>은 그 완료가 연결 상태, 수신/송신 큐, 버퍼 반환, 종료 절차에 어떤 의미를 갖는지 판단하는 소유 객체입니다.</p>
+<p>실행 루프는 다음 다섯 구간으로 나눌 수 있습니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 54%">
+<col style="width: 31%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>구간</th>
+<th>책임</th>
+<th>의미</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>submit</td>
+<td><code>IoEvent</code>를 SQE에 연결하고 커널에 제출</td>
+<td>사용자 객체와 커널 작업을 묶는 지점</td>
+</tr>
+<tr class="even">
+<td>kernel</td>
+<td><code>io_uring</code>이 비동기 작업을 수행하고 CQE 생성</td>
+<td>사용자 코드 밖에서 I/O가 진행되는 구간</td>
+</tr>
+<tr class="odd">
+<td>cqe restore</td>
+<td><code>IoRing</code>이 CQE를 꺼내 <code>user_data</code>에서 이벤트 복원</td>
+<td>커널 완료가 런타임 객체로 돌아오는 경계</td>
+</tr>
+<tr class="even">
+<td>dispatch</td>
+<td>복원된 이벤트를 <code>Session</code> 또는 <code>Listener</code> 콜백으로 전달</td>
+<td>완료 통지를 소유 객체에 넘기는 경계</td>
+</tr>
+<tr class="odd">
+<td>disposition</td>
+<td>콜백 결과로 이벤트 처분 결정</td>
+<td>완료, 유지, 재제출 중 무엇을 할지 판단</td>
+</tr>
+</tbody>
+</table>
+<p>세션 콜백은 이번 CQE로 이벤트가 끝났는지, 같은 multishot 제출이 계속 살아 있는지, 또는 같은 이벤트 객체로 새 SQE를 재제출했는지를 반환합니다. 이 결과에 따라 <code>IoRing</code>은 이벤트를 정리하거나 유지하거나 다시 제출 상태로 둡니다.</p>
+<p>전체 흐름은 다음과 같습니다.</p>
+<pre class="text"><code>상위 모듈
+  -&gt; Session::Send() / OnRecv()
+  -&gt; Core Session 상태 변경
+  -&gt; IoEvent 생성
+  -&gt; IoRing submit
+  -&gt; kernel io_uring 처리
+  -&gt; CQE 도착
+  -&gt; IoRing user_data 복원
+  -&gt; Session / Listener dispatch
+  -&gt; DispatchResult에 따라 완료, 유지, 재제출</code></pre>
+<p>이 구조 덕분에 Core는 프로토콜을 해석하지 않으면서도, 비동기 I/O 완료, 버퍼 수명, 세션 종료, 재제출 여부를 일관된 실행 모델 안에서 처리할 수 있습니다.</p>
+<hr>
+</section>
+</section>
+<section id="수명-관리" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="수명-관리"><span class="header-section-number">4</span> 수명 관리</h2>
+<p>클라이언트와 서버 간의 연결을 <code>Session</code>으로 추상화하면 “세션이 살아 있다”는 말이 여러 의미로 나누어집니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>의미</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>관리 대상 생존</td>
+<td><code>SessionManager</code>의 연결 목록에 남아 있음</td>
+</tr>
+<tr class="even">
+<td>콜백 대상 생존</td>
+<td>CQE 콜백을 실행하는 동안 <code>Session</code> 객체가 파괴되지 않음</td>
+</tr>
+<tr class="odd">
+<td>제출 I/O 생존</td>
+<td>이미 커널에 제출된 I/O의 CQE가 아직 돌아올 수 있음</td>
+</tr>
+<tr class="even">
+<td>논리 상태 생존</td>
+<td>새 수신, 송신, 등록 작업을 받아도 되는 상태임</td>
+</tr>
+</tbody>
+</table>
+<p>이 의미들을 하나의 소유권 규칙으로 합치면 종료 경로가 불명확해집니다. 예를 들어 <code>SessionManager</code>에서 세션을 제거했다고 해서 이미 제출된 CQE가 더 이상 오지 않는 것은 아닙니다. 반대로 pending I/O가 남아 있다고 해서 외부에서 정상 연결된 세션으로 취급해야 하는 것도 아닙니다.</p>
+<p>따라서 이 코드에서는 수명 관리 장치를 하나의 소유권 이야기로 합치지 않고, 각 장치가 판단하는 범위를 분리했습니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 17%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>장치</th>
+<th>판단 범위</th>
+<th>결정하는 것</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>SessionManager</code></td>
+<td>애플리케이션 관리</td>
+<td>외부에서 연결된 세션으로 취급할지</td>
+</tr>
+<tr class="even">
+<td><code>OwnerBoundEvent</code></td>
+<td>콜백 내부 생존</td>
+<td>제출 이벤트가 owner 생존과 handler 호출을 함께 보장할지</td>
+</tr>
+<tr class="odd">
+<td><code>DispatchResult</code></td>
+<td>이벤트 객체 생존</td>
+<td>이번 CQE 이후 이벤트 객체를 완료, 유지, 재사용할지</td>
+</tr>
+<tr class="even">
+<td><code>pending_io_</code></td>
+<td>세션 전체 제출 추적</td>
+<td>아직 최종 CQE가 돌아오지 않은 제출 I/O가 있는지</td>
+</tr>
+<tr class="odd">
+<td><code>SessionState</code></td>
+<td>세션 논리 상태</td>
+<td>새 작업 허용 여부와 종료 단계</td>
+</tr>
+</tbody>
+</table>
+<section id="제출된-io와-콜백-대상-생존" class="level3" data-number="4.1">
+<h3 data-number="4.1" class="anchored" data-anchor-id="제출된-io와-콜백-대상-생존"><span class="header-section-number">4.1</span> 제출된 I/O와 콜백 대상 생존</h3>
+<p><code>SessionManager</code>는 외부에서 세션을 “현재 연결된 세션”으로 취급하는 동안의 소유자입니다. 하지만 이것만으로는 이미 <code>io_uring</code>에 제출된 I/O의 CQE 콜백 대상 생존을 보장할 수 없습니다.</p>
+<p><code>io_uring</code>에는 콜백 객체를 직접 실을 수 없습니다. SQE의 <code>user_data</code>에는 제출된 I/O 하나를 대표하는 <code>IoEvent*</code>만 저장하고, CQE가 도착하면 같은 <code>IoEvent*</code>를 복원해 완료 처리를 위임합니다.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span><span class="op">*</span> ev <span class="op">=</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span>IoEvent<span class="op">*&gt;(</span>data<span class="op">);</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="kw">auto</span> dispatch_result <span class="op">=</span> ev<span class="op">-&gt;</span>Complete<span class="op">(</span>result<span class="op">,</span> flags<span class="op">);</span></span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>IoRing</code>은 이 이벤트가 <code>Session</code> 작업인지, <code>Listener</code> 작업인지 알 필요가 없습니다. <code>IoEvent::Complete()</code>를 호출하면, 이벤트 객체의 가상 <code>Dispatch()</code>가 실행되고 각 operation 타입이 자기 owner의 처리 함수로 넘깁니다.</p>
+<pre><code>SessionManager
+  └── 외부에서 접근 가능한 현재 연결 목록을 관리
+
+RecvOp / SendOp / DisconnectOp / AcceptOp
+  ├── 제출된 I/O 하나를 대표
+  ├── owner shared_ptr 보관
+  ├── CQE 완료 시 Dispatch() 실행
+  └── owner의 실제 handler 호출
+
+IoRing
+  └── owner 타입을 모르고 IoEvent::Complete()만 호출</code></pre>
+<p>따라서 콜백 대상 생존은 <code>SessionManager</code>가 아니라 제출된 operation 객체가 보장합니다. <code>SessionManager</code>는 “현재 연결 목록”을 관리하고, <code>RecvOp</code>나 <code>SendOp</code> 같은 제출 이벤트는 “이미 커널에 제출된 I/O가 완료될 때까지 콜백 대상을 살려두는 책임”을 가집니다.</p>
+</section>
+<section id="dispatchresult와-pending_io_" class="level3" data-number="4.2">
+<h3 data-number="4.2" class="anchored" data-anchor-id="dispatchresult와-pending_io_"><span class="header-section-number">4.2</span> <code>DispatchResult</code>와 <code>pending_io_</code></h3>
+<p>CQE를 처리한 뒤에는 두 가지를 따로 판단해야 합니다.</p>
+<ol type="1">
+<li>이번 CQE를 받은 <code>IoEvent</code> 객체를 끝내도 되는지</li>
+<li>세션 전체에서 아직 돌아오지 않은 제출 I/O가 남아 있는지</li>
+</ol>
+<p>multishot 수신에서는 하나의 SQE가 여러 CQE를 만들 수 있습니다. 중간 CQE는 데이터를 하나 전달하지만, 같은 수신 제출은 계속 살아 있을 수 있습니다. 따라서 CQE 하나를 받았다고 해서 항상 제출 I/O 하나가 끝났다고 볼 수 없었습니다.</p>
+<p>이를 분리하기 위해 이벤트 콜백은 <code>DispatchResult</code>를 반환하고, 세션은 제출 I/O 단위로 <code>pending_io_</code>를 관리합니다.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">auto</span><span class="op">*</span> ev <span class="op">=</span> <span class="kw">reinterpret_cast</span><span class="op">&lt;</span>IoEvent<span class="op">*&gt;(</span>data<span class="op">);</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="at">const</span> <span class="kw">auto</span> dispatch_result <span class="op">=</span> ev<span class="op">-&gt;</span>Complete<span class="op">(</span>result<span class="op">,</span> flags<span class="op">);</span></span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>값</th>
+<th>의미</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>kComplete</code></td>
+<td>이번 CQE 처리 뒤 이벤트 객체를 완료 처리할 수 있음</td>
+</tr>
+<tr class="even">
+<td><code>kPending</code></td>
+<td>이번 CQE 처리 뒤에도 이벤트 객체를 유지해야 함</td>
+</tr>
+</tbody>
+</table>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 41%">
+<col style="width: 17%">
+<col style="width: 21%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>경로</th>
+<th>CQE 의미</th>
+<th><code>DispatchResult</code></th>
+<th><code>pending_io_</code> 처리</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>단일 송신 완료</td>
+<td>제출한 send 하나가 끝남</td>
+<td><code>kComplete</code></td>
+<td>감소</td>
+</tr>
+<tr class="even">
+<td>짧은 쓰기</td>
+<td>같은 <code>SendOp</code>를 남은 바이트 범위의 새 send SQE에 재제출</td>
+<td><code>kPending</code></td>
+<td>재제출 성공 시 유지, 실패 시 감소</td>
+</tr>
+<tr class="odd">
+<td>multishot 수신 중간 CQE</td>
+<td>데이터는 받았지만 같은 multishot 제출이 계속 살아 있음</td>
+<td><code>kPending</code></td>
+<td>유지</td>
+</tr>
+<tr class="even">
+<td>multishot 수신 최종 CQE</td>
+<td>multishot 제출이 종료됨</td>
+<td><code>kComplete</code></td>
+<td>감소</td>
+</tr>
+<tr class="odd">
+<td>cancel/shutdown 완료</td>
+<td>종료용 제출이 완료됨</td>
+<td><code>kComplete</code></td>
+<td>감소</td>
+</tr>
+</tbody>
+</table>
+<p>대표적인 경우는 두 가지입니다. 첫째, multishot receive에서 <code>IORING_CQE_F_MORE</code>가 붙은 CQE는 중간 완료입니다. 같은 수신 SQE에서 CQE가 더 올 수 있으므로 이벤트 객체를 유지하고, <code>pending_io_</code>도 감소시키지 않습니다.</p>
+<p>두번째 문제는 커널에 요청한 send 가 부분적으로 전송되었을때 입니다.</p>
+<p>이떄 CQE를 받은 뒤 같은 <code>SendOp</code>를 남은 바이트 범위의 새 send SQE에 다시 연결해야 하므로 이벤트 객체를 삭제하지 않고<code>kPending</code>을 반환합니다. 재제출이 성공하면 그대로 유지하고 재제출이 실패한 경우에만 <code>CompletePendingIo()</code>로 기존 제출분을 정리합니다.</p>
+<p><code>kComplete</code>는 이번 CQE 처리 뒤 이벤트 객체를 완료 처리할 수 있다는 뜻입니다. 단일 send 완료, cancel 완료, shutdown 완료, 또는 <code>IORING_CQE_F_MORE</code>가 없는 multishot 최종 CQE가 여기에 해당합니다.</p>
+</section>
+<section id="종료-가능-상태" class="level3" data-number="4.3">
+<h3 data-number="4.3" class="anchored" data-anchor-id="종료-가능-상태"><span class="header-section-number">4.3</span> 종료 가능 상태</h3>
+<p><code>pending_io_</code>는 이미 제출된 I/O가 남았는지만 셉니다. 하지만 종료가 시작된 세션이 새 수신, 송신, 등록 작업을 받아도 되는지는 별도의 상태 판단입니다.</p>
+<p>이를 위해 세션은 논리 상태를 가집니다.</p>
+<div class="line-block">SessionState` | 의미 |<br>
+————- | ————————- |<br>
+<code>kOpen</code> | 정상 송수신 가능 |<br>
+<code>kClosing</code> | 종료 시작, 새 일반 작업 차단 |<br>
+<code>kDraining</code> | 종료 관련 제출 이후 남은 CQE를 비우는 중 |<br>
+<code>kClosed</code> | 연결 종료 통지와 manager 해제 완료 |</div>
+<p>종료 흐름은 “새 작업 차단 → 종료 관련 작업 제출 → 남은 CQE 비우기 → 한 번만 해제” 순서로 진행됩니다.</p>
+<ol type="1">
+<li><p><code>Disconnect()</code>가 호출되면 <code>SessionState</code>를 <code>kClosing</code>으로 전환</p></li>
+<li><p><code>kOpen</code>이 아니면 새 수신, 새 송신, 새 등록 작업을 차단</p></li>
+<li><p>이미 큐에 들어간 송신 데이터는 정책에 따라 폐기하거나, 종료 전에 drain할지 결정</p></li>
+<li><p>취소, <code>shutdown</code>, close 관련 정리처럼 커널 제출이 필요한 종료 작업을 등록</p></li>
+<li><p>제출에 성공한 종료 작업은 <code>pending_io_</code>에 반영</p></li>
+<li><p>CQE가 도착할 때마다 이벤트 dispatch가 <code>DispatchResult</code>를 반환</p></li>
+<li><p>최종 완료 CQE는 <code>pending_io_</code>를 감소</p></li>
+<li><p><code>ClosingStarted() &amp;&amp; pending_io_ == 0 &amp;&amp; !disconnected_notified_</code> 조건을 통과하면 <code>TryRelease()</code>가 <code>OnDisconnected()</code>와 manager 해제를 한 번만 실행</p></li>
+<li><p>해제가 끝나면 상태를 <code>kClosed</code>로 전환</p></li>
+</ol>
+<p><code>SessionState</code>가 없으면 이미 종료가 시작된 세션에 새 작업이 다시 들어갈 수 있습니다. 예를 들어 수신 CQE에서 <code>res == 0</code>을 보고 peer close를 감지해 종료를 시작했는데, 다른 경로의 <code>Send()</code>나 <code>RegisterRecv()</code>가 아직 세션을 정상 상태로 보고 새 SQE를 제출할 수 있습니다.</p>
+<p>이 경우 다음과 같은 버그가 생길 수 있습니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 21%">
+<col style="width: 78%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>버그</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>종료 중 새 recv 등록</td>
+<td>닫히는 세션에 multishot recv가 다시 걸려 종료가 끝나지 않음</td>
+</tr>
+<tr class="even">
+<td>send after close</td>
+<td>이미 닫히는 소켓에 새 송신이 들어가 <code>EBADF</code>, <code>ECANCELED</code>, <code>EPIPE</code>류 오류가 뒤늦게 발생</td>
+</tr>
+<tr class="odd">
+<td><code>pending_io_</code> 재증가</td>
+<td>drain 중이던 세션의 pending 카운터가 다시 증가해 해제 조건이 흔들림</td>
+</tr>
+<tr class="even">
+<td>이중 연결 종료 통지</td>
+<td>서로 다른 CQE 경로가 동시에 종료 조건을 만족해 <code>OnDisconnected()</code>가 중복 호출될 수 있음</td>
+</tr>
+<tr class="odd">
+<td>이벤트/버퍼 수명 꼬임</td>
+<td>종료 중 폐기한 송신 버퍼나 이벤트 객체를 늦은 CQE가 다시 참조할 수 있음</td>
+</tr>
+<tr class="even">
+<td>세션 부활</td>
+<td>manager에서 제거해야 할 세션에 새 작업이 붙으면서 외부 관점의 종료 상태와 내부 I/O 상태가 어긋남</td>
+</tr>
+</tbody>
+</table>
+<p>따라서 <code>SessionState</code>는 <code>pending_io_</code>와 별개로 이미 제출한 I/O가 남았는지를 판단하고, <code>SessionState</code>는 “지금 새 I/O를 받아도 되는지를 판단합니다.</p>
+</section>
+<section id="해제-조건" class="level3" data-number="4.4">
+<h3 data-number="4.4" class="anchored" data-anchor-id="해제-조건"><span class="header-section-number">4.4</span> 해제 조건</h3>
+<p>세션 해제는 다음 조건이 모두 만족되어야 합니다.</p>
+<pre class="text"><code>1. 세션이 종료를 시작한 상태.
+2. 새 일반 작업이 차단되어 있음.
+3. 이미 제출된 I/O의 최종 CQE가 모두 돌아왔다.
+4. 종료 통지가 아직 실행되지 않았다.</code></pre>
+<p>이를 코드 관점으로 표현하면 다음과 같습니다.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="dt">bool</span> Session<span class="op">::</span>CanRelease<span class="op">()</span> <span class="at">const</span> <span class="op">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="va">state_</span> <span class="op">!=</span> SessionState<span class="op">::</span>kOpen</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>        <span class="op">&amp;&amp;</span> <span class="va">pending_io_</span> <span class="op">==</span> <span class="dv">0</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="va">disconnected_notified_</span><span class="op">;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>TryRelease()</code>는 이 조건을 통과한 경우에만 <code>OnDisconnected()</code>와 <code>SessionManager</code> 해제를 수행합니다. 또한 <code>disconnected_notified_</code>를 통해 동일 세션의 종료 통지가 한 번만 실행되도록 막습니다.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode cpp code-with-copy"><code class="sourceCode cpp"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> Session<span class="op">::</span>TryRelease<span class="op">()</span> <span class="op">{</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="op">(!</span>CanRelease<span class="op">())</span> <span class="op">{</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span><span class="op">;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="op">}</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="va">disconnected_notified_</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="va">state_</span> <span class="op">=</span> SessionState<span class="op">::</span>kClosed<span class="op">;</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    OnDisconnected<span class="op">();</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="va">manager_</span><span class="op">-&gt;</span>Remove<span class="op">(</span><span class="va">session_id_</span><span class="op">);</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="co">//세션 소유자 실행 문맥에서 호출되어야 순서가 보장됨</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="결론" class="level3" data-number="4.5">
+<h3 data-number="4.5" class="anchored" data-anchor-id="결론"><span class="header-section-number">4.5</span> 결론</h3>
+<p>이 구조에서 각 장치는 같은 <code>Session</code>을 다루지만 서로 다른 경계를 다루고 있습니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 5%">
+<col style="width: 10%">
+<col style="width: 28%">
+<col style="width: 29%">
+<col style="width: 15%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>구분</th>
+<th><code>SessionManager</code></th>
+<th><code>OwnerBoundEvent</code></th>
+<th><code>SessionState</code></th>
+<th><code>DispatchResult</code></th>
+<th><code>pending_io_</code></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>대상</td>
+<td>외부 연결 목록</td>
+<td>CQE 콜백 대상과 handler 바인딩</td>
+<td>세션 전체</td>
+<td>CQE를 받은 <code>IoEvent</code> 하나</td>
+<td>세션이 제출한 I/O 전체</td>
+</tr>
+<tr class="even">
+<td>질문</td>
+<td>외부에서 연결된 세션인가?</td>
+<td>어떤 owner의 어떤 handler를 안전하게 호출할 것인가?</td>
+<td>새 작업을 받아도 되는 상태인가?</td>
+<td>이번 CQE 뒤 이벤트를 유지해야 하나?</td>
+<td>아직 최종 CQE가 남았나?</td>
+</tr>
+<tr class="odd">
+<td>대표 값</td>
+<td>manager map/list</td>
+<td><code>RecvOp</code>, <code>SendOp</code>, <code>AcceptOp</code>, <code>CancelOp</code></td>
+<td><code>kOpen</code>, <code>kClosing</code>, <code>kDraining</code>, <code>kClosed</code></td>
+<td><code>kComplete</code>, <code>kPending</code></td>
+<td>정수 카운터</td>
+</tr>
+<tr class="even">
+<td>판단하는 것</td>
+<td>외부 접근 가능성</td>
+<td>keep-alive와 멤버 handler 호출</td>
+<td>새 작업 허용과 종료 단계</td>
+<td>이벤트 완료, 유지, 재사용</td>
+<td>해제 전에 기다릴 I/O 수</td>
+</tr>
+<tr class="odd">
+<td>최종 해제 관계</td>
+<td>제거 대상</td>
+<td>콜백 중 생존 보장</td>
+<td><code>kOpen</code>이 아니어야 함</td>
+<td>직접 판단하지 않음</td>
+<td>0이어야 함</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+</section>
+<section id="버퍼-관리" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="버퍼-관리"><span class="header-section-number">5</span> 버퍼 관리</h2>
+<section id="수신-버퍼" class="level3" data-number="5.1">
+<h3 data-number="5.1" class="anchored" data-anchor-id="수신-버퍼"><span class="header-section-number">5.1</span> 수신 버퍼</h3>
+</section>
+<section id="버퍼-복사와-비용" class="level3" data-number="5.2">
+<h3 data-number="5.2" class="anchored" data-anchor-id="버퍼-복사와-비용"><span class="header-section-number">5.2</span> 버퍼 복사와 비용</h3>
+<p>기존 수신 경로에서는 매 수신마다 임시 버퍼의 데이터를 세션별 수신 버퍼로 복사했습니다. 이 방식은 구현은 단순하지만, 대부분의 패킷이 한 번의 수신으로 완성되는 상황에서도 불필요한 복사 비용이 발생합니다.</p>
+<p>그렇다고 커널이 채운 수신 버퍼의 뷰만 그대로 전달할 수도 없습니다. TCP는 바이트 스트림이기 때문에 애플리케이션이 정의한 패킷 경계를 보존하지 않습니다. 하나의 패킷이 여러 번의 수신으로 나뉘어 도착할 수 있고, 반대로 여러 패킷이 한 번의 수신에 합쳐져 들어올 수도 있습니다.</p>
+<p>따라서 수신 버퍼는 단순히 “이번에 받은 데이터”를 담는 공간이 아니라, 다음 역할을 수행할 수 있어야 합니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>역할</th>
+<th>의미</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>완전한 프레임 파싱</td>
+<td>이번 수신 데이터 안에서 완성된 패킷을 바로 해석</td>
+</tr>
+<tr class="even">
+<td>조각난 프레임 보존</td>
+<td>아직 완성되지 않은 패킷의 앞부분을 다음 수신까지 보관</td>
+</tr>
+<tr class="odd">
+<td>소비한 데이터 제거</td>
+<td>이미 파싱한 앞부분을 버리고 남은 데이터만 유지</td>
+</tr>
+<tr class="even">
+<td>경계 누적</td>
+<td>다음 패킷 경계가 완성될 때까지 데이터를 이어 붙임</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="수신-경로-분리" class="level3" data-number="5.3">
+<h3 data-number="5.3" class="anchored" data-anchor-id="수신-경로-분리"><span class="header-section-number">5.3</span> 수신 경로 분리</h3>
+<p>수신 경로는 빠른 경로와 느린 경로로 분리했습니다.</p>
+<p>완전한 프레임이 이번 수신 데이터 안에 모두 들어 있는 경우에는 제공 버퍼의 뷰를 그대로 사용해 파싱합니다. 이때 별도의 세션 수신 버퍼로 복사하지 않습니다. 반대로 프레임이 조각나 있거나, 이전 수신에서 남은 조각과 이어 붙여야 하는 경우에만 프로토콜 <code>RecvBuffer</code>에 복사해 누적합니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 27%">
+<col style="width: 72%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>상황</th>
+<th>처리</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>완전한 프레임</td>
+<td>provided 버퍼의 <code>span</code> 또는 뷰에서 직접 파싱</td>
+</tr>
+<tr class="even">
+<td>여러 완전한 프레임</td>
+<td>provided 버퍼 뷰를 순차적으로 소비하며 반복 파싱</td>
+</tr>
+<tr class="odd">
+<td>조각난 프레임</td>
+<td>세션 소유 <code>RecvBuffer</code>에 복사해 다음 수신까지 보존</td>
+</tr>
+<tr class="even">
+<td>이전 조각 + 새 데이터</td>
+<td><code>RecvBuffer</code>에 이어 붙인 뒤 완성 여부 확인</td>
+</tr>
+</tbody>
+</table>
+<p>이 구조에서 <code>Session</code>은 수신 작업의 상태와 제공 버퍼의 반환 타이밍을 관리합니다. 원본 수신 메모리는 <code>iouring</code> 가 관리하고, 프로토콜 프레임 재조립은 <code>RecvBuffer</code>가 담당합니다.</p>
+</section>
+<section id="송신-버퍼" class="level3" data-number="5.4">
+<h3 data-number="5.4" class="anchored" data-anchor-id="송신-버퍼"><span class="header-section-number">5.4</span> 송신 버퍼</h3>
+</section>
+<section id="요청한-길이와-실제-처리된-길이의-불일치" class="level3" data-number="5.5">
+<h3 data-number="5.5" class="anchored" data-anchor-id="요청한-길이와-실제-처리된-길이의-불일치"><span class="header-section-number">5.5</span> 요청한 길이와 실제 처리된 길이의 불일치</h3>
+<p>송신 경로에서는 애플리케이션이 넘긴 페이로드의 수명이 송신 완료까지 보장되어야 합니다. 스택 버퍼, 임시 문자열, 임시 <code>string_view</code>를 그대로 커널 송신 요청에 넘기면, 커널이 아직 해당 메모리를 참조하고 있는 동안 원본 데이터가 먼저 해제되거나 덮어써질 수 있습니다.</p>
+<p>또한 송신 완료 통지는 “요청한 버퍼 전체가 전송되었다”는 뜻이 아닙니다. <code>sendmsg</code>나 <code>io_uring send</code>는 성공 완료에서도 요청한 바이트 수보다 작은 값을 반환할 수 있습니다. 이 경우 반환된 값은 실제로 처리된 바이트 수이며, 애플리케이션은 그 바이트 수만큼 현재 페이로드의 송신 커서를 전진시켜야 합니다.</p>
+<p>남은 바이트 범위를 기억하지 못하면 두 가지 문제가 생깁니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 89%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>문제</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>데이터 누락</td>
+<td>부분 완료된 뒤 남은 바이트를 다시 보내지 않으면 페이로드 뒷부분이 사라짐</td>
+</tr>
+<tr class="even">
+<td>순서 훼손</td>
+<td>앞 페이로드가 끝나기 전에 다음 페이로드를 보내면 애플리케이션이 의도한 메시지 순서가 깨짐</td>
+</tr>
+</tbody>
+</table>
+<p>따라서 송신 버퍼는 페이로드 수명, 송신 커서, 부분 완료 이후의 재제출 순서를 함께 관리해야 합니다.</p>
+</section>
+<section id="애플리케이션이-의도한-순서-보장-불가" class="level3" data-number="5.6">
+<h3 data-number="5.6" class="anchored" data-anchor-id="애플리케이션이-의도한-순서-보장-불가"><span class="header-section-number">5.6</span> 애플리케이션이 의도한 순서 보장 불가</h3>
+<p>TCP는 네트워크상에서 바이트의 순서를 보존하지만, 애플리케이션이 호출한 <code>Send(A)</code>, <code>Send(B)</code> 같은 요청 단위나 프로토콜 메시지 경계를 보존하지 않습니다. TCP가 보장하는 것은 소켓 송신 버퍼에 들어간 바이트의 순서이지, 애플리케이션이 의도한 “A 전체가 끝난 뒤 B 전체”라는 의미적 순서가 아닙니다.</p>
+<p>따라서 같은 세션 소켓에 대해 둘 이상의 송신 작업을 동시에 커널에 제출하면, 부분 전송이 발생했을 때 애플리케이션이 의도한 순서가 깨질 수 있습니다.</p>
+<p>예를 들어 <code>A</code>를 먼저 보내고 <code>B</code>를 그 다음 보냈더라도, <code>A</code> 송신이 일부 바이트만 성공한 상태에서 이미 제출된 <code>B</code> 송신이 처리될 수 있습니다. 이 경우 TCP 스트림에는 다음과 같은 순서로 바이트가 들어갈 수 있습니다.</p>
+<pre class="text"><code>A의 앞부분 + B 전체 + A의 뒷부분</code></pre>
+<p>TCP는 이 순서를 잘못된 것으로 보지 않습니다. 실제로 소켓 송신 버퍼에 들어간 순서가 그렇기 때문입니다. TCP는 이 바이트열을 다시 <code>A 전체 + B 전체</code>로 복구해주지 않으며, 애플리케이션 프로토콜의 메시지 경계도 알지 못합니다.</p>
+<p>따라서 애플리케이션이 의도한 송신 순서는 Session의 송신 큐가 직접 보장해야 합니다.</p>
+</section>
+<section id="세션당-단일-활성-송신-작업" class="level3" data-number="5.7">
+<h3 data-number="5.7" class="anchored" data-anchor-id="세션당-단일-활성-송신-작업"><span class="header-section-number">5.7</span> 세션당 단일 활성 송신 작업</h3>
+<p>송신 경로는 세션별 큐와 활성 송신 작업 하나로 구성됩니다. 이를 통해 아직 커널에 제출되지 않은 데이터와, 이미 커널에 제출되어 완료를 기다리는 데이터를 분리합니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>구성 요소</th>
+<th>책임</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>SendQueue</code></td>
+<td>아직 커널에 제출되지 않은 <code>SendBufferRef</code> 대기열과 등록 필요 여부 관리</td>
+</tr>
+<tr class="even">
+<td><code>SendOp</code></td>
+<td>진행 중인 <code>msghdr</code>, <code>iovec</code>, 페이로드 참조, 송신 커서 유지</td>
+</tr>
+<tr class="odd">
+<td><code>active_send_ev_</code></td>
+<td>현재 세션에서 커널에 맡긴 단 하나의 활성 송신 작업</td>
+</tr>
+</tbody>
+</table>
+<p>소유자 실행 문맥에 들어온 <code>Send()</code>는 페이로드를 <code>send_queue_</code>에 FIFO로 추가합니다. <code>SendQueue::Push()</code>는 첫 추가 주기에서만 <code>needs_register</code>를 반환하고, <code>RegisterSend()</code>는 이미 <code>active_send_ev_</code>가 있으면 즉시 반환합니다. 따라서 현재 송신 작업이 진행 중일 때 새 페이로드가 들어와도, 그 페이로드는 큐에 남아 있을 뿐 커널에는 제출되지 않습니다.</p>
+<p>이 구조에서 커널이 알고 있는 현재 세션의 송신 작업은 항상 논리적 FIFO의 맨 앞 조각 하나뿐입니다. 그 앞쪽 조각이 완전히 처리되기 전에는 다음 큐 항목이 커널에 보이지 않습니다.</p>
+<p><code>sendmsg</code>의 <code>iovec</code>은 하나의 바이트 스트림 앞부분으로 해석되고, CQE의 결과 바이트 수는 그 앞부분에서 몇 바이트가 처리되었는지를 의미합니다. 따라서 짧은 쓰기가 발생하더라도 완료된 바이트 수만큼 현재 <code>SendOp</code>의 커서를 전진시키면 남은 뒷부분을 정확히 계산할 수 있습니다.</p>
+<p>부분 완료가 발생하면 큐를 재구성하지 않습니다. 현재 <code>SendOp</code>의 커서만 전진시키고, 같은 페이로드의 남은 범위를 다시 제출합니다. 현재 <code>SendOp</code>이 완전히 끝나기 전까지는 다음 페이로드를 큐에서 꺼내지 않습니다.</p>
+<p>즉 송신 경로에서 항상 성립해야 하는 조건은 다음과 같습니다.</p>
+<ol type="1">
+<li><strong>세션당 활성 송신 작업은 0개 또는 1개</strong>
+<ul>
+<li>같은 세션 소켓에 동시에 둘 이상의 <code>send</code>를 제출하지 않음</li>
+</ul></li>
+<li><strong>활성 <code>SendOp</code>은 논리적 FIFO의 맨 앞 항목</strong>
+<ul>
+<li>뒤의 페이로드가 앞의 페이로드를 추월할 수 없음.</li>
+</ul></li>
+<li><strong>CQE의 성공 결과는 커서 전진으로 처리</strong>
+<ul>
+<li>요청한 길이가 아니라 실제 처리된 바이트 수를 기준으로 진행.</li>
+</ul></li>
+<li><strong>현재 <code>SendOp</code> 완료 후 다음 항목으로 이동</strong>
+<ul>
+<li>부분 전송된 페이로드의 남은 범위를 먼저 처리.</li>
+</ul></li>
+</ol>
+<p>결과적으로 수신은 “가능하면 복사하지 않고, 필요할 때만 누적”하는 구조가 되었고, 송신은 “완료까지 페이로드를 붙잡고, 세션당 하나의 활성 send만 진행”하는 구조가 되었습니다.</p>
+<hr>
+</section>
+</section>
+<section id="room과-session-직렬화" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="room과-session-직렬화"><span class="header-section-number">6</span> Room과 Session 직렬화</h2>
+<section id="room-상태-결정의-직렬화-단위" class="level3" data-number="6.1">
+<h3 data-number="6.1" class="anchored" data-anchor-id="room-상태-결정의-직렬화-단위"><span class="header-section-number">6.1</span> Room: 상태 결정의 직렬화 단위</h3>
+<p>게임 서버에서는 실시간으로 상태가 변하고, 여러 플레이어가 그 상태를 공유합니다. 하지만 각 플레이어의 입력은 서로 다른 네트워크 레이턴시를 거쳐 서버에 도착하므로, 서버는 도착한 입력들을 어떤 순서로 처리할지 결정해야 합니다.</p>
+<p>게임 서버에서 <code>Room</code>은 같은 공간, 채널, 전투 인스턴스처럼 함께 상태를 공유하는 최소 단위입니다. 플레이어 입장, 퇴장, 이동, 공격, 포탈 이동, 브로드캐스트 대상 결정처럼 “누가 같은 공간에 있고, 어떤 순서로 상태가 바뀌었는지”를 판단해야 하는 작업은 Room의 상태를 기준으로 처리됩니다.</p>
+<p>Room은 다음 정보를 하나의 상태 단위로 묶습니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>항목</th>
+<th>의미</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>멤버 목록</td>
+<td>현재 Room에 들어와 있는 플레이어와 세션</td>
+</tr>
+<tr class="even">
+<td>도메인 상태</td>
+<td>위치, 이동, 전투 상태처럼 Room 안에서 공유되는 값</td>
+</tr>
+<tr class="odd">
+<td>입력 작업</td>
+<td>입장, 퇴장, 이동, 공격, 포탈 이동처럼 순서가 필요한 요청</td>
+</tr>
+<tr class="even">
+<td>출력 결정</td>
+<td>어떤 플레이어에게 어떤 패킷을 보낼지에 대한 브로드캐스트 결정</td>
+</tr>
+</tbody>
+</table>
+<p>Room이 직접 관리하는 것은 Room 내부 상태입니다. 예를 들면 현재 Room에 들어온 플레이어 목록, Room 안에서 처리할 작업 순서, 그리고 어떤 세션에게 어떤 패킷을 보내야 하는지에 대한 결정, 즉 “게임 상태를 어떤 순서로 바꿀지”를 정해야 합니다.</p>
+</section>
+<section id="session-송신-순서의-직렬화-단위" class="level3" data-number="6.2">
+<h3 data-number="6.2" class="anchored" data-anchor-id="session-송신-순서의-직렬화-단위"><span class="header-section-number">6.2</span> Session: 송신 순서의 직렬화 단위</h3>
+<p><code>Session</code>은 하나의 클라이언트 연결을 나타냅니다. Session의 책임은 Room 상태를 판단하는 것이 아니라, 해당 연결에 대해 패킷 바이트를 어떤 순서로 쓸지 보장하는 것입니다.</p>
+<p>Room이 브로드캐스트 대상을 결정하더라도, 실제 <code>Send()</code>가 어느 스레드에서 어떤 순서로 실행될지는 별도의 문제입니다. 같은 Session에는 Room에서 발생한 이동/전투 패킷뿐 아니라 채팅, 인벤토리, 로그인, 시스템 알림처럼 다른 경로의 패킷도 들어올 수 있습니다.</p>
+<p>따라서 Room과 Session은 서로 다른 순서를 보장합니다.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>단위</th>
+<th>보장하는 순서</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Room</td>
+<td>공유 게임 상태의 변경 순서</td>
+</tr>
+<tr class="even">
+<td>Session</td>
+<td>하나의 TCP 연결에 쓰이는 바이트 순서</td>
+</tr>
+</tbody>
+</table>
+<p>Room은 “게임 상태를 순서대로 바꾸는 곳”이고, Session은 “한 연결에 바이트를 순서대로 쓰는 곳”입니다. Room의 브로드캐스트 결과는 Session 송신 큐에 들어가는 입력일 뿐이며, 실제 커널 송신 제출과 부분 송신 복구는 Session의 책임입니다.</p>
+</section>
+<section id="직렬화-경계가-필요한-이유" class="level3" data-number="6.3">
+<h3 data-number="6.3" class="anchored" data-anchor-id="직렬화-경계가-필요한-이유"><span class="header-section-number">6.3</span> 직렬화 경계가 필요한 이유</h3>
+<p><code>iouring-runtime</code>의 게임 서버는 여러 <code>IoWorker</code>가 각자의 <code>io_uring</code> 루프를 가지고 병렬로 실행됩니다. 이 구조에서는 같은 Room이나 같은 Session에 대한 요청이 서로 다른 스레드에서 동시에 발생할 수 있습니다.</p>
+<p>단순하게 모든 상태를 뮤텍스로 보호할 수도 있습니다. 하지만 그렇게 하면 게임 로직, 소켓 I/O, Room 브로드캐스트, Session 송신 경로 전체에 락이 퍼집니다. 락 범위가 넓어질수록 어떤 상태를 누가 소유하는지 불명확해지고, 교착이나 락 순서 문제도 생기기 쉬웠습니다.</p>
+<p>여기에서는 전역 락 대신 상태의 소유자를 명확히 나누고, 스레드 간 작업을 해당 상태의 소유자 실행 context로 모으는 방식을 선택했습니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 16%">
+<col style="width: 39%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>경계</th>
+<th>소유자</th>
+<th>통과하는 데이터</th>
+<th>보장하는 것</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Room JobQueue</code></td>
+<td>Room을 실행 중인 워커</td>
+<td>join, leave, move, attack, portal, 브로드캐스트 결정</td>
+<td>Room 상태는 한 번에 하나의 job만 변경</td>
+</tr>
+<tr class="even">
+<td><code>WorkerOutbox</code></td>
+<td>대상 <code>IoWorker</code></td>
+<td>세션별 Room 출력</td>
+<td>같은 세션으로 가는 Room 출력은 FIFO로 비워짐</td>
+</tr>
+<tr class="odd">
+<td><code>Session owner ring</code></td>
+<td>해당 세션의 <code>IoRing</code> 스레드</td>
+<td><code>Send()</code>, <code>send_queue_</code>, <code>SendOp</code></td>
+<td>한 연결의 쓰기 상태는 소유자 ring에서만 변경</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="room-출력-순서-보장" class="level3" data-number="6.4">
+<h3 data-number="6.4" class="anchored" data-anchor-id="room-출력-순서-보장"><span class="header-section-number">6.4</span> Room 출력 순서 보장</h3>
+<p>Room이 만든 패킷을 곧바로 각 Session 소유자 ring 으로 흩어 보내면, 클라이언트가 보는 순서가 Room의 처리 순서와 달라질 수 있습니다.</p>
+<p>기존 <code>RunOnRing()</code> 방식은 대상 ring이 현재 ring이면 즉시 실행하고, 다른 ring이면 비동기로 전달했습니다. 이 차이 때문에 Room 내부의 논리 순서와 실제 <code>Session::SendQueue</code> 삽입 순서가 달라질 수 있습니다.</p>
+<p>예를 들어 Room이 같은 세션에 대해 <code>Packet #1</code>, <code>Packet #2</code>를 순서대로 만들었다고 하더라도, 하나는 현재 ring에서 즉시 <code>Send()</code>되고 다른 하나는 다른 ring으로 비동기 전달되면 실제 Session 송신 큐에 들어가는 순서가 Room의 출력 순서와 달라질 수 있습니다.</p>
+<p>Room은 순서대로 처리했지만, 출력 경로가 즉시 실행 경로와 비동기 실행 경로로 갈라지면서 실제 송신 큐 삽입 순서가 뒤집힐 수 있는 것입니다.</p>
+<p>이를 해결하기 위해 Room에서 나온 출력은 세션에 바로 <code>Send()</code>하지 않고, 대상 쓰레드의 발신 메일박스인 <code>WorkerOutbox</code>에 먼저 넣습니다.</p>
+<p>현재 <code>Room::SendTo()</code>, <code>BroadcastAll()</code>, <code>BroadcastExcept()</code>는 모두 <code>worker-&gt;EnqueueOutbound(...)</code>를 호출합니다.</p>
+<p><code>WorkerOutbox</code>는 세션 id별 큐를 가지고, <code>IoWorker::Run()</code>의 drain 단계에서 소유 스레드가 직접 비웁니다. 즉시 <code>Send()</code>하지 않고 반드시 outbox를 거치기 때문에, 같은 세션으로 가는 Room 출력은 하나의 FIFO 경로를 통과합니다.</p>
+<p>서로 다른 세션으로 가는 메시지는 각 세션 큐에서 독립적으로 처리됩니다. 여기서 보장하는 것은 Room이 만든 출력이 같은 대상 Session으로 전달될 때, 그 Room 출력의 상대 순서가 유지된다는 것입니다.</p>
+<p>예를 들어 Room이 <code>ChatMessage #1</code>, <code>ChatMessage #2</code>를 순서대로 처리하면 Room JobQueue는 두 메시지의 브로드캐스트 결정 순서를 보장합니다. 그 결과는 대상 워커의 <code>outbox[session]</code>에 같은 순서로 들어가고, <code>DrainOutbox()</code>가 이를 <code>Session::SendQueue</code>로 순서대로 밀어 넣습니다. 마지막으로 실제 TCP 바이트 스트림의 순서는 Session의 <code>SendQueue</code>와 활성 <code>SendOp</code>이 유지합니다.</p>
+<p>전체 흐름은 다음과 같습니다.</p>
+<pre class="text"><code>Room JobQueue
+  -&gt; Room 상태 변경
+  -&gt; 브로드캐스트 대상 결정
+  -&gt; WorkerOutbox[session] enqueue
+  -&gt; IoWorker::DrainOutbox()
+  -&gt; Session::SendQueue enqueue
+  -&gt; active SendOp
+  -&gt; io_uring send</code></pre>
+<p>이 경로를 통해 Room의 상태 변경 순서, Room 출력의 세션별 전달 순서, 그리고 Session의 실제 송신 바이트 순서가 각각의 소유자 실행 문맥에서 분리되어 보장됩니다.</p>
+<hr>
+</section>
+</section>
+<section id="생산소비-백프레셔" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="생산소비-백프레셔"><span class="header-section-number">7</span> 생산/소비 백프레셔</h2>
+<p>애플리케이션 단위의 레이어에서 HTTP handler, proxy upstream, TLS 암복호화 단계, Room worker처럼 데이터를 만드는 생산자는 계속 다음 출력을 만들 수 있습니다. 반면 실제 소비자는 소켓 송신 완료 CQE를 받아 <code>SendQueue</code>를 비우는 쪽입니다. 생산 속도가 소비 속도보다 빨라지면 한쪽이 넘치게 됩니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>경계</th>
+<th>생산자</th>
+<th>압력이 쌓이는 위치</th>
+<th>조절 방식</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Runtime send</td>
+<td>애플리케이션 <code>Send()</code></td>
+<td><code>SendQueue</code>, <code>SendOp</code></td>
+<td>pending 개수와 byte를 관측하고 한도 초과 시 종료</td>
+</tr>
+<tr class="even">
+<td>Proxy bridge</td>
+<td>한쪽 peer의 recv</td>
+<td>반대편 peer의 write</td>
+<td>write 압력을 read pause/resume으로 전파</td>
+</tr>
+<tr class="odd">
+<td>Proxy TLS</td>
+<td>plaintext 생성 단계</td>
+<td>암호화 전 plaintext queue</td>
+<td>bounded queue에 보류하고 socket drain 이후 재개</td>
+</tr>
+<tr class="even">
+<td>HTTP response</td>
+<td>handler, file/body stream</td>
+<td>response body chunk</td>
+<td>header와 body stream을 분리해 drain 속도만큼 pump</td>
+</tr>
+<tr class="odd">
+<td>Paused recv</td>
+<td>이미 완료된 recv CQE</td>
+<td>pause 중 임시 recv queue</td>
+<td>FIFO로 보존하되 한도 초과 시 종료</td>
+</tr>
+<tr class="even">
+<td>Room output</td>
+<td>Room worker</td>
+<td>worker outbox, session queue</td>
+<td>세션별 FIFO와 budgeted drain으로 송신 경로 진입</td>
+</tr>
+</tbody>
+</table>
+<section id="sendqueue를-메모리-압력-경계로-보기" class="level3" data-number="7.1">
+<h3 data-number="7.1" class="anchored" data-anchor-id="sendqueue를-메모리-압력-경계로-보기"><span class="header-section-number">7.1</span> SendQueue를 메모리 압력 경계로 보기</h3>
+<p>초기 송신 큐 방어는 주로 “몇 개의 버퍼가 쌓였는가”를 기준으로 삼았습니다. 하지만 큐 항목 수만으로는 실제 메모리 압력을 알 수 없습니다. 같은 10개라도 작은 패킷 10개와 256 KiB body chunk 10개는 다른 상황이었습니다.</p>
+<p>그래서 송신 큐는 depth와 byte를 함께 관측합니다.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>값</th>
+<th>의미</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>current_depth</code></td>
+<td>현재 대기 중인 buffer 개수</td>
+</tr>
+<tr class="even">
+<td><code>pending_bytes</code></td>
+<td>현재 대기 중인 총 byte 수</td>
+</tr>
+<tr class="odd">
+<td><code>peak_depth</code></td>
+<td>관측된 최대 queue depth</td>
+</tr>
+<tr class="even">
+<td><code>peak_pending_bytes</code></td>
+<td>관측된 최대 pending bytes</td>
+</tr>
+<tr class="odd">
+<td><code>overflow_count</code></td>
+<td>한도 초과 횟수</td>
+</tr>
+</tbody>
+</table>
+<p><code>max_pending</code> 같은 hard limit은 마지막 방어선입니다. 한도를 넘은 연결은 더 이상 큐잉하지 않고 정리합니다. 하지만 정상적인 백프레셔의 핵심은 종료가 아니라, 한도에 닿기 전에 생산 위치를 늦추고 drain 이후에 다시 진행하는 것입니다.</p>
+</section>
+<section id="write-압력을-read-쪽으로-되돌리기" class="level3" data-number="7.2">
+<h3 data-number="7.2" class="anchored" data-anchor-id="write-압력을-read-쪽으로-되돌리기"><span class="header-section-number">7.2</span> write 압력을 read 쪽으로 되돌리기</h3>
+<p>프록시는 한쪽 peer에서 받은 데이터를 반대편 peer로 전달합니다. 이때 downstream은 빠르게 읽히는데 upstream write가 느리면, 단순 중계 구조에서는 downstream recv가 계속 새로운 데이터를 만들고 반대편 send queue만 커집니다.</p>
+<p>그래서 proxy bridge는 write-side backpressure를 read-side pause로 전파합니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 49%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>상황</th>
+<th>처리</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>반대편 write가 정상적으로 drain됨</td>
+<td>recv를 계속 등록하고 즉시 중계</td>
+</tr>
+<tr class="even">
+<td>반대편 send queue가 pressure 상태</td>
+<td>현재 peer의 recv를 pause</td>
+</tr>
+<tr class="odd">
+<td>socket drain 신호 도착</td>
+<td>보류 데이터를 먼저 비우고 recv resume</td>
+</tr>
+<tr class="even">
+<td>보류 queue 한도 초과</td>
+<td>peer 쌍을 정리</td>
+</tr>
+</tbody>
+</table>
+<p>TLS proxy에서는 같은 원칙이 plaintext 단계에도 적용됩니다. downstream socket이 막혔는데 plaintext를 계속 만들면, 암호화 전 원문 데이터가 별도 queue에 쌓입니다. 이 queue도 bounded queue로 다루고, socket이 drain된 뒤에만 암호화와 송신을 재개합니다.</p>
+</section>
+<section id="paused-recv-queue-pause-이후-이미-도착한-데이터-보존" class="level3" data-number="7.3">
+<h3 data-number="7.3" class="anchored" data-anchor-id="paused-recv-queue-pause-이후-이미-도착한-데이터-보존"><span class="header-section-number">7.3</span> Paused recv queue: pause 이후 이미 도착한 데이터 보존</h3>
+<p>read를 pause한다고 해서 이미 완료된 recv CQE까지 사라지는 것은 아닙니다. <code>PauseRecv()</code>를 호출했더라도 커널이나 ring에서 이미 넘어온 데이터가 있을 수 있습니다.</p>
+<p>이 데이터를 버리면 TCP 바이트 스트림이 깨집니다. 반대로 무제한으로 보관하면 pause 자체가 백프레셔 역할을 하지 못합니다. 그래서 pause 중 도착한 데이터는 <code>PausedRecvQueue</code>에 제한적으로 보존합니다.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>상황</th>
+<th>처리</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>recv가 pause되지 않음</td>
+<td>즉시 <code>OnRecv()</code>로 전달</td>
+</tr>
+<tr class="even">
+<td>recv가 pause됨</td>
+<td>도착한 chunk를 paused recv queue에 복사</td>
+</tr>
+<tr class="odd">
+<td>queue 한도 내</td>
+<td>resume 때 FIFO로 다시 <code>OnRecv()</code></td>
+</tr>
+<tr class="even">
+<td>queue 한도 초과</td>
+<td>overflow로 disconnect</td>
+</tr>
+</tbody>
+</table>
+<p>이 경계의 목적은 성능 최적화가 아니라 스트림 보존입니다. write-side 압력이 read-side pause로 전파되더라도, 이미 도착한 바이트는 순서를 유지한 채 제한된 범위에서만 살아남습니다.</p>
+</section>
+<section id="http-큰-응답을-drain-속도에-맞춰-생산" class="level3" data-number="7.4">
+<h3 data-number="7.4" class="anchored" data-anchor-id="http-큰-응답을-drain-속도에-맞춰-생산"><span class="header-section-number">7.4</span> HTTP: 큰 응답을 drain 속도에 맞춰 생산</h3>
+<p>HTTP handler는 큰 JSON, 큰 text, 파일 body를 만들 수 있습니다. 이 body를 한 번에 <code>SendBuffer</code>로 만들면 두 문제가 생깁니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>문제</th>
+<th>이유</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>build 실패</td>
+<td>body가 buffer pool chunk보다 클 수 있음</td>
+</tr>
+<tr class="even">
+<td>slow client 앞 메모리 증가</td>
+<td>큰 응답 전체가 send queue에 한 번에 들어감</td>
+</tr>
+</tbody>
+</table>
+<p><code>c10aa5b</code> 이후 HTTP 응답은 작은 경우만 inline buffer로 만들고, 큰 body는 header와 body stream으로 나눕니다.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>기준</th>
+<th style="text-align: right;">값</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>inline response 한계</td>
+<td style="text-align: right;">256 KiB</td>
+</tr>
+<tr class="even">
+<td>body stream chunk 크기</td>
+<td style="text-align: right;">256 KiB</td>
+</tr>
+<tr class="odd">
+<td>한 번에 pump하는 최대 chunk 수</td>
+<td style="text-align: right;">4</td>
+</tr>
+</tbody>
+</table>
+<p><code>HttpResponse::Send()</code>는 전체 크기가 inline 한계 이하일 때만 단일 buffer를 만듭니다. 더 큰 응답은 header를 먼저 보내고 <code>StartBodyStream()</code>으로 body를 넘깁니다.</p>
+<p>작은 응답은 header와 body를 하나의 send buffer로 만들어 바로 <code>Send()</code>할 수 있지만, 큰 응답을 한 번에 만들면 느린 클라이언트 앞에서 send queue와 buffer pool에 큰 압력이 생깁니다. 그래서 큰 body는 먼저 header만 전송하고, body는 <code>BodyStreamState</code>에 보관한 뒤 일정 크기의 chunk로 나누어 pump합니다.</p>
+<p>동작 흐름은 다음과 같습니다.</p>
+<ol type="1">
+<li>이미 file stream이나 body stream이 진행 중이면 시작하지 않습니다.</li>
+<li>body shared pointer, offset, chunk size, 한 번에 보낼 최대 chunk 수를 <code>body_stream_</code>에 저장합니다.</li>
+<li>먼저 HTTP header buffer를 <code>Send()</code>합니다.</li>
+<li>header 전송 등록에 성공하면 <code>PumpBodyStream()</code>을 호출해 첫 body chunk 묶음을 큐에 넣습니다.</li>
+<li>이후 socket send가 drain될 때 <code>OnSocketDrained()</code>에서 다시 <code>PumpBodyStream()</code>을 호출해 다음 chunk를 이어 보냅니다.</li>
+</ol>
+<p>이 구조로 큰 body 전체를 한 번에 <code>SendQueue</code>에 넣지 않고, <code>chunk_size * max_chunks_per_write</code> 단위로만 생산합니다. 즉 생산자인 HTTP response body stream이 소비자인 socket send 완료 속도에 맞춰 천천히 진행됩니다. 이 구조에서는 handler가 큰 응답을 만들더라도 런타임이 전체 body를 즉시 socket queue로 밀어 넣지 않습니다. 소비자가 drain한 만큼 다음 body chunk가 생산됩니다.</p>
+</section>
+<section id="정리" class="level3" data-number="7.5">
+<h3 data-number="7.5" class="anchored" data-anchor-id="정리"><span class="header-section-number">7.5</span> 정리</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 44%">
+<col style="width: 55%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>단계</th>
+<th>개선 방향</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>send queue overflow</td>
+<td>무제한 대기 방지</td>
+</tr>
+<tr class="even">
+<td>byte accounting</td>
+<td>실제 메모리 압력 관측</td>
+</tr>
+<tr class="odd">
+<td>proxy pause/resume</td>
+<td>한쪽 write 압력을 반대편 read에 전파</td>
+</tr>
+<tr class="even">
+<td>TLS plaintext buffering</td>
+<td>암호화 전 출력도 bounded queue로 보류</td>
+</tr>
+<tr class="odd">
+<td>HTTP chunk streaming</td>
+<td>큰 응답을 drain 속도에 맞춰 생산</td>
+</tr>
+<tr class="even">
+<td>paused recv queue</td>
+<td>pause 중 이미 도착한 recv를 제한적으로 보존</td>
+</tr>
+</tbody>
+</table>
+<hr>
+</section>
+</section>
+<section id="선택-모듈-검증-최종-정리" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="선택-모듈-검증-최종-정리"><span class="header-section-number">8</span> 선택 모듈, 검증, 최종 정리</h2>
+<section id="선택-모듈로-확장한-결과" class="level3" data-number="8.1">
+<h3 data-number="8.1" class="anchored" data-anchor-id="선택-모듈로-확장한-결과"><span class="header-section-number">8.1</span> 선택 모듈로 확장한 결과</h3>
+<p>최종 구조에서 Core 런타임은 특정 서버 제품이 아니라 프로토콜에 종속되지 않는 전송 계층입니다. Core는 소켓 연결 수락, 수신/송신, 제공 버퍼, 송신 큐, 시간 초과, 수명주기, owner ring 같은 공통 I/O 책임을 맡습니다. HTTP 요청 해석, 프록시 라우팅, 게임 패킷과 Room 실행 모델은 Core 밖 선택 모듈이 담당합니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>모듈</th>
+<th>Core에서 받는 것</th>
+<th>모듈이 추가하는 의미</th>
+<th>Core에 넣지 않은 것</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>RuntimeWeb</code></td>
+<td>세션 I/O, 제공 버퍼 뷰, 송신 큐</td>
+<td><code>HttpSession</code>, HTTP 파서, Router, 응답 생성</td>
+<td>라우팅 정책, 인증, 파일 정책</td>
+</tr>
+<tr class="even">
+<td><code>RuntimeProxy</code></td>
+<td>스트림 I/O, 송신 큐, 시간 초과</td>
+<td>downstream/upstream 중계, 연결기, TLS/SNI</td>
+<td>프록시 라우팅 정책, peer별 종료 정책</td>
+</tr>
+<tr class="odd">
+<td><code>RuntimeGame</code></td>
+<td>세션 I/O, owner callback, 송신 큐</td>
+<td><code>PacketSession</code>, <code>PacketBuilder</code>, Room, RoomManager</td>
+<td>전투, 던전, DB, 인증 같은 게임 도메인</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="모듈별-검증" class="level3" data-number="8.2">
+<h3 data-number="8.2" class="anchored" data-anchor-id="모듈별-검증"><span class="header-section-number">8.2</span> 모듈별 검증</h3>
+</section>
+<section id="runtimeweb" class="level3" data-number="8.3">
+<h3 data-number="8.3" class="anchored" data-anchor-id="runtimeweb"><span class="header-section-number">8.3</span> RuntimeWeb</h3>
+<p><code>RuntimeWeb</code>은 Core <code>Session::OnRecv()</code>로 올라온 바이트를 HTTP/1.1 요청으로 해석합니다. 요청 헤더와 본문을 파싱하고, Router를 통해 handler를 찾은 뒤, 응답을 Core 송신 큐로 넘깁니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>검증 항목</th>
+<th>확인한 것</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>HTTP 파서와 요청 수명주기</td>
+<td>TCP 스트림을 HTTP 요청 단위로 해석</td>
+</tr>
+<tr class="even">
+<td>Router / RadixTree</td>
+<td>method, 정적 경로, parameter, wildcard route 분리</td>
+</tr>
+<tr class="odd">
+<td>파일/스트리밍 응답</td>
+<td>큰 본문을 앱 메모리에 한 번에 누적하지 않음</td>
+</tr>
+<tr class="even">
+<td>timeout/backpressure 연결</td>
+<td>HTTP 의미의 요청 시간 초과와 출력 흐름 제어를 Core 경로에 연결</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="runtimeproxy" class="level3" data-number="8.4">
+<h3 data-number="8.4" class="anchored" data-anchor-id="runtimeproxy"><span class="header-section-number">8.4</span> RuntimeProxy</h3>
+<p><code>RuntimeProxy</code>는 downstream 세션과 upstream 세션을 중계 경로로 묶습니다. HTTP 요청/응답 객체를 만들지 않고, 한쪽 peer에서 받은 바이트를 반대편 peer의 송신 큐로 전달합니다.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>검증 항목</th>
+<th>확인한 것</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>downstream/upstream 중계</td>
+<td>두 TCP 세션 사이의 바이트 전달</td>
+</tr>
+<tr class="even">
+<td>논블로킹 연결기</td>
+<td>upstream 연결 시간 초과와 실패 처리</td>
+</tr>
+<tr class="odd">
+<td>TLS/SNI 라우팅</td>
+<td>TLS 종료와 라우팅 선택을 Proxy 경계에 격리</td>
+</tr>
+<tr class="even">
+<td>느린 peer 처리</td>
+<td>write pressure를 반대편 recv pause/resume으로 전파</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="runtimegame" class="level3" data-number="8.5">
+<h3 data-number="8.5" class="anchored" data-anchor-id="runtimegame"><span class="header-section-number">8.5</span> RuntimeGame</h3>
+<p><code>RuntimeGame</code>은 게임 도메인 전체가 아니라 바이너리 패킷 프레이밍과 Room 실행 모델을 제공하고, <code>PacketSession</code>은 <code>[size:uint16][msgId:uint16][payload]</code> 형식의 패킷 경계를 복원 및 완전한 패킷이 만들어졌을 때만 게임 핸들러로 넘깁니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>검증 항목</th>
+<th>확인한 것</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>PacketSession</code></td>
+<td>TCP 스트림 위 바이너리 패킷 경계 복원</td>
+</tr>
+<tr class="even">
+<td><code>PacketBuilder</code></td>
+<td>페이로드 앞에 패킷 헤더를 붙여 Core 송신 큐로 전달</td>
+</tr>
+<tr class="odd">
+<td><code>Room</code> / <code>JobQueue</code></td>
+<td>Room 상태 변경을 직렬 실행하고 Room 간 분산 허용</td>
+</tr>
+<tr class="even">
+<td><code>RoomManager</code> / <code>PlayerRegistry</code></td>
+<td>플레이어-Room 관계와 Room 수명주기 관리</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="검증과-벤치마크" class="level3" data-number="8.6">
+<h3 data-number="8.6" class="anchored" data-anchor-id="검증과-벤치마크"><span class="header-section-number">8.6</span> 검증과 벤치마크</h3>
+<p>벤치마크는 “<code>io_uring</code>이 항상 빠르다”는 주장을 하기 위한 것이 아니라, 병목이 어디에 있는지 분리해서 보기 위한 검증입니다. 그래서 Core echo 벤치마크와 Game 브로드캐스트 벤치마크를 나누어 해석했습니다.</p>
+<p>테스트 기준은 아래와 같습니다.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>항목</th>
+<th>조건</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>환경</td>
+<td>WSL2 Ubuntu 24.04, localhost</td>
+</tr>
+<tr class="even">
+<td>도구</td>
+<td><code>game_bench</code>, <code>echo_bench</code>, <code>tools/run_bench.sh</code></td>
+</tr>
+<tr class="odd">
+<td>게임 로직</td>
+<td>Login -&gt; EnterGame -&gt; Move 20Hz -&gt; Attack 2Hz</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="core-echo-벤치마크" class="level3" data-number="8.7">
+<h3 data-number="8.7" class="anchored" data-anchor-id="core-echo-벤치마크"><span class="header-section-number">8.7</span> Core echo 벤치마크</h3>
+<p>게임 로직 없이 Core TCP 경로만 측정한 결과입니다. 64바이트 페이로드, 파이프라인=1 조건에서 측정했습니다.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: right;">클라이언트</th>
+<th style="text-align: right;">처리량 echo/s</th>
+<th style="text-align: right;">p50</th>
+<th style="text-align: right;">p99</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">218,498</td>
+<td style="text-align: right;">30us</td>
+<td style="text-align: right;">157us</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">305,183</td>
+<td style="text-align: right;">152us</td>
+<td style="text-align: right;">367us</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">326,913</td>
+<td style="text-align: right;">293us</td>
+<td style="text-align: right;">594us</td>
+</tr>
+</tbody>
+</table>
+<p>이 결과는 Core의 순수 송신/수신 경로가 밀리초 미만 응답성을 유지한다는 근거입니다. 다만 localhost/WSL2 조건이므로 절대 성능 홍보보다는 Core 전송 경로가 병목 없이 동작하는지 확인한 결과로 보는 것이 맞습니다.</p>
+</section>
+<section id="game-브로드캐스트-벤치마크" class="level3" data-number="8.8">
+<h3 data-number="8.8" class="anchored" data-anchor-id="game-브로드캐스트-벤치마크"><span class="header-section-number">8.8</span> Game 브로드캐스트 벤치마크</h3>
+<p>Game 벤치마크는 Core I/O 경로만 보는 테스트가 아닙니다. <code>C_MOVE</code>를 받은 뒤 Room이 <code>S_MOVE</code>를 여러 클라이언트에게 브로드캐스트하는 경로까지 포함합니다. 즉 여기서는 I/O 백엔드뿐 아니라 Room fan-out, ring 간 송신, Room 직렬화가 함께 드러납니다.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: right;">봇 수</th>
+<th>구성</th>
+<th style="text-align: right;">io_uring p50</th>
+<th style="text-align: right;">epoll p50</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">40</td>
+<td>4 threads</td>
+<td style="text-align: right;">838us</td>
+<td style="text-align: right;">3,322us</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">200</td>
+<td>4 threads</td>
+<td style="text-align: right;">10,001us</td>
+<td style="text-align: right;">4,419,583us</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">400</td>
+<td>8 threads</td>
+<td style="text-align: right;">3,025us</td>
+<td style="text-align: right;">측정 불가</td>
+</tr>
+</tbody>
+</table>
+<p>200봇 단일 Room에서는 epoll 기준 구현이 뮤텍스 경합과 브로드캐스트 fan-out 영향으로 초 단위까지 밀렸고, io_uring 런타임은 ms 단위를 유지했습니다. 이 결과는 단순히 CQ/SQ가 빠르다는 의미보다, owner ring과 Room job 경계를 분리해 둔 구조가 대규모 fan-out에서 무너지지 않았다는 의미가 큽니다.</p>
+<p>꼬리 지연 시간도 같은 방향을 보였습니다.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: right;">봇 수</th>
+<th>구성</th>
+<th style="text-align: right;">io_uring p99</th>
+<th style="text-align: right;">epoll p99</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">40</td>
+<td>1 thread</td>
+<td style="text-align: right;">1,887us</td>
+<td style="text-align: right;">6,067us</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">200</td>
+<td>4 threads</td>
+<td style="text-align: right;">24,191us</td>
+<td style="text-align: right;">11,794,952us</td>
+</tr>
+</tbody>
+</table>
+<p>처리량은 <code>S_MOVE + S_ATTACK + S_DAMAGE</code> 수신 메시지/초 기준으로 봤습니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 22%">
+<col style="width: 16%">
+<col style="width: 22%">
+<col style="width: 22%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: right;">봇 수</th>
+<th>구성</th>
+<th style="text-align: right;">io_uring</th>
+<th style="text-align: right;">epoll</th>
+<th>해석</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">40</td>
+<td>1 thread</td>
+<td style="text-align: right;">37,288 msg/s</td>
+<td style="text-align: right;">37,288 msg/s</td>
+<td>소규모에서는 I/O 백엔드 차이가 거의 드러나지 않음</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">200</td>
+<td>4 threads</td>
+<td style="text-align: right;">950,656 msg/s</td>
+<td style="text-align: right;">523,846 msg/s</td>
+<td>fan-out이 커지며 epoll 기준 구현의 경합이 먼저 드러남</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="room-분산-결과" class="level3" data-number="8.9">
+<h3 data-number="8.9" class="anchored" data-anchor-id="room-분산-결과"><span class="header-section-number">8.9</span> Room 분산 결과</h3>
+<p>봇을 여러 Room으로 분산하면 Room당 fan-out 크기가 줄어듭니다.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>규모</th>
+<th>구성</th>
+<th style="text-align: right;">io_uring p50</th>
+<th style="text-align: right;">epoll p50</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>200 bots / 10 Rooms</td>
+<td>4T x 50C</td>
+<td style="text-align: right;">846us</td>
+<td style="text-align: right;">897us</td>
+</tr>
+<tr class="even">
+<td>400 bots / 20 Rooms</td>
+<td>4T x 100C</td>
+<td style="text-align: right;">920us</td>
+<td style="text-align: right;">691us</td>
+</tr>
+</tbody>
+</table>
+<p>Room 분산 이후에는 두 백엔드 모두 밀리초 미만 수준으로 수렴했습니다. 이 결과는 중요합니다. 병목이 “항상 I/O 백엔드”에 있는 것이 아니라, 단일 Room fan-out 크기와 Room 직렬화 범위에 따라 달라진다는 뜻이기 때문입니다. 따라서 이 벤치마크의 결론은 <code>io_uring</code>의 절대 우위가 아니라, Core I/O 경로와 Game 브로드캐스트 경로의 병목을 분리해서 볼 수 있게 되었다는 점입니다.</p>
+<div class="flow-visual" role="img" aria-label="벤치마크는 Core echo와 Game fan-out과 Room 분산을 나누어 병목 위치를 해석한다">
+<p class="flow-title">
+벤치마크 해석 순서
+</p>
+<div class="flow-steps">
+<pre><code>&lt;div class="flow-step"&gt;
+  &lt;strong&gt;Core echo&lt;/strong&gt;
+  &lt;p&gt;프로토콜 없는 전송 경로 자체의 응답성을 확인한다.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class="flow-step flow-accent-amber"&gt;
+  &lt;strong&gt;single Room&lt;/strong&gt;
+  &lt;p&gt;fan-out이 커질 때 Room 출력과 I/O 경계가 같이 드러난다.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class="flow-step flow-accent-green"&gt;
+  &lt;strong&gt;Room 분산&lt;/strong&gt;
+  &lt;p&gt;Room당 fan-out이 줄면 병목 위치가 다시 이동한다.&lt;/p&gt;
+&lt;/div&gt;
+&lt;div class="flow-step"&gt;
+  &lt;strong&gt;결론&lt;/strong&gt;
+  &lt;p&gt;절대 성능보다 어떤 경계가 먼저 포화되는지를 읽는다.&lt;/p&gt;
+&lt;/div&gt;</code></pre>
+</div>
+</div>
+</section>
+<section id="결과-해석" class="level3" data-number="8.10">
+<h3 data-number="8.10" class="anchored" data-anchor-id="결과-해석"><span class="header-section-number">8.10</span> 결과 해석</h3>
+<p>이 구현에서 얻은 가장 큰 결과는 기능이 많아진 것이 아니라 경계가 선명해진 것입니다.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>검증 항목</th>
+<th>확인한 것</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Core echo</td>
+<td>프로토콜 없는 전송 경로가 독립적으로 측정 가능</td>
+</tr>
+<tr class="even">
+<td>Web 모듈</td>
+<td>HTTP 파서/라우터/스트리밍을 Core 밖에 유지</td>
+</tr>
+<tr class="odd">
+<td>Proxy 모듈</td>
+<td>스트림 중계와 TLS/SNI 라우팅을 Core 밖에 유지</td>
+</tr>
+<tr class="even">
+<td>Game 모듈</td>
+<td>패킷/Room 실행 모델을 Core 밖에 유지</td>
+</tr>
+<tr class="odd">
+<td>Game 벤치마크</td>
+<td>fan-out 병목과 I/O 백엔드 병목을 분리해서 해석 가능</td>
+</tr>
+<tr class="even">
+<td>Room 분산</td>
+<td>병목이 Room 크기에 따라 이동한다는 점 확인</td>
+</tr>
+</tbody>
+</table>
+<p>즉 이 장의 결론은 “Web, Proxy, Game을 모두 만들었다”가 아닙니다. 같은 Core 런타임이 서로 다른 프로토콜 모듈을 수용해도 Core 내부 불변식이 바뀌지 않았다는 점입니다.</p>
+</section>
+<section id="최종-정리" class="level3" data-number="8.11">
+<h3 data-number="8.11" class="anchored" data-anchor-id="최종-정리"><span class="header-section-number">8.11</span> 최종 정리</h3>
+<p>최종 구조에서 유지해야 하는 불변식은 다음과 같습니다.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>불변식</th>
+<th>의미</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Core는 프로토콜을 모른다</td>
+<td>HTTP, 프록시 라우팅, 게임 패킷의 의미는 모듈 책임</td>
+</tr>
+<tr class="even">
+<td>세션 I/O 상태는 owner ring에서만 바뀐다</td>
+<td>송신 큐, 수신 재등록, 연결 종료 상태 전이를 한 실행 문맥으로 직렬화</td>
+</tr>
+<tr class="odd">
+<td>제출된 I/O는 CQE까지 생존한다</td>
+<td>늦은 CQE가 파괴된 세션이나 반환된 버퍼에 접근하지 않음</td>
+</tr>
+<tr class="even">
+<td>닫기는 즉시 해제가 아니다</td>
+<td>연결 종료는 상태 전환이고, 해제는 비우기 이후에 확정</td>
+</tr>
+<tr class="odd">
+<td>송신 큐는 무제한 버퍼가 아니다</td>
+<td>watermark, 수신 일시 정지, 연결 종료 정책의 기준</td>
+</tr>
+<tr class="even">
+<td>Room/DB/프로토콜 파싱은 Core 밖에 둔다</td>
+<td>Core 런타임이 특정 서비스 프레임워크로 굳지 않게 함</td>
+</tr>
+</tbody>
+</table>
+<p>처음에는 서버의 연결 수락, 수신, 송신, 연결 종료 흐름을 직접 구현하는 문제로 시작했습니다. 하지만 실제로 어려웠던 부분은 빠르게 I/O를 제출하는 코드가 아니라, 완료 통지가 늦게 도착하고, 버퍼 수명이 엇갈리고, 연결 종료 중 새 작업이 들어오고, 여러 워커가 같은 세션이나 Room을 건드리는 상황을 끝까지 안전하게 정리하는 것이었습니다.</p>
+<p>그래서 최종 모델은 “빠른 서버”라기보다 “완료 통지 기반 전송 런타임”에 가깝습니다. Core는 수명, 버퍼, 흐름, 동시성의 규칙을 고정하고, Web/Proxy/Game은 그 위에서 각자 프로토콜을 해석합니다. 이 경계가 유지되기 때문에 같은 런타임을 HTTP 서버, TCP/TLS 프록시, 패킷 게임 서버로 확장할 수 있었습니다.</p>
+</section>
 </section>
 
 </main>
