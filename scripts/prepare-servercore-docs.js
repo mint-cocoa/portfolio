@@ -129,37 +129,6 @@ Obsidian Vault의 Markdown 원본을 GitHub Actions에서 Quarto 문서로 렌�
 `;
 }
 
-function chapterNavigation(chapters, index) {
-  const previous = chapters[index - 1];
-  const next = chapters[index + 1];
-  const links = [];
-
-  if (previous) {
-    links.push(`<a class="chapter-nav-link previous" href="${previous.stem}.qmd">
-<span>이전 장</span>
-<strong>${previous.title}</strong>
-</a>`);
-  }
-
-  if (next) {
-    links.push(`<a class="chapter-nav-link next" href="${next.stem}.qmd">
-<span>다음 장</span>
-<strong>${next.title}</strong>
-</a>`);
-  }
-
-  if (links.length === 0) {
-    return "";
-  }
-
-  return `
-
-<div class="chapter-next-panel">
-${links.join("\n")}
-</div>
-`;
-}
-
 function main() {
   if (!fs.existsSync(sourceDocsDir)) {
     throw new Error(`Source docs directory not found: ${sourceDocsDir}`);
@@ -186,8 +155,7 @@ function main() {
 
   chapters.forEach((chapter, index) => {
     const body = convertObsidianEmbeds(normalizeMarkdownForQmd(chapter.markdown));
-    const navigation = chapterNavigation(chapters, index);
-    const qmd = `${frontMatter(chapter.title, index + 1, chapter.description)}${body}${navigation}\n`;
+    const qmd = `${frontMatter(chapter.title, index + 1, chapter.description)}${body}\n`;
     fs.writeFileSync(path.join(buildDocsDir, `${chapter.stem}.qmd`), qmd, "utf8");
   });
 
@@ -202,7 +170,7 @@ function main() {
 
 website:
   title: "서버 런타임 구현 포트폴리오"
-  page-navigation: false
+  page-navigation: true
   navbar:
     left:
       - text: "문서"
