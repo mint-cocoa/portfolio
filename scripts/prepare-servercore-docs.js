@@ -102,7 +102,7 @@ listing:
   contents: "docs/*.qmd"
   type: table
   sort: "order"
-  fields: [title, description, reading-time]
+  fields: [title, description]
   field-links: [title]
   table-hover: true
   filter-ui: [title, description]
@@ -111,7 +111,6 @@ listing:
   field-display-names:
     title: "문서"
     description: "내용"
-    reading-time: "읽기 시간"
 ---
 
 ## 문서 구성
@@ -170,7 +169,6 @@ function main() {
 website:
   title: "서버 런타임 구현 포트폴리오"
   page-navigation: true
-  back-to-top-navigation: true
   navbar:
     left:
       - text: "문서"
