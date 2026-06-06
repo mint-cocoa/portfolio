@@ -1,0 +1,14 @@
+[
+  {
+    "listing": "/index.html",
+    "items": [
+      "/docs/1.overview.html",
+      "/docs/2.lifecycle-management.html",
+      "/docs/3.buffer-management.html",
+      "/docs/4.concurrency-management.html",
+      "/docs/5.producer-consumer-backpressure.html",
+      "/docs/6.summary.html",
+      "/docs/backend-platform-self-introduction.html"
+    ]
+  }
+]
