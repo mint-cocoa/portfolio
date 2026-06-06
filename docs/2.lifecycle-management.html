@@ -69,8 +69,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<link href="../docs/3.buffer-management.html" rel="next">
-<link href="../docs/1.overview.html" rel="prev">
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
@@ -411,6 +409,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div><button title="클립보드 복사" class="code-copy-button"><i class="bi"></i></button></div>
 <p>수명 관리는 하나의 세션 소유자를 관리하는것이 아니라, 각 장치가 보장하는 방식으로 설계되었습니다. <code>SessionManager</code>는 외부에 노출되는 연결 목록을 관리하고, <code>OwnerBoundEvent</code>는 CQE 콜백 대상의 생존을 보장하며, <code>DispatchResult</code>는 이벤트를 완료할지 유지할지 재사용할지 결정합니다. 여기에 <code>pending_io_</code>가 최종 CQE 대기 수를 추적하고, <code>SessionState</code>가 새 작업 허용 여부와 종료 단계를 막아 줍니다.</p>
 <p>결국 세션은 새 작업이 차단되고, 제출된 I/O의 최종 CQE가 모두 돌아오고, 종료 통지가 아직 실행되지 않았을 때만 해제될 수 있습니다. 이 경계가 닫혀야 이후 장에서 다루는 버퍼와 송신 큐도 반환된 세션이나 버퍼를 다시 참조하지 않습니다.</p>
+<div class="chapter-next-panel">
+<p><a class="chapter-nav-link previous" href="../docs/1.overview.html"> <span>이전 장</span> <strong>전체 구조</strong> </a> <a class="chapter-nav-link next" href="../docs/3.buffer-management.html"> <span>다음 장</span> <strong>수신 버퍼</strong> </a></p>
+</div>
 
 
 </section>
@@ -821,18 +822,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
   });
   </script>
-<nav class="page-navigation">
-  <div class="nav-page nav-page-previous">
-      <a href="../docs/1.overview.html" class="pagination-link" aria-label="전체 구조">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">전체 구조</span>
-      </a>          
-  </div>
-  <div class="nav-page nav-page-next">
-      <a href="../docs/3.buffer-management.html" class="pagination-link" aria-label="수신 버퍼">
-        <span class="nav-page-text">수신 버퍼</span> <i class="bi bi-arrow-right-short"></i>
-      </a>
-  </div>
-</nav>
 </div> <!-- /content -->
 
 

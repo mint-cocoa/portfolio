@@ -34,8 +34,6 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<link href="../docs/6.summary.html" rel="next">
-<link href="../docs/4.concurrency-management.html" rel="prev">
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
@@ -465,6 +463,9 @@ ul.task-list li input[type="checkbox"] {
 <li>이후 socket send가 drain될 때 <code>OnSocketDrained()</code>에서 다시 <code>PumpBodyStream()</code>을 호출해 다음 chunk를 이어 보냅니다.</li>
 </ol>
 <p>이 구조로 큰 body 전체를 한 번에 <code>SendQueue</code>에 넣지 않고, <code>chunk_size * max_chunks_per_write</code> 단위로만 생산합니다. 즉 생산자인 HTTP response body stream이 소비자인 socket send 완료 속도에 맞춰 천천히 진행됩니다.</p>
+<div class="chapter-next-panel">
+<p><a class="chapter-nav-link previous" href="../docs/4.concurrency-management.html"> <span>이전 장</span> <strong>Room과 Session 직렬화</strong> </a> <a class="chapter-nav-link next" href="../docs/6.summary.html"> <span>다음 장</span> <strong>선택 모듈로 확장한 결과</strong> </a></p>
+</div>
 
 
 </section>
@@ -875,18 +876,6 @@ ul.task-list li input[type="checkbox"] {
     }
   });
   </script>
-<nav class="page-navigation">
-  <div class="nav-page nav-page-previous">
-      <a href="../docs/4.concurrency-management.html" class="pagination-link" aria-label="Room과 Session 직렬화">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Room과 Session 직렬화</span>
-      </a>          
-  </div>
-  <div class="nav-page nav-page-next">
-      <a href="../docs/6.summary.html" class="pagination-link" aria-label="선택 모듈로 확장한 결과">
-        <span class="nav-page-text">선택 모듈로 확장한 결과</span> <i class="bi bi-arrow-right-short"></i>
-      </a>
-  </div>
-</nav>
 </div> <!-- /content -->
 
 
