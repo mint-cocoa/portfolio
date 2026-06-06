@@ -82,7 +82,6 @@ Web/Proxy/Game 모듈과 검증 결과를 통해 Core 불변식이 유지되는�
 | --- | --- |
 | 구현 저장소 | [iouring-runtime](https://github.com/mint-cocoa/iouring-runtime) |
 | 공개 문서 기준 URL | [mint-cocoa.github.io/portfolio/](https://mint-cocoa.github.io/portfolio/) |
-| 기존 세부 서버 문서 | [ServerCorePortfolio.html](server/ServerCorePortfolio.html) |
 :::
 
 
@@ -105,7 +104,7 @@ Core의 역할은 바이트 스트림을 수신하고 송신하며, 비동기 I/
 
 Core는 연결 수명주기와 비동기 I/O 처리, 버퍼 및 완료 이벤트 관리를 공통으로 담당하고, 스트림을 어떤 메시지 모델로 변환할지는 각 프로토콜 세션이 담당합니다. 이를 통해 게임 서버뿐 아니라 HTTP 서버, 프록시 서버, 패킷 기반 서비스 등 다양한 서버 모듈이 동일한 Core 런타임 위에서 동작할 수 있도록 설계했습니다.
 
-![fig servercore eventloop group](diagrams/servercore-site-style/fig-servercore-eventloop-group.svg)
+![fig servercore eventloop group](../diagrams/servercore-site-style/fig-servercore-eventloop-group.svg)
 
 ### 주요 클래스
 |Core|설명|
@@ -151,7 +150,7 @@ Core는 연결 수명주기와 비동기 I/O 처리, 버퍼 및 완료 이벤트
   -> DispatchResult에 따라 완료, 유지, 재제출
 ```
 
-![fig servercore execution timeline](diagrams/servercore-site-style/fig-servercore-execution-timeline.svg)
+![fig servercore execution timeline](../diagrams/servercore-site-style/fig-servercore-execution-timeline.svg)
 
 이 구조 덕분에 Core는 프로토콜을 해석하지 않으면서도, 비동기 I/O 완료, 버퍼 수명, 세션 종료, 재제출 여부를 일관된 실행 모델 안에서 처리할 수 있습니다.
 
@@ -167,7 +166,7 @@ Core는 연결 수명주기와 비동기 I/O 처리, 버퍼 및 완료 이벤트
 
 `io_uring`의 SQE `user_data`에는 제출된 I/O 하나를 대표하는 `IoEvent*`가 들어갑니다. CQE가 도착하면 `IoRing`은 그 포인터를 복원하고, 이벤트 객체의 `Complete()`를 호출합니다.
 
-![fig servercore cqe dispatch](diagrams/servercore-site-style/fig-servercore-cqe-dispatch.svg)
+![fig servercore cqe dispatch](../diagrams/servercore-site-style/fig-servercore-cqe-dispatch.svg)
 
 ```cpp
 auto* ev = reinterpret_cast<IoEvent*>(data);
@@ -185,7 +184,7 @@ CQE를 처리한 뒤에는 두 가지를 따로 판단해야 합니다.
 1. 이번 CQE를 받은 `IoEvent` 객체를 끝내도 되는지
 2. 세션 전체에서 아직 돌아오지 않은 제출 I/O가 남아 있는지
 
-![ioevent lifetime](diagrams/servercore-site-style/ioevent-lifetime.svg)
+![ioevent lifetime](../diagrams/servercore-site-style/ioevent-lifetime.svg)
 
 multishot 수신에서는 하나의 SQE가 여러 CQE를 만들 수 있습니다. 중간 CQE는 데이터를 하나 전달하지만, 같은 수신 제출은 계속 살아 있을 수 있습니다. 따라서 CQE 하나를 받았다고 해서 항상 제출 I/O 하나가 끝났다고 볼 수 없습니다.
 
@@ -218,7 +217,7 @@ multishot 수신에서는 하나의 SQE가 여러 CQE를 만들 수 있습니다
 
 종료 흐름은 “새 작업 차단 → 종료 관련 작업 제출 → 남은 CQE 비우기 → 한 번만 해제” 순서로 진행됩니다.
 
-![session close flow timeline](diagrams/servercore-site-style/session-close-flow-timeline.svg)
+![session close flow timeline](../diagrams/servercore-site-style/session-close-flow-timeline.svg)
 
 1. `Disconnect()`가 호출되면 `SessionState`를 `kClosing`으로 전환합니다.
 2. `kOpen`이 아니면 새 수신, 새 송신, 새 등록 작업을 차단합니다.
@@ -301,7 +300,7 @@ void Session::TryRelease() {
 
 완전한 프레임이 이번 수신 데이터 안에 모두 들어 있는 경우에는 제공 버퍼의 뷰를 그대로 사용해 파싱합니다. 이때 별도의 세션 수신 버퍼로 복사하지 않습니다. 반대로 프레임이 조각나 있거나, 이전 수신에서 남은 조각과 이어 붙여야 하는 경우에만 프로토콜 `RecvBuffer`에 복사해 누적합니다.
 
-![fig servercore recv buffer fast slow path](diagrams/servercore-site-style/fig-servercore-recv-buffer-fast-slow-path.svg)
+![fig servercore recv buffer fast slow path](../diagrams/servercore-site-style/fig-servercore-recv-buffer-fast-slow-path.svg)
 
 | 상황            | 처리                                 |
 | ------------- | ---------------------------------- |
@@ -321,7 +320,7 @@ void Session::TryRelease() {
 
 또한 송신 완료 통지는 “요청한 버퍼 전체가 전송되었다”는 뜻이 아닙니다. `sendmsg`나 `io_uring send`는 성공 완료에서도 요청한 바이트 수보다 작은 값을 반환할 수 있습니다. 이 경우 반환된 값은 실제로 처리된 바이트 수이며, 애플리케이션은 그 바이트 수만큼 현재 페이로드의 송신 커서를 전진시켜야 합니다.
 
-![fig servercore send byte count cursor](diagrams/servercore-site-style/fig-servercore-send-byte-count-cursor.svg)
+![fig servercore send byte count cursor](../diagrams/servercore-site-style/fig-servercore-send-byte-count-cursor.svg)
 
 남은 바이트 범위를 기억하지 못하면 두 가지 문제가 생깁니다.
 
@@ -348,10 +347,10 @@ TCP는 이 순서를 잘못된 것으로 보지 않습니다. 실제로 소켓 �
 
 따라서 애플리케이션이 의도한 송신 순서는 Session의 송신 큐가 직접 보장해야 합니다.
 
-![fig servercore sendop order timeline](diagrams/servercore-site-style/fig-servercore-sendop-order-timeline.svg)
+![fig servercore sendop order timeline](../diagrams/servercore-site-style/fig-servercore-sendop-order-timeline.svg)
 
 ### 세션당 단일 활성 송신 작업
-![fig servercore single active sendop timeline](diagrams/servercore-site-style/fig-servercore-single-active-sendop-timeline.svg)
+![fig servercore single active sendop timeline](../diagrams/servercore-site-style/fig-servercore-single-active-sendop-timeline.svg)
 
 송신 경로는 세션별 큐와 활성 송신 작업 하나로 구성됩니다. 이를 통해 아직 커널에 제출되지 않은 데이터와, 이미 커널에 제출되어 완료를 기다리는 데이터를 분리합니다.
 
@@ -433,7 +432,7 @@ Room은 “게임 상태를 순서대로 바꾸는 곳”이고, Session은 “�
 
 Room의 `JobQueue`는 여러 세션에서 들어온 요청은 큐에 쌓이지만, Room owner는 그 큐를 한 번에 하나씩만 비우며 Room 상태를 변경합니다. Room이 만든 출력은 바로 세션에 쓰지 않고 `WorkerOutbox`라는 출력 메일박스에 세션별로 들어갑니다. 마지막으로 각 세션 owner ring에서 그 큐를 `Session::SendQueue`로 옮기기 때문에, Room 결정 순서가 같은 세션의 송신 큐 삽입 순서로 이어집니다.
 
-![fig servercore ordering layers](diagrams/servercore-site-style/fig-servercore-ordering-layers.svg)
+![fig servercore ordering layers](../diagrams/servercore-site-style/fig-servercore-ordering-layers.svg)
 
 ### Room 출력 순서 보장
 Room이 만든 패킷을 곧바로 각 Session 소유자 ring 으로 흩어 보내면, 클라이언트가 보는 순서가 Room의 처리 순서와 달라질 수 있습니다.
@@ -497,7 +496,7 @@ Room JobQueue
 | Room output   | Room worker               | worker outbox, session queue | 세션별 FIFO와 budgeted drain으로 송신 경로 진입      |
 |               |                           |                              |                                          |
 
-![fig servercore backpressure](diagrams/servercore-site-style/fig-servercore-backpressure.svg)
+![fig servercore backpressure](../diagrams/servercore-site-style/fig-servercore-backpressure.svg)
 
 
 ### SendQueue를 메모리 압력 측정 단위로
@@ -521,7 +520,7 @@ Room JobQueue
 
 그래서 proxy bridge는 write-side backpressure를 read-side pause로 전파합니다.
 
-![fig servercore proxy backpressure example](diagrams/servercore-site-style/fig-servercore-proxy-backpressure-example.svg)
+![fig servercore proxy backpressure example](../diagrams/servercore-site-style/fig-servercore-proxy-backpressure-example.svg)
 
 이 그림은 백프레셔의 시간 흐름과 pause 중 recv 데이터의 보존 경계를 함께 보여줍니다. B 쪽 `SendQueue`가 high watermark를 넘으면 A 쪽 새 recv 등록을 멈추고, 이미 완료되어 들어온 recv CQE의 데이터는 `PausedRecvQueue`로 복사합니다. B 쪽 write가 low watermark 아래로 내려가면 보류된 데이터를 FIFO 순서로 먼저 `OnRecv()`에 다시 전달한 뒤 recv 등록을 재개합니다.
 
@@ -564,7 +563,7 @@ HTTP handler는 큰 JSON, 큰 text, 파일 body를 만들 수 있습니다. 이 
 | body stream chunk 크기 | 256 KiB |
 | 한 번에 pump하는 최대 chunk 수 | 4 |
 
-![fig servercore http body stream](diagrams/servercore-site-style/fig-servercore-http-body-stream.svg)
+![fig servercore http body stream](../diagrams/servercore-site-style/fig-servercore-http-body-stream.svg)
 
 `HttpResponse::Send()`는 전체 크기가 inline 한계 이하일 때만 단일 buffer를 만듭니다. 더 큰 응답은 header를 먼저 보내고 `StartBodyStream()`으로 body를 넘깁니다.
 
@@ -587,7 +586,7 @@ HTTP handler는 큰 JSON, 큰 text, 파일 body를 만들 수 있습니다. 이 
 ### 선택 모듈로 확장한 결과
 최종 구조에서 Core 런타임은 특정 서버 제품이 아니라 프로토콜에 종속되지 않는 전송 계층입니다. Core는 소켓 연결 수락, 수신/송신, 제공 버퍼, 송신 큐, 시간 초과, 수명주기, owner ring 같은 공통 I/O 책임을 맡습니다. HTTP 요청 해석, 프록시 라우팅, 게임 패킷과 Room 실행 모델은 Core 밖 선택 모듈이 담당합니다.
 
-![fig servercore module boundary](diagrams/servercore-site-style/fig-servercore-module-boundary.svg)
+![fig servercore module boundary](../diagrams/servercore-site-style/fig-servercore-module-boundary.svg)
 
 | 모듈             | Core에서 받는 것                  | 모듈이 추가하는 의미                                         | Core에 넣지 않은 것            |
 | -------------- | ---------------------------- | --------------------------------------------------- | ------------------------ |
@@ -636,4 +635,3 @@ Web, Proxy, Game을 각각 만들었다는 데 있지 않고, 서로 다른 프�
 그래서 최종 구조에서 Core는 프로토콜을 모르는 상태로 남겨 두었습니다. HTTP 요청, 프록시 라우팅, 게임 패킷의 의미는 각 모듈이 해석하고, Core는 세션 I/O 상태를 owner ring에서 직렬화합니다. 제출된 I/O는 CQE가 돌아올 때까지 생존하고, 연결 종료는 즉시 해제가 아니라 비우기 이후에 확정되는 상태 전환으로 처리됩니다. 송신 큐 역시 무제한 버퍼가 아니라 watermark, 수신 일시 정지, 연결 종료 정책을 판단하는 기준으로 사용됩니다.
 
 결과적으로 이 구현은 단순히 빠른 서버를 만드는 작업이 아닌 완료 통지 기반 전송 런타임을 세우는 작업에 가까웠습니다. Core는 수명, 버퍼, 흐름, 동시성의 규칙을 고정하고, Web/Proxy/Game은 그 위에서 각자 프로토콜을 해석합니다. 이 경계가 유지되기 때문에 같은 런타임을 HTTP 서버, , 패킷 게임 서버로 확장할 수 있었습니다.
-
