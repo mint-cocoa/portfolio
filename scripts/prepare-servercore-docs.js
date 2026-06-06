@@ -9,6 +9,7 @@ const sourceCssPath = path.join(contentRoot, "portfolio.css");
 const buildDir = path.join(repoRoot, "generated-quarto");
 const buildDocsDir = path.join(buildDir, "docs");
 const buildDiagramsDir = path.join(buildDir, "diagrams");
+const quartoOutputDir = process.env.QUARTO_OUTPUT_DIR || "../docs";
 
 const chapterSummaries = new Map([
   ["1.overview.md", "io_uring 기반 Core가 소켓, CQE, Session을 어떻게 하나의 실행 모델로 묶는지 정리합니다."],
@@ -160,10 +161,13 @@ function main() {
     path.join(buildDir, "_quarto.yml"),
     `project:
   type: website
-  output-dir: ../docs
+  output-dir: ${quartoOutputDir}
+  resources:
+    - diagrams/
 
 website:
   title: "서버 런타임 구현 포트폴리오"
+  page-navigation: true
   navbar:
     left:
       - text: "문서"
