@@ -81,43 +81,44 @@ function convertObsidianEmbeds(markdown) {
   });
 }
 
-function frontMatter(title, order) {
+function frontMatter(title, order, description) {
   return [
     "---",
     `title: ${yamlString(title)}`,
     `order: ${order}`,
+    `description: ${yamlString(description)}`,
     "---",
     "",
   ].join("\n");
 }
 
-function buildIndex(chapters) {
-  const cards = chapters
-    .map((chapter, index) => {
-      const number = String(index + 1).padStart(2, "0");
-      const summary = chapterSummaries.get(chapter.file) || "";
-      return `::: {.chapter-card}
-[${number}](docs/${chapter.stem}.qmd){.chapter-number}
-
-<p class="chapter-title">${chapter.title}</p>
-
-${summary}
-:::`; 
-    })
-    .join("\n\n");
-
+function buildIndex() {
   return `---
 title: "서버 런타임 구현 포트폴리오"
 subtitle: "io_uring 기반 프로토콜 독립 전송 런타임 설계와 구현"
 order: 0
+listing:
+  id: document-listing
+  contents: "docs/*.qmd"
+  type: table
+  sort: "order"
+  fields: [title, description, reading-time]
+  field-links: [title]
+  table-hover: true
+  filter-ui: [title, description]
+  sort-ui: false
+  page-size: 20
+  field-display-names:
+    title: "문서"
+    description: "내용"
+    reading-time: "읽기 시간"
 ---
 
 ## 문서 구성
 
 Obsidian Vault의 Markdown 원본을 GitHub Actions에서 Quarto 문서로 렌더링한 각 장입니다.
 
-::: {.chapter-map}
-${cards}
+::: {#document-listing}
 :::
 
 ::: {.repo-links}
@@ -150,13 +151,14 @@ function main() {
     const markdown = fs.readFileSync(sourcePath, "utf8").trimStart();
     const stem = outputStem(file);
     const title = titleFromMarkdown(markdown, stem);
+    const description = chapterSummaries.get(file) || "";
     const body = convertObsidianEmbeds(normalizeMarkdownForQmd(markdown));
-    const qmd = `${frontMatter(title, index + 1)}${body}\n`;
+    const qmd = `${frontMatter(title, index + 1, description)}${body}\n`;
     fs.writeFileSync(path.join(buildDocsDir, `${stem}.qmd`), qmd, "utf8");
     chapters.push({ file, stem, title });
   });
 
-  fs.writeFileSync(path.join(buildDir, "index.qmd"), buildIndex(chapters), "utf8");
+  fs.writeFileSync(path.join(buildDir, "index.qmd"), buildIndex(), "utf8");
   fs.writeFileSync(
     path.join(buildDir, "_quarto.yml"),
     `project:
@@ -168,6 +170,7 @@ function main() {
 website:
   title: "서버 런타임 구현 포트폴리오"
   page-navigation: true
+  back-to-top-navigation: true
   navbar:
     left:
       - text: "문서"
