@@ -2,7 +2,9 @@
 _archive/
 _plans/
 .claude/
-_site/
+/_site/
+/docs/
+/generated-quarto/
 _freeze/
 .venv/
 .node/

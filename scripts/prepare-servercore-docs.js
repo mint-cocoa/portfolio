@@ -1,0 +1,201 @@
+const fs = require("fs");
+const path = require("path");
+
+const repoRoot = path.resolve(__dirname, "..");
+const contentRoot = path.join(repoRoot, "content");
+const sourceDocsDir = path.join(contentRoot, "docs");
+const sourceDiagramsDir = path.join(contentRoot, "diagrams");
+const sourceCssPath = path.join(contentRoot, "portfolio.css");
+const buildDir = path.join(repoRoot, "generated-quarto");
+const buildDocsDir = path.join(buildDir, "docs");
+const buildDiagramsDir = path.join(buildDir, "diagrams");
+
+const chapterSummaries = new Map([
+  ["1.overview.md", "io_uring 기반 Core가 소켓, CQE, Session을 어떻게 하나의 실행 모델로 묶는지 정리합니다."],
+  ["2.lifecycle-management.md", "SessionManager, IoEvent, pending_io_, SessionState가 각각 어느 생존 범위를 판단하는지 분리합니다."],
+  ["3.buffer-management.md", "수신 fast/slow path와 송신 순서 보장, 부분 송신 복구를 설명합니다."],
+  ["4.concurrency-management.md", "Room 상태 순서, WorkerOutbox, Session owner ring이 서로 다른 순서를 보장하는 이유를 다룹니다."],
+  ["5.producer-consumer-backpressure.md", "SendQueue, Proxy, Paused recv, HTTP streaming에서 느린 소비자 앞의 생산 위치를 조절합니다."],
+  ["6.summary.md", "Web/Proxy/Game 모듈과 검증 결과를 통해 Core 불변식이 유지되는지 확인합니다."],
+]);
+
+function ensureDir(dir) {
+  fs.mkdirSync(dir, { recursive: true });
+}
+
+function removeDir(dir) {
+  fs.rmSync(dir, { recursive: true, force: true });
+}
+
+function copyDir(src, dest) {
+  if (!fs.existsSync(src)) {
+    return;
+  }
+  ensureDir(dest);
+  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyDir(srcPath, destPath);
+    } else if (entry.isFile()) {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
+function yamlString(value) {
+  return `"${String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
+function titleFromMarkdown(markdown, fallback) {
+  const heading = markdown.match(/^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$/m);
+  if (!heading) {
+    return fallback.replace(/^\d+\./, "").replace(/[-_]/g, " ");
+  }
+  return heading[1].replace(/\s+\{#[^}]+\}\s*$/, "");
+}
+
+function outputStem(file) {
+  return path.basename(file, path.extname(file));
+}
+
+function normalizeMarkdownForQmd(markdown) {
+  return markdown.replace(/^---\s*$/gm, "***");
+}
+
+function convertObsidianEmbeds(markdown) {
+  return markdown.replace(/!\[\[([^\]]+)\]\]/g, (_, rawTarget) => {
+    const [rawPath, rawWidth] = rawTarget.split("|").map((part) => part.trim());
+    const normalized = rawPath.replace(/\\/g, "/");
+    const basename = path.basename(normalized, path.extname(normalized));
+    const alt = basename.replace(/[-_]/g, " ");
+    const relative = normalized.startsWith("diagrams/")
+      ? `../${normalized}`
+      : normalized;
+
+    if (rawWidth && /^\d+$/.test(rawWidth)) {
+      return `![${alt}](${relative}){width="${rawWidth}px"}`;
+    }
+    return `![${alt}](${relative})`;
+  });
+}
+
+function frontMatter(title, order) {
+  return [
+    "---",
+    `title: ${yamlString(title)}`,
+    `order: ${order}`,
+    "---",
+    "",
+  ].join("\n");
+}
+
+function buildIndex(chapters) {
+  const cards = chapters
+    .map((chapter, index) => {
+      const number = String(index + 1).padStart(2, "0");
+      const summary = chapterSummaries.get(chapter.file) || "";
+      return `::: {.chapter-card}
+[${number}](docs/${chapter.stem}.qmd){.chapter-number}
+
+<p class="chapter-title">${chapter.title}</p>
+
+${summary}
+:::`; 
+    })
+    .join("\n\n");
+
+  return `---
+title: "서버 런타임 구현 포트폴리오"
+subtitle: "io_uring 기반 프로토콜 독립 전송 런타임 설계와 구현"
+order: 0
+---
+
+## 문서 구성
+
+Obsidian Vault의 Markdown 원본을 GitHub Actions에서 Quarto 문서로 렌더링한 각 장입니다.
+
+::: {.chapter-map}
+${cards}
+:::
+
+::: {.repo-links}
+| 항목 | 링크 |
+| --- | --- |
+| 구현 저장소 | [iouring-runtime](https://github.com/mint-cocoa/iouring-runtime) |
+| 공개 문서 기준 URL | [mint-cocoa.github.io/portfolio/](https://mint-cocoa.github.io/portfolio/) |
+:::
+`;
+}
+
+function main() {
+  if (!fs.existsSync(sourceDocsDir)) {
+    throw new Error(`Source docs directory not found: ${sourceDocsDir}`);
+  }
+
+  removeDir(buildDir);
+  ensureDir(buildDocsDir);
+  copyDir(sourceDiagramsDir, buildDiagramsDir);
+  fs.copyFileSync(sourceCssPath, path.join(buildDir, "portfolio.css"));
+
+  const files = fs
+    .readdirSync(sourceDocsDir)
+    .filter((file) => file.toLowerCase().endsWith(".md"))
+    .sort((a, b) => a.localeCompare(b, "ko"));
+
+  const chapters = [];
+  files.forEach((file, index) => {
+    const sourcePath = path.join(sourceDocsDir, file);
+    const markdown = fs.readFileSync(sourcePath, "utf8").trimStart();
+    const stem = outputStem(file);
+    const title = titleFromMarkdown(markdown, stem);
+    const body = convertObsidianEmbeds(normalizeMarkdownForQmd(markdown));
+    const qmd = `${frontMatter(title, index + 1)}${body}\n`;
+    fs.writeFileSync(path.join(buildDocsDir, `${stem}.qmd`), qmd, "utf8");
+    chapters.push({ file, stem, title });
+  });
+
+  fs.writeFileSync(path.join(buildDir, "index.qmd"), buildIndex(chapters), "utf8");
+  fs.writeFileSync(
+    path.join(buildDir, "_quarto.yml"),
+    `project:
+  type: website
+  output-dir: ../docs
+
+website:
+  title: "서버 런타임 구현 포트폴리오"
+  navbar:
+    left:
+      - text: "문서"
+        href: index.qmd
+  sidebar:
+    contents: auto
+
+format:
+  html:
+    lang: ko
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-copy: true
+    code-fold: false
+    link-external-newwindow: true
+    page-layout: article
+    css: portfolio.css
+    code-overflow: wrap
+    highlight-style: github
+    fontsize: 1em
+    linestretch: 1.6
+    grid:
+      body-width: 900px
+      margin-width: 280px
+      gutter-width: 1.5rem
+`,
+    "utf8",
+  );
+
+  console.log(`Prepared ${chapters.length} documents in ${path.relative(repoRoot, buildDir)}`);
+}
+
+main();
