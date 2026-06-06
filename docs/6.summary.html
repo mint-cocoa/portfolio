@@ -34,6 +34,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
+<link href="../docs/backend-platform-self-introduction.html" rel="next">
+<link href="../docs/5.producer-consumer-backpressure.html" rel="prev">
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
@@ -376,9 +378,6 @@ ul.task-list li input[type="checkbox"] {
 <p>처음에는 서버의 연결 수락, 수신, 송신, 연결 종료 흐름을 직접 구현하는 문제로 시작했습니다. 하지만 구현이 진행될수록 핵심은 빠르게 I/O를 제출하는 코드가 아니라, 완료 통지가 늦게 도착하고, 버퍼 수명이 엇갈리고, 연결 종료 중 새 작업이 들어오고, 여러 워커가 같은 세션이나 Room을 건드리는 상황을 끝까지 안전하게 마무리하는 데 있다는 점이 드러났습니다.</p>
 <p>그래서 최종 구조에서 Core는 프로토콜을 모르는 상태로 남겨 두었습니다. HTTP 요청, 프록시 라우팅, 게임 패킷의 의미는 각 모듈이 해석하고, Core는 세션 I/O 상태를 owner ring에서 직렬화합니다. 제출된 I/O는 CQE가 돌아올 때까지 생존하고, 연결 종료는 즉시 해제가 아니라 비우기 이후에 확정되는 상태 전환으로 처리됩니다. 송신 큐 역시 무제한 버퍼가 아니라 watermark, 수신 일시 정지, 연결 종료 정책을 판단하는 기준으로 사용됩니다.</p>
 <p>결과적으로 이 구현은 단순히 빠른 서버를 만드는 작업이 아닌 완료 통지 기반 전송 런타임을 세우는 작업에 가까웠습니다. Core는 수명, 버퍼, 흐름, 동시성의 규칙을 고정하고, Web/Proxy/Game은 그 위에서 각자 프로토콜을 해석합니다. 이 경계가 유지되기 때문에 같은 런타임을 HTTP 서버, , 패킷 게임 서버로 확장할 수 있었습니다.</p>
-<div class="chapter-next-panel">
-<p><a class="chapter-nav-link previous" href="../docs/5.producer-consumer-backpressure.html"> <span>이전 장</span> <strong>SendQueue를 메모리 압력 측정 단위로</strong> </a> <a class="chapter-nav-link next" href="../docs/backend-platform-self-introduction.html"> <span>다음 장</span> <strong>백엔드/플랫폼 자기소개서 초안</strong> </a></p>
-</div>
 
 
 </section>
@@ -789,6 +788,18 @@ ul.task-list li input[type="checkbox"] {
     }
   });
   </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../docs/5.producer-consumer-backpressure.html" class="pagination-link" aria-label="SendQueue를 메모리 압력 측정 단위로">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">SendQueue를 메모리 압력 측정 단위로</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../docs/backend-platform-self-introduction.html" class="pagination-link" aria-label="백엔드/플랫폼 자기소개서 초안">
+        <span class="nav-page-text">백엔드/플랫폼 자기소개서 초안</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
 </div> <!-- /content -->
 
 

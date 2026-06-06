@@ -34,6 +34,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
+<link href="../docs/5.producer-consumer-backpressure.html" rel="next">
+<link href="../docs/3.buffer-management.html" rel="prev">
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
@@ -367,9 +369,6 @@ ul.task-list li input[type="checkbox"] {
   -&gt; io_uring send</code></pre>
 <p>이 경로를 통해 Room의 상태 변경 순서, Room 출력의 세션별 전달 순서, 그리고 Session의 실제 송신 바이트 순서가 각각의 소유자 실행 문맥에서 분리되어 보장됩니다.</p>
 <p>핵심은 Room의 논리 순서와 Session의 실제 송신 순서를 하나의 락으로 묶지 않았다는 점입니다. <code>Room JobQueue</code>는 Room 상태 변경과 브로드캐스트 결정을 한 번에 하나씩 처리하고, <code>WorkerOutbox</code>는 Room 출력이 대상 워커로 이동할 때 세션별 FIFO를 유지하며, <code>Session owner ring</code>은 같은 세션의 <code>SendQueue</code> 삽입과 <code>SendOp</code> 진행을 한 실행 문맥에서 처리합니다.</p>
-<div class="chapter-next-panel">
-<p><a class="chapter-nav-link previous" href="../docs/3.buffer-management.html"> <span>이전 장</span> <strong>수신 버퍼</strong> </a> <a class="chapter-nav-link next" href="../docs/5.producer-consumer-backpressure.html"> <span>다음 장</span> <strong>SendQueue를 메모리 압력 측정 단위로</strong> </a></p>
-</div>
 
 
 </section>
@@ -781,6 +780,18 @@ ul.task-list li input[type="checkbox"] {
     }
   });
   </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../docs/3.buffer-management.html" class="pagination-link" aria-label="수신 버퍼">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">수신 버퍼</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../docs/5.producer-consumer-backpressure.html" class="pagination-link" aria-label="SendQueue를 메모리 압력 측정 단위로">
+        <span class="nav-page-text">SendQueue를 메모리 압력 측정 단위로</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
 </div> <!-- /content -->
 
 

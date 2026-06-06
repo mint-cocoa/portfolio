@@ -33,6 +33,7 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
+<link href="../docs/6.summary.html" rel="prev">
 <script src="../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
@@ -238,9 +239,6 @@ ul.task-list li input[type="checkbox"] {
 </ol>
 <p>생산자가 데이터를 만드는 속도보다 소켓 송신 완료가 느리면 송신 대기열이 계속 증가합니다. 그래서 송신 대기열을 메모리 압력 경계로 보고, 쌓인 데이터의 크기와 대기 상태를 관측했습니다. 프록시에서는 쓰기 쪽 압력을 읽기 일시 정지로 되돌리고, HTTP 응답은 큰 본문을 한 번에 만들지 않고 비워지는 속도에 맞춰 조각 단위로 생산하도록 설계했습니다.</p>
 <p>이 과정에서 공통 실행 엔진은 프로토콜을 해석하지 않고 바이트 스트림, 세션 수명, 버퍼 소유권, 송신 순서, 흐름 제어만 책임지도록 정리했습니다. 그 위에서 게임 모듈은 패킷 해석과 Room 실행 모델을, 웹 모듈은 HTTP 파서와 라우팅을, 프록시 모듈은 스트림 중계와 라우팅을 담당하도록 분리했습니다. 결과적으로 게임 서버를 위해 시작한 엔진을 여러 서버 애플리케이션이 공유할 수 있는 네트워크 I/O 실행 기반으로 확장했습니다.</p>
-<div class="chapter-next-panel">
-<p><a class="chapter-nav-link previous" href="../docs/6.summary.html"> <span>이전 장</span> <strong>선택 모듈로 확장한 결과</strong> </a></p>
-</div>
 
 
 </section>
@@ -652,6 +650,15 @@ ul.task-list li input[type="checkbox"] {
     }
   });
   </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../docs/6.summary.html" class="pagination-link" aria-label="선택 모듈로 확장한 결과">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">선택 모듈로 확장한 결과</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+  </div>
+</nav>
 </div> <!-- /content -->
 
 
