@@ -1,0 +1,2311 @@
+---
+title: "수신 버퍼"
+lang: ko
+format:
+  html:
+    css: ../../portfolio.css
+    code-overflow: wrap
+    highlight-style: github
+    fontsize: 1em
+    linestretch: 1.6
+    toc: true
+    embed-resources: true
+---
+
+## 수신 버퍼
+
+### 버퍼 복사와 비용
+
+기존 수신 경로에서는 매 수신마다 임시 버퍼의 데이터를 세션별 수신 버퍼로 복사했습니다. 이 방식은 구현은 단순하지만, 대부분의 패킷이 한 번의 수신으로 완성되는 상황에서도 불필요한 복사 비용이 발생합니다.
+
+그렇다고 커널이 채운 수신 버퍼의 뷰만 그대로 전달할 수도 없습니다. TCP는 바이트 스트림이기 때문에 애플리케이션이 정의한 패킷 경계를 보존하지 않습니다. 하나의 패킷이 여러 번의 수신으로 나뉘어 도착할 수 있고, 반대로 여러 패킷이 한 번의 수신에 합쳐져 들어올 수도 있습니다.
+
+
+
+따라서 수신 버퍼는 단순히 “이번에 받은 데이터”를 담는 공간이 아니라, 다음 역할을 수행할 수 있어야 합니다.
+
+| 역할         | 의미                             |
+| ---------- | ------------------------------ |
+| 완전한 프레임 파싱 | 이번 수신 데이터 안에서 완성된 패킷을 바로 해석    |
+| 조각난 프레임 보존 | 아직 완성되지 않은 패킷의 앞부분을 다음 수신까지 보관 |
+| 소비한 데이터 제거 | 이미 파싱한 앞부분을 버리고 남은 데이터만 유지     |
+| 경계 누적      | 다음 패킷 경계가 완성될 때까지 데이터를 이어 붙임   |
+
+### 수신 경로 분리
+
+수신 경로는 빠른 경로와 느린 경로로 분리했습니다.
+
+완전한 프레임이 이번 수신 데이터 안에 모두 들어 있는 경우에는 제공 버퍼의 뷰를 그대로 사용해 파싱합니다. 이때 별도의 세션 수신 버퍼로 복사하지 않습니다. 반대로 프레임이 조각나 있거나, 이전 수신에서 남은 조각과 이어 붙여야 하는 경우에만 프로토콜 `RecvBuffer`에 복사해 누적합니다.
+
+```{=html}
+<div class="servercore-svg-frame" data-diagram="fig-servercore-recv-buffer-fast-slow-path">
+<svg
+   width="1200"
+   height="588"
+   viewBox="0 87 1200 588"
+   role="img"
+   aria-labelledby="fig-servercore-recv-buffer-fast-slow-path-title fig-servercore-recv-buffer-fast-slow-path-desc"
+   version="1.1"
+   id="fig-servercore-recv-buffer-fast-slow-path-svg31"
+   sodipodi:docname="fig-servercore-recv-buffer-fast-slow-path.svg"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg" class="servercore-svg-inline">
+  <sodipodi:namedview
+     id="fig-servercore-recv-buffer-fast-slow-path-namedview31"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="1.5102041"
+     inkscape:cx="375.11486"
+     inkscape:cy="258.24324"
+     inkscape:window-width="3840"
+     inkscape:window-height="2036"
+     inkscape:window-x="3572"
+     inkscape:window-y="-12"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg31" />
+  <title
+     id="fig-servercore-recv-buffer-fast-slow-path-title">Recv buffer fast and slow paths</title>
+  <desc
+     id="fig-servercore-recv-buffer-fast-slow-path-desc">The io_uring provided buffer span is valid only during the receive callback. Complete frames are parsed directly from the span, while incomplete tails are copied into the session-owned RecvBuffer and joined with later receives.</desc>
+  <defs
+     id="fig-servercore-recv-buffer-fast-slow-path-defs3">
+    <rect
+       x="919.81692"
+       y="376.91658"
+       width="197.82268"
+       height="197.82268"
+       id="fig-servercore-recv-buffer-fast-slow-path-rect34" />
+    <marker markerUnits="userSpaceOnUse"
+       id="fig-servercore-recv-buffer-fast-slow-path-arrow"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="8"
+       markerHeight="8"
+       orient="auto">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#334155"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="fig-servercore-recv-buffer-fast-slow-path-path1" />
+    </marker>
+    <marker markerUnits="userSpaceOnUse"
+       id="fig-servercore-recv-buffer-fast-slow-path-tealArrow"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="8"
+       markerHeight="8"
+       orient="auto">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#0f766e"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="fig-servercore-recv-buffer-fast-slow-path-path2" />
+    </marker>
+    <marker markerUnits="userSpaceOnUse"
+       id="fig-servercore-recv-buffer-fast-slow-path-purpleArrow"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="8"
+       markerHeight="8"
+       orient="auto">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#7c3aed"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="fig-servercore-recv-buffer-fast-slow-path-path3" />
+    </marker>
+    <style
+       id="fig-servercore-recv-buffer-fast-slow-path-style3">
+      .bg{fill:#f8fafc}.panel{fill:#ffffff;stroke:#cbd5e1;stroke-width:1.5}.temp{fill:#f0fdfa;stroke:#0f766e;stroke-width:2}.durable{fill:#f5f3ff;stroke:#7c3aed;stroke-width:2}.neutral{fill:#f8fafc;stroke:#64748b;stroke-width:1.5}.frame{fill:#ccfbf1;stroke:#0f766e;stroke-width:1.5}.tail{fill:#ede9fe;stroke:#7c3aed;stroke-width:1.5}.parsed{fill:#dcfce7;stroke:#16a34a;stroke-width:1.5}.clean{fill:#e0f2fe;stroke:#0284c7;stroke-width:1.5}.h{font-family:Segoe UI,Arial,sans-serif;fill:#0f172a;font-size:30px;font-weight:700}.t{font-family:Segoe UI,Arial,sans-serif;fill:#0f172a;font-size:20px;font-weight:700}.s{font-family:Segoe UI,Arial,sans-serif;fill:#475569;font-size:16px}.xs{font-family:Segoe UI,Arial,sans-serif;fill:#64748b;font-size:14px}.line{stroke:#334155;stroke-width:3;fill:none;marker-end:url(#fig-servercore-recv-buffer-fast-slow-path-arrow)}.fast{stroke:#0f766e;stroke-width:3;fill:none;marker-end:url(#fig-servercore-recv-buffer-fast-slow-path-tealArrow)}.slow{stroke:#7c3aed;stroke-width:3;fill:none;marker-end:url(#fig-servercore-recv-buffer-fast-slow-path-purpleArrow)}.dash{stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:8 8;fill:none}
+    </style>
+  </defs>
+  <rect
+     class="bg"
+     width="1200"
+     height="760"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect3" />
+  <rect
+     class="panel"
+     x="60"
+     y="120"
+     width="1080"
+     height="170"
+     rx="12"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect4" />
+  <text
+     class="t"
+     x="88"
+     y="156"
+     id="fig-servercore-recv-buffer-fast-slow-path-text4">수신 직후의 임시 메모리</text>
+  <text
+     class="s"
+     x="88"
+     y="184"
+     id="fig-servercore-recv-buffer-fast-slow-path-text5"><tspan
+       sodipodi:role="line"
+       id="fig-servercore-recv-buffer-fast-slow-path-tspan31"
+       x="88"
+       y="184">CQE가 알려준 buf_id와 span은 이번 OnRecv() 동안만 안전</tspan><tspan
+       sodipodi:role="line"
+       id="fig-servercore-recv-buffer-fast-slow-path-tspan32"
+       x="88"
+       y="204">.</tspan></text>
+  <rect
+     class="temp"
+     x="120"
+     y="218"
+     width="196"
+     height="48"
+     rx="8"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect5" />
+  <text
+     class="s"
+     x="154"
+     y="248"
+     id="fig-servercore-recv-buffer-fast-slow-path-text6">provided buffer</text>
+  <path
+     class="line"
+     d="M 316 242 L 398 242"
+     id="fig-servercore-recv-buffer-fast-slow-path-path6" />
+  <rect
+     class="neutral"
+     x="398"
+     y="218"
+     width="150"
+     height="48"
+     rx="8"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect6" />
+  <text
+     class="s"
+     x="433"
+     y="248"
+     id="fig-servercore-recv-buffer-fast-slow-path-text7">CQE span</text>
+  <path
+     class="line"
+     d="M 548 242 L 632 242"
+     id="fig-servercore-recv-buffer-fast-slow-path-path7" />
+  <rect
+     class="neutral"
+     x="632"
+     y="218"
+     width="170"
+     height="48"
+     rx="8"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect7" />
+  <text
+     class="s"
+     x="672"
+     y="248"
+     id="fig-servercore-recv-buffer-fast-slow-path-text8">OnRecv(span)</text>
+  <path
+     class="line"
+     d="M 802 242 L 884 242"
+     id="fig-servercore-recv-buffer-fast-slow-path-path8" />
+  <rect
+     class="temp"
+     x="884"
+     y="206"
+     width="200"
+     height="72"
+     rx="8"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect8" />
+  <text
+     class="xs"
+     x="918"
+     y="230"
+     id="fig-servercore-recv-buffer-fast-slow-path-text9">이번 recv 데이터</text>
+  <rect
+     class="frame"
+     x="906"
+     y="244"
+     width="44"
+     height="20"
+     rx="4"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect9" />
+  <rect
+     class="frame"
+     x="956"
+     y="244"
+     width="44"
+     height="20"
+     rx="4"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect10" />
+  <rect
+     class="tail"
+     x="1006"
+     y="244"
+     width="56"
+     height="20"
+     rx="4"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect11" />
+  <text
+     class="xs"
+     x="912"
+     y="259"
+     id="fig-servercore-recv-buffer-fast-slow-path-text11">A</text>
+  <text
+     class="xs"
+     x="962"
+     y="259"
+     id="fig-servercore-recv-buffer-fast-slow-path-text12">B</text>
+  <text
+     class="xs"
+     x="1016"
+     y="259"
+     id="fig-servercore-recv-buffer-fast-slow-path-text13">tail</text>
+  <rect
+     class="panel"
+     x="60"
+     y="330"
+     width="520"
+     height="300"
+     rx="12"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect13" />
+  <text
+     class="t"
+     x="88"
+     y="366"
+     id="fig-servercore-recv-buffer-fast-slow-path-text14">빠른 경로: 복사 없이 파싱</text>
+  <text
+     class="s"
+     x="88"
+     y="394"
+     id="fig-servercore-recv-buffer-fast-slow-path-text15">완전한 프레임은 span 위에서 바로 소비.</text>
+  <rect
+     class="temp"
+     x="112"
+     y="432"
+     width="260"
+     height="74"
+     rx="8"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect15" />
+  <text
+     class="xs"
+     x="136"
+     y="456"
+     id="fig-servercore-recv-buffer-fast-slow-path-text16">provided buffer span</text>
+  <rect
+     class="frame"
+     x="142.62163"
+     y="472.33109"
+     width="76"
+     height="22"
+     rx="4"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect16" />
+  <text
+     class="xs"
+     x="160"
+     y="488"
+     id="fig-servercore-recv-buffer-fast-slow-path-text17">frame A</text>
+  <rect
+     class="frame"
+     x="233.60135"
+     y="472.66217"
+     width="76"
+     height="22"
+     rx="4"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect17" />
+  <text
+     class="xs"
+     x="248"
+     y="488"
+     id="fig-servercore-recv-buffer-fast-slow-path-text18">frame B</text>
+  <path
+     class="fast"
+     d="M 372 469 L 436 469"
+     id="fig-servercore-recv-buffer-fast-slow-path-path18" />
+  <rect
+     class="parsed"
+     x="436"
+     y="444"
+     width="106"
+     height="50"
+     rx="8"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect18" />
+  <text
+     class="s"
+     x="468.96622"
+     y="472.67569"
+     id="fig-servercore-recv-buffer-fast-slow-path-text19">parse</text>
+  <path
+     class="fast"
+     d="M 242 506 C 242 548 302 570 380 570"
+     id="fig-servercore-recv-buffer-fast-slow-path-path19" />
+  <rect
+     class="clean"
+     x="380"
+     y="546"
+     width="132"
+     height="48"
+     rx="8"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect19" />
+  <text
+     class="s"
+     x="411.35135"
+     y="577.32434"
+     id="fig-servercore-recv-buffer-fast-slow-path-text20">buffer 반환</text>
+  <text
+     class="xs"
+     x="132.63515"
+     y="612.64868"
+     id="fig-servercore-recv-buffer-fast-slow-path-text21">RecvBuffer를 거치지 않음</text>
+  <rect
+     class="panel"
+     x="620.70233"
+     y="330.46823"
+     width="520"
+     height="300"
+     rx="12"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect21" />
+  <text
+     class="t"
+     x="648"
+     y="366"
+     id="fig-servercore-recv-buffer-fast-slow-path-text22">느린 경로: tail만 보존</text>
+  <text
+     class="s"
+     x="648"
+     y="394"
+     id="fig-servercore-recv-buffer-fast-slow-path-text23"><tspan
+       sodipodi:role="line"
+       id="fig-servercore-recv-buffer-fast-slow-path-tspan33"
+       x="648"
+       y="394">프레임이 조각나면 세션 RecvBuffer에 누적</tspan><tspan
+       sodipodi:role="line"
+       id="fig-servercore-recv-buffer-fast-slow-path-tspan34"
+       x="648"
+       y="414" /></text>
+  <rect
+     class="temp"
+     x="662"
+     y="432"
+     width="204"
+     height="62"
+     rx="8"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect23" />
+  <text
+     class="xs"
+     x="686"
+     y="456"
+     id="fig-servercore-recv-buffer-fast-slow-path-text24">provided span</text>
+  <rect
+     class="frame"
+     x="684"
+     y="470"
+     width="58"
+     height="18"
+     rx="4"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect24" />
+  <text
+     class="xs"
+     x="696"
+     y="484"
+     id="fig-servercore-recv-buffer-fast-slow-path-text25">frame</text>
+  <rect
+     class="tail"
+     x="750"
+     y="470"
+     width="88"
+     height="18"
+     rx="4"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect25" />
+  <text
+     class="xs"
+     x="772"
+     y="484"
+     id="fig-servercore-recv-buffer-fast-slow-path-text26">tail</text>
+  <path
+     class="slow"
+     d="m 838,479 c 48,0 64.40781,57.06672 96.32096,83.287"
+     id="fig-servercore-recv-buffer-fast-slow-path-path26"
+     sodipodi:nodetypes="cc" />
+  <rect
+     class="durable"
+     x="927.06354"
+     y="434.85712"
+     width="176"
+     height="76"
+     rx="8"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect26" />
+  <text
+     class="xs"
+     x="956.23413"
+     y="458.38889"
+     id="fig-servercore-recv-buffer-fast-slow-path-text27">session RecvBuffer</text>
+  <rect
+     class="tail"
+     x="951.5318"
+     y="478.72998"
+     width="56"
+     height="20"
+     rx="4"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect27" />
+  <text
+     class="xs"
+     x="966.38452"
+     y="491.38889"
+     id="fig-servercore-recv-buffer-fast-slow-path-text28">prev</text>
+  <rect
+     class="tail"
+     x="1013.2977"
+     y="478.72998"
+     width="62"
+     height="20"
+     rx="4"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect28" />
+  <text
+     class="xs"
+     x="1030.9799"
+     y="490.92065"
+     id="fig-servercore-recv-buffer-fast-slow-path-text29">new</text>
+  <path
+     class="slow"
+     d="m 1012.9566,512.96409 v 30"
+     id="fig-servercore-recv-buffer-fast-slow-path-path29" />
+  <rect
+     class="parsed"
+     x="935.5318"
+     y="549.05096"
+     width="160"
+     height="48"
+     rx="8"
+     id="fig-servercore-recv-buffer-fast-slow-path-rect29" />
+  <text
+     class="s"
+     x="970.44806"
+     y="579.98737"
+     id="fig-servercore-recv-buffer-fast-slow-path-text30">완성 후 파싱</text>
+  <path
+     class="slow"
+     d="m 933.85274,579.13779 c -80,0 -109.35808,-19.10383 -109.35808,-83.10383"
+     id="fig-servercore-recv-buffer-fast-slow-path-path30"
+     sodipodi:nodetypes="cc" />
+  <text
+     class="xs"
+     x="674.38513"
+     y="616.62164"
+     id="fig-servercore-recv-buffer-fast-slow-path-text31">남은 조각만 다음 recv까지 유지</text>
+  <text
+     xml:space="preserve"
+     transform="translate(0,87)"
+     id="fig-servercore-recv-buffer-fast-slow-path-text34"
+     style="writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#fig-servercore-recv-buffer-fast-slow-path-rect34);fill:#e5e0f4;fill-opacity:0.352941;stroke:#ed3a3a" />
+</svg>
+</div>
+```
+
+| 상황            | 처리                                 |
+| ------------- | ---------------------------------- |
+| 완전한 프레임       | provided 버퍼의 `span` 또는 뷰에서 직접 파싱   |
+| 여러 완전한 프레임    | provided 버퍼 뷰를 순차적으로 소비하며 반복 파싱    |
+| 조각난 프레임       | 세션 소유 `RecvBuffer`에 복사해 다음 수신까지 보존 |
+| 이전 조각 + 새 데이터 | `RecvBuffer`에 이어 붙인 뒤 완성 여부 확인     |
+
+이 구조에서 `Session`은 수신 작업의 상태와 제공 버퍼의 반환 타이밍을 관리합니다. 원본 수신 메모리는 `iouring` 가 관리하고, 프로토콜 프레임 재조립은 `RecvBuffer`가 담당합니다.
+
+여러 클라이언트가 동시에 연결되어도 이 경계는 세션별로 독립적입니다. `IoRing`과 provided buffer pool은 공유되지만, 조각난 프레임을 보관하는 `RecvBuffer`, 아직 커널에 제출되지 않은 `SendQueue`, 현재 진행 중인 `SendOp`은 각 `Session` 내부 상태로 분리됩니다.
+
+
+
+***
+## 송신 버퍼
+
+### 요청한 길이와 실제 처리된 길이의 불일치
+
+송신 경로에서는 애플리케이션이 넘긴 페이로드의 수명이 송신 완료까지 보장되어야 합니다. 스택 버퍼, 임시 문자열, 임시 `string_view`를 그대로 커널 송신 요청에 넘기면, 커널이 아직 해당 메모리를 참조하고 있는 동안 원본 데이터가 먼저 해제되거나 덮어써질 수 있습니다.
+
+또한 송신 완료 통지는 “요청한 버퍼 전체가 전송되었다”는 뜻이 아닙니다. `sendmsg`나 `io_uring send`는 성공 완료에서도 요청한 바이트 수보다 작은 값을 반환할 수 있습니다. 이 경우 반환된 값은 실제로 처리된 바이트 수이며, 애플리케이션은 그 바이트 수만큼 현재 페이로드의 송신 커서를 전진시켜야 합니다.
+
+```{=html}
+<div class="servercore-svg-frame" data-diagram="fig-servercore-send-byte-count-cursor">
+<svg
+   width="1200"
+   height="682"
+   viewBox="0 93 1200 682"
+   role="img"
+   aria-labelledby="fig-servercore-send-byte-count-cursor-title fig-servercore-send-byte-count-cursor-desc"
+   version="1.1"
+   id="fig-servercore-send-byte-count-cursor-svg30"
+   sodipodi:docname="fig-servercore-send-byte-count-cursor.svg"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg" class="servercore-svg-inline">
+  <sodipodi:namedview
+     id="fig-servercore-send-byte-count-cursor-namedview30"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="1.3020528"
+     inkscape:cx="588.6858"
+     inkscape:cy="407.43355"
+     inkscape:window-width="2560"
+     inkscape:window-height="1351"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg30" />
+  <title
+     id="fig-servercore-send-byte-count-cursor-title">Send byte count cursor</title>
+  <desc
+     id="fig-servercore-send-byte-count-cursor-desc">A send request asks the kernel to process a full payload range, but the completion result may report only a prefix. The session advances the send cursor by the completed byte count and resubmits the remaining suffix before starting the next payload.</desc>
+  <defs
+     id="fig-servercore-send-byte-count-cursor-defs3">
+    <marker markerUnits="userSpaceOnUse"
+       id="fig-servercore-send-byte-count-cursor-arrow"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="8"
+       markerHeight="8"
+       orient="auto">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#334155"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="fig-servercore-send-byte-count-cursor-path1" />
+    </marker>
+    <marker markerUnits="userSpaceOnUse"
+       id="fig-servercore-send-byte-count-cursor-tealArrow"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="8"
+       markerHeight="8"
+       orient="auto">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#0f766e"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="fig-servercore-send-byte-count-cursor-path2" />
+    </marker>
+    <marker markerUnits="userSpaceOnUse"
+       id="fig-servercore-send-byte-count-cursor-amberArrow"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="8"
+       markerHeight="8"
+       orient="auto">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#ca8a04"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="fig-servercore-send-byte-count-cursor-path3" />
+    </marker>
+    <style
+       id="fig-servercore-send-byte-count-cursor-style3">
+      .bg{fill:#f8fafc}.panel{fill:#ffffff;stroke:#cbd5e1;stroke-width:1.5}.request{fill:#f8fafc;stroke:#64748b;stroke-width:1.5}.active{fill:#ecfdf5;stroke:#0f766e;stroke-width:2}.done{fill:#dcfce7;stroke:#16a34a;stroke-width:1.5}.left{fill:#fef3c7;stroke:#ca8a04;stroke-width:1.5}.payloadA{fill:#dbeafe;stroke:#2563eb;stroke-width:1.5}.payloadB{fill:#ccfbf1;stroke:#0f766e;stroke-width:1.5}.next{fill:#f1f5f9;stroke:#94a3b8;stroke-width:1.5}.kernel{fill:#e0f2fe;stroke:#0284c7;stroke-width:1.5}.warn{fill:#fff7ed;stroke:#ea580c;stroke-width:1.5}.h{font-family:Segoe UI,Arial,sans-serif;fill:#0f172a;font-size:30px;font-weight:700}.t{font-family:Segoe UI,Arial,sans-serif;fill:#0f172a;font-size:20px;font-weight:700}.s{font-family:Segoe UI,Arial,sans-serif;fill:#475569;font-size:16px}.xs{font-family:Segoe UI,Arial,sans-serif;fill:#64748b;font-size:14px}.mini{font-family:Segoe UI,Arial,sans-serif;fill:#0f172a;font-size:13px;font-weight:700}.line{stroke:#334155;stroke-width:3;fill:none;marker-end:url(#fig-servercore-send-byte-count-cursor-arrow)}.tealLine{stroke:#0f766e;stroke-width:3;fill:none;marker-end:url(#fig-servercore-send-byte-count-cursor-tealArrow)}.amberLine{stroke:#ca8a04;stroke-width:3;fill:none;marker-end:url(#fig-servercore-send-byte-count-cursor-amberArrow)}.dash{stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:7 7;fill:none}.cursor{stroke:#ea580c;stroke-width:3;fill:none}.thin{stroke:#334155;stroke-width:1.5;fill:none}
+    </style>
+  </defs>
+  <rect
+     class="bg"
+     width="1200"
+     height="800"
+     id="fig-servercore-send-byte-count-cursor-rect3" />
+  <rect
+     class="panel"
+     x="60"
+     y="126"
+     width="1080"
+     height="164"
+     rx="12"
+     id="fig-servercore-send-byte-count-cursor-rect4" />
+  <text
+     class="t"
+     x="88"
+     y="162"
+     id="fig-servercore-send-byte-count-cursor-text4">1. user-space에서 요청한 범위</text>
+  <text
+     class="s"
+     x="88"
+     y="190"
+     id="fig-servercore-send-byte-count-cursor-text5"><tspan
+       sodipodi:role="line"
+       id="fig-servercore-send-byte-count-cursor-tspan30"
+       x="88"
+       y="190">SendOp은 payload 참조와 iovec 범위를 붙잡고, 커널에는 현재 FIFO 앞쪽 byte range만 제출</tspan><tspan
+       sodipodi:role="line"
+       id="fig-servercore-send-byte-count-cursor-tspan31"
+       x="88"
+       y="210">.</tspan></text>
+  <rect
+     class="request"
+     x="112"
+     y="222"
+     width="210"
+     height="44"
+     rx="8"
+     id="fig-servercore-send-byte-count-cursor-rect5" />
+  <text
+     class="s"
+     x="144"
+     y="250"
+     id="fig-servercore-send-byte-count-cursor-text6">SendOp request</text>
+  <path
+     class="line"
+     d="M 322 244 L 390 244"
+     id="fig-servercore-send-byte-count-cursor-path6" />
+  <rect
+     class="active"
+     x="390"
+     y="206"
+     width="430"
+     height="76"
+     rx="8"
+     id="fig-servercore-send-byte-count-cursor-rect6" />
+  <text
+     class="xs"
+     x="412"
+     y="230"
+     id="fig-servercore-send-byte-count-cursor-text7">requested = 200B</text>
+  <rect
+     class="payloadA"
+     x="414"
+     y="244"
+     width="180"
+     height="22"
+     rx="4"
+     id="fig-servercore-send-byte-count-cursor-rect7" />
+  <text
+     class="mini"
+     x="478"
+     y="260"
+     id="fig-servercore-send-byte-count-cursor-text8">A 100B</text>
+  <rect
+     class="payloadB"
+     x="600"
+     y="244"
+     width="180"
+     height="22"
+     rx="4"
+     id="fig-servercore-send-byte-count-cursor-rect8" />
+  <text
+     class="mini"
+     x="664"
+     y="260"
+     id="fig-servercore-send-byte-count-cursor-text9">B 100B</text>
+  <path
+     class="line"
+     d="M 820 244 L 888 244"
+     id="fig-servercore-send-byte-count-cursor-path9" />
+  <rect
+     class="kernel"
+     x="888"
+     y="212"
+     width="200"
+     height="64"
+     rx="8"
+     id="fig-servercore-send-byte-count-cursor-rect9" />
+  <text
+     class="s"
+     x="963.12048"
+     y="238.384"
+     id="fig-servercore-send-byte-count-cursor-text10">kernel</text>
+  <text
+     class="xs"
+     x="945.20044"
+     y="261.15204"
+     id="fig-servercore-send-byte-count-cursor-text11">in-flight send</text>
+  <rect
+     class="panel"
+     x="60"
+     y="326"
+     width="1080"
+     height="236"
+     rx="12"
+     id="fig-servercore-send-byte-count-cursor-rect11" />
+  <text
+     class="t"
+     x="88"
+     y="362"
+     id="fig-servercore-send-byte-count-cursor-text12">2. completion은 처리된 prefix만 알려줌 </text>
+  <text
+     class="s"
+     x="88"
+     y="390"
+     id="fig-servercore-send-byte-count-cursor-text13">성공 CQE라도 결과 값은 requested byte 수가 아니라 실제로 socket send buffer에 들어간 byte 수</text>
+  <text
+     class="s"
+     x="104"
+     y="454"
+     id="fig-servercore-send-byte-count-cursor-text14">active byte stream</text>
+  <rect
+     class="request"
+     x="270"
+     y="424"
+     width="760"
+     height="58"
+     rx="8"
+     id="fig-servercore-send-byte-count-cursor-rect14" />
+  <rect
+     class="payloadA"
+     x="290"
+     y="442"
+     width="330"
+     height="24"
+     rx="4"
+     id="fig-servercore-send-byte-count-cursor-rect15" />
+  <text
+     class="mini"
+     x="426"
+     y="459"
+     id="fig-servercore-send-byte-count-cursor-text15">A 0-100</text>
+  <rect
+     class="payloadB"
+     x="628"
+     y="442"
+     width="330"
+     height="24"
+     rx="4"
+     id="fig-servercore-send-byte-count-cursor-rect16" />
+  <text
+     class="mini"
+     x="764"
+     y="459"
+     id="fig-servercore-send-byte-count-cursor-text16">B 100-200</text>
+  <path
+     class="thin"
+     d="M 290 412 L 958 412"
+     id="fig-servercore-send-byte-count-cursor-path16" />
+  <path
+     class="thin"
+     d="M 290 406 L 290 418"
+     id="fig-servercore-send-byte-count-cursor-path17" />
+  <path
+     class="thin"
+     d="M 958 406 L 958 418"
+     id="fig-servercore-send-byte-count-cursor-path18" />
+  <text
+     class="xs"
+     x="880.80743"
+     y="399.69592"
+     id="fig-servercore-send-byte-count-cursor-text18">requested range = 200B</text>
+  <rect
+     class="done"
+     x="286.15991"
+     y="504"
+     width="430"
+     height="34"
+     rx="6"
+     id="fig-servercore-send-byte-count-cursor-rect18" />
+  <text
+     class="mini"
+     x="412"
+     y="526"
+     id="fig-servercore-send-byte-count-cursor-text19">processed prefix: A 전체 + B 앞부분</text>
+  <rect
+     class="left"
+     x="723.07208"
+     y="504"
+     width="238"
+     height="34"
+     rx="6"
+     id="fig-servercore-send-byte-count-cursor-rect19" />
+  <text
+     class="mini"
+     x="792"
+     y="526"
+     id="fig-servercore-send-byte-count-cursor-text20">remaining suffix</text>
+  <path
+     class="cursor"
+     d="M 720 414 L 720 552"
+     id="fig-servercore-send-byte-count-cursor-path20" />
+  <rect
+     class="warn"
+     x="655"
+     y="335"
+     width="130"
+     height="34"
+     rx="7"
+     id="fig-servercore-send-byte-count-cursor-rect20" />
+  <text
+     class="mini"
+     x="693.05634"
+     y="349.11148"
+     id="fig-servercore-send-byte-count-cursor-text21">CQE res</text>
+  <text
+     class="mini"
+     x="693.20044"
+     y="363.42343"
+     id="fig-servercore-send-byte-count-cursor-text22">= 130B</text>
+  <path
+     class="amberLine"
+     d="M 720 369 L 720 414"
+     id="fig-servercore-send-byte-count-cursor-path22" />
+  <text
+     class="xs"
+     x="727.10358"
+     y="554.91217"
+     id="fig-servercore-send-byte-count-cursor-text23">cursor = begin + res</text>
+  <rect
+     class="panel"
+     x="60"
+     y="598"
+     width="1080"
+     height="144"
+     rx="12"
+     id="fig-servercore-send-byte-count-cursor-rect23" />
+  <text
+     class="t"
+     x="88"
+     y="636"
+     id="fig-servercore-send-byte-count-cursor-text24">3. suffix를 먼저 재제출한다</text>
+  <text
+     class="s"
+     x="88"
+     y="664"
+     id="fig-servercore-send-byte-count-cursor-text25">남은 범위가 있으면 같은 SendOp의 cursor만 전진시켜 먼저 다시 제출</text>
+  <text
+     class="s"
+     x="88"
+     y="686"
+     id="fig-servercore-send-byte-count-cursor-text26">다음 payload는 현재 SendOp이 완전히 끝난 뒤에만 시작</text>
+  <rect
+     class="left"
+     x="690"
+     y="668"
+     width="158"
+     height="42"
+     rx="8"
+     id="fig-servercore-send-byte-count-cursor-rect26" />
+  <text
+     class="mini"
+     x="728"
+     y="694"
+     id="fig-servercore-send-byte-count-cursor-text27">B suffix</text>
+  <path
+     class="tealLine"
+     d="M 848 689 L 918 689"
+     id="fig-servercore-send-byte-count-cursor-path27" />
+  <rect
+     class="kernel"
+     x="918"
+     y="668"
+     width="120"
+     height="42"
+     rx="8"
+     id="fig-servercore-send-byte-count-cursor-rect27" />
+  <text
+     class="mini"
+     x="946"
+     y="694"
+     id="fig-servercore-send-byte-count-cursor-text28">resubmit</text>
+  <rect
+     class="next"
+     x="1056"
+     y="668"
+     width="56"
+     height="42"
+     rx="8"
+     id="fig-servercore-send-byte-count-cursor-rect28" />
+  <text
+     class="mini"
+     x="1079"
+     y="694"
+     id="fig-servercore-send-byte-count-cursor-text29">C</text>
+  <path
+     class="dash"
+     d="M 1038 689 L 1056 689"
+     id="fig-servercore-send-byte-count-cursor-path29" />
+  <text
+     class="xs"
+     x="906"
+     y="730"
+     id="fig-servercore-send-byte-count-cursor-text30">C는 B suffix 이후</text>
+  <text
+     xml:space="preserve"
+     style="writing-mode:lr-tb;direction:ltr;fill:#000000;stroke:#ed3a3a"
+     x="688.14417"
+     y="509.26575"
+     id="fig-servercore-send-byte-count-cursor-text1"><tspan
+       sodipodi:role="line"
+       id="fig-servercore-send-byte-count-cursor-tspan1"
+       x="688.14417"
+       y="509.26575" /></text>
+</svg>
+</div>
+```
+
+남은 바이트 범위를 기억하지 못하면 두 가지 문제가 생깁니다.
+
+| 문제     | 설명                                                 |
+| ------ | -------------------------------------------------- |
+| 데이터 누락 | 부분 완료된 뒤 남은 바이트를 다시 보내지 않으면 페이로드 뒷부분이 사라짐          |
+| 순서 훼손  | 앞 페이로드가 끝나기 전에 다음 페이로드를 보내면 애플리케이션이 의도한 메시지 순서가 깨짐 |
+
+따라서 송신 버퍼는 페이로드 수명, 송신 커서, 부분 완료 이후의 재제출 순서를 함께 관리해야 합니다.
+
+***
+### 애플리케이션이 의도한 순서 보장 불가
+
+TCP는 네트워크상에서 바이트의 순서를 보존하지만, 애플리케이션이 호출한 `Send(A)`, `Send(B)` 같은 요청 단위나 프로토콜 메시지 경계를 보존하지 않습니다. TCP가 보장하는 것은 소켓 송신 버퍼에 들어간 바이트의 순서이지, 애플리케이션이 의도한 “A 전체가 끝난 뒤 B 전체”라는 의미적 순서가 아닙니다.
+
+따라서 같은 세션 소켓에 대해 둘 이상의 송신 작업을 동시에 커널에 제출하면, 부분 전송이 발생했을 때 애플리케이션이 의도한 순서가 깨질 수 있습니다.
+
+예를 들어 `A`를 먼저 보내고 `B`를 그 다음 보냈더라도, `A` 송신이 일부 바이트만 성공한 상태에서 이미 제출된 `B` 송신이 처리될 수 있습니다. 이 경우 TCP 스트림에는 다음과 같은 순서로 바이트가 들어갈 수 있습니다.
+
+```text
+A의 앞부분 + B 전체 + A의 뒷부분
+```
+
+TCP는 이 순서를 잘못된 것으로 보지 않습니다. 실제로 소켓 송신 버퍼에 들어간 순서가 그렇기 때문입니다. TCP는 이 바이트열을 다시 `A 전체 + B 전체`로 복구해주지 않으며, 애플리케이션 프로토콜의 메시지 경계도 알지 못합니다.
+
+따라서 애플리케이션이 의도한 송신 순서는 Session의 송신 큐가 직접 보장해야 합니다.
+
+```{=html}
+<div class="servercore-svg-frame" data-diagram="fig-servercore-sendop-order-timeline">
+<svg
+   width="1200"
+   height="795"
+   viewBox="0 74 1200 795"
+   role="img"
+   aria-labelledby="fig-servercore-sendop-order-timeline-title fig-servercore-sendop-order-timeline-desc"
+   version="1.1"
+   id="fig-servercore-sendop-order-timeline-svg73"
+   sodipodi:docname="fig-servercore-sendop-order-timeline.svg"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg" class="servercore-svg-inline">
+  <sodipodi:namedview
+     id="fig-servercore-sendop-order-timeline-namedview73"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="1.1169812"
+     inkscape:cx="334.38344"
+     inkscape:cy="476.73141"
+     inkscape:window-width="2560"
+     inkscape:window-height="1351"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg73" />
+  <title
+     id="fig-servercore-sendop-order-timeline-title">SendOp ordering timeline</title>
+  <desc
+     id="fig-servercore-sendop-order-timeline-desc">A comparison timeline shows why multiple outstanding SendOps can make payload ordering and partial-send cursor ownership unclear, while a single active SendOp preserves FIFO order by completing or rearming the current payload before starting the next one.</desc>
+  <defs
+     id="fig-servercore-sendop-order-timeline-defs2">
+    <marker markerUnits="userSpaceOnUse"
+       id="fig-servercore-sendop-order-timeline-arrow"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="8"
+       markerHeight="8"
+       orient="auto-start-reverse">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#334155"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="fig-servercore-sendop-order-timeline-path1" />
+    </marker>
+    <marker markerUnits="userSpaceOnUse"
+       id="fig-servercore-sendop-order-timeline-redArrow"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="8"
+       markerHeight="8"
+       orient="auto-start-reverse">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#dc2626"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="fig-servercore-sendop-order-timeline-path2" />
+    </marker>
+    <style
+       id="fig-servercore-sendop-order-timeline-style2">
+      .bg{fill:#f8fafc}.panel{fill:#ffffff;stroke:#cbd5e1;stroke-width:2}.badPanel{fill:#fef2f2;stroke:#dc2626;stroke-width:2}.goodPanel{fill:#ecfdf5;stroke:#0f766e;stroke-width:2}.lane{fill:#f8fafc;stroke:#cbd5e1;stroke-width:1.5}.a{fill:#dbeafe;stroke:#2563eb;stroke-width:1.8}.b{fill:#ccfbf1;stroke:#0f766e;stroke-width:1.8}.c{fill:#fef3c7;stroke:#ca8a04;stroke-width:1.8}.warn{fill:#fee2e2;stroke:#dc2626;stroke-width:1.8}.ok{fill:#dcfce7;stroke:#16a34a;stroke-width:1.8}.h{font-family:Segoe UI,Arial,sans-serif;fill:#0f172a;font-size:30px;font-weight:700}.t{font-family:Segoe UI,Arial,sans-serif;fill:#0f172a;font-size:20px;font-weight:700}.s{font-family:Segoe UI,Arial,sans-serif;fill:#475569;font-size:15px}.xs{font-family:Segoe UI,Arial,sans-serif;fill:#64748b;font-size:13px}.mini{font-family:Segoe UI,Arial,sans-serif;fill:#0f172a;font-size:13px;font-weight:700}.line{stroke:#334155;stroke-width:2.5;fill:none;marker-end:url(#fig-servercore-sendop-order-timeline-arrow)}.badLine{stroke:#dc2626;stroke-width:2.5;fill:none;marker-end:url(#fig-servercore-sendop-order-timeline-redArrow)}.time{stroke:#334155;stroke-width:2;fill:none;marker-end:url(#fig-servercore-sendop-order-timeline-arrow)}.dash{stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:6 7;fill:none}.split{stroke:#dc2626;stroke-width:2;stroke-dasharray:5 5;fill:none}
+    </style>
+  </defs>
+  <rect
+     class="bg"
+     width="1200"
+     height="900"
+     id="fig-servercore-sendop-order-timeline-rect2" />
+  <path
+     class="time"
+     d="M 57.643581,128 H 1147.797"
+     id="fig-servercore-sendop-order-timeline-path3" />
+  <text
+     class="xs"
+     x="1040"
+     y="116"
+     id="fig-servercore-sendop-order-timeline-text3">time</text>
+  <rect
+     class="badPanel"
+     x="42.035439"
+     y="150.03545"
+     width="1115.9291"
+     height="364.54904"
+     rx="15.998983"
+     id="fig-servercore-sendop-order-timeline-rect6" />
+  <text
+     class="t"
+     x="72"
+     y="188"
+     id="fig-servercore-sendop-order-timeline-text6">bad: multiple active SendOp</text>
+  <text
+     class="s"
+     x="72"
+     y="214"
+     id="fig-servercore-sendop-order-timeline-text7">A가 끝나기 전에 B/C도 socket write 경계로 들어가면, CQE 순서와 payload FIFO 기준이 분리</text>
+  <text
+     class="s"
+     x="78"
+     y="262"
+     id="fig-servercore-sendop-order-timeline-text8">SendQueue</text>
+  <rect
+     class="lane"
+     x="165"
+     y="238"
+     width="965"
+     height="48"
+     rx="8"
+     id="fig-servercore-sendop-order-timeline-rect8" />
+  <rect
+     class="a"
+     x="198"
+     y="248"
+     width="72"
+     height="28"
+     rx="5"
+     id="fig-servercore-sendop-order-timeline-rect9" />
+  <text
+     class="mini"
+     x="222"
+     y="267"
+     id="fig-servercore-sendop-order-timeline-text9">A</text>
+  <rect
+     class="b"
+     x="282"
+     y="248"
+     width="72"
+     height="28"
+     rx="5"
+     id="fig-servercore-sendop-order-timeline-rect10" />
+  <text
+     class="mini"
+     x="306"
+     y="267"
+     id="fig-servercore-sendop-order-timeline-text10">B</text>
+  <rect
+     class="c"
+     x="366"
+     y="248"
+     width="72"
+     height="28"
+     rx="5"
+     id="fig-servercore-sendop-order-timeline-rect11" />
+  <text
+     class="mini"
+     x="390"
+     y="267"
+     id="fig-servercore-sendop-order-timeline-text11">C</text>
+  <text
+     class="xs"
+     x="462"
+     y="267"
+     id="fig-servercore-sendop-order-timeline-text12">FIFO 대기열 자체는 A -&gt; B</text>
+  <text
+     class="s"
+     x="78"
+     y="324"
+     id="fig-servercore-sendop-order-timeline-text13">SendOps</text>
+  <rect
+     class="lane"
+     x="165.0036"
+     y="302.0036"
+     width="964.9928"
+     height="92.888054"
+     rx="7.9999404"
+     id="fig-servercore-sendop-order-timeline-rect13" />
+  <text
+     class="xs"
+     x="272.4223"
+     y="375.23987"
+     id="fig-servercore-sendop-order-timeline-text14">SendOp#1</text>
+  <rect
+     class="a"
+     x="251.27534"
+     y="315.23819"
+     width="46"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect14" />
+  <text
+     class="mini"
+     x="264.40878"
+     y="331.79053"
+     id="fig-servercore-sendop-order-timeline-text15">A0</text>
+  <rect
+     class="a"
+     x="304.75171"
+     y="315.23819"
+     width="46"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect15" />
+  <text
+     class="mini"
+     x="320.12332"
+     y="331.79056"
+     id="fig-servercore-sendop-order-timeline-text16">A1</text>
+  <rect
+     class="a"
+     x="690"
+     y="313"
+     width="46"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect16" />
+  <text
+     class="mini"
+     x="700"
+     y="330"
+     id="fig-servercore-sendop-order-timeline-text17">A2</text>
+  <rect
+     class="a"
+     x="739"
+     y="313"
+     width="46"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect17" />
+  <text
+     class="mini"
+     x="749"
+     y="330"
+     id="fig-servercore-sendop-order-timeline-text18">A3</text>
+  <text
+     class="xs"
+     x="448.79053"
+     y="323.9223"
+     id="fig-servercore-sendop-order-timeline-text19">SendOp#2</text>
+  <rect
+     class="b"
+     x="410.59967"
+     y="354.92398"
+     width="46"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect19" />
+  <text
+     class="mini"
+     x="420.59967"
+     y="371.92398"
+     id="fig-servercore-sendop-order-timeline-text20">B0</text>
+  <rect
+     class="b"
+     x="459.59967"
+     y="354.92398"
+     width="46"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect20" />
+  <text
+     class="mini"
+     x="469.59967"
+     y="371.92398"
+     id="fig-servercore-sendop-order-timeline-text21">B1</text>
+  <rect
+     class="b"
+     x="508.59967"
+     y="354.92398"
+     width="46"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect21" />
+  <text
+     class="mini"
+     x="518.59967"
+     y="371.92398"
+     id="fig-servercore-sendop-order-timeline-text22">B2</text>
+  <text
+     class="xs"
+     x="703.26013"
+     y="374.50507"
+     id="fig-servercore-sendop-order-timeline-text23">SendOp#3</text>
+  <text
+     class="s"
+     x="78"
+     y="432"
+     id="fig-servercore-sendop-order-timeline-text26">CQE order</text>
+  <rect
+     class="lane"
+     x="165"
+     y="410"
+     width="965"
+     height="44"
+     rx="8"
+     id="fig-servercore-sendop-order-timeline-rect26" />
+  <rect
+     class="warn"
+     x="404.13544"
+     y="419.32635"
+     width="152.85408"
+     height="23.556787"
+     rx="6.3689203"
+     id="fig-servercore-sendop-order-timeline-rect27" />
+  <text
+     class="mini"
+     x="462.7821"
+     y="435.20947"
+     id="fig-servercore-sendop-order-timeline-text27">B done</text>
+  <rect
+     class="warn"
+     x="251.16602"
+     y="420.45316"
+     width="105.33183"
+     height="23.98893"
+     rx="4.0512242"
+     id="fig-servercore-sendop-order-timeline-rect28" />
+  <text
+     class="mini"
+     x="269.8273"
+     y="439.43777"
+     id="fig-servercore-sendop-order-timeline-text28"
+     transform="scale(1.0066149,0.99342858)"
+     style="stroke-width:1.00615">A partial</text>
+  <rect
+     class="warn"
+     x="687.28888"
+     y="420.44763"
+     width="96"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect30" />
+  <text
+     class="mini"
+     x="702.28888"
+     y="437.44763"
+     id="fig-servercore-sendop-order-timeline-text30">A done</text>
+  <text
+     class="s"
+     x="78"
+     y="474"
+     id="fig-servercore-sendop-order-timeline-text31">receiver</text>
+  <rect
+     class="lane"
+     x="165.89526"
+     y="461.55237"
+     width="965"
+     height="44"
+     rx="8"
+     id="fig-servercore-sendop-order-timeline-rect31" />
+  <rect
+     class="a"
+     x="254.53769"
+     y="471.58499"
+     width="43.068226"
+     height="23.93478"
+     rx="4.3068228"
+     id="fig-servercore-sendop-order-timeline-rect32" />
+  <text
+     class="mini"
+     x="265.74326"
+     y="488.10474"
+     id="fig-servercore-sendop-order-timeline-text32">A0</text>
+  <rect
+     class="a"
+     x="307.94257"
+     y="471.14191"
+     width="43.506744"
+     height="23.925665"
+     rx="4.3506746"
+     id="fig-servercore-sendop-order-timeline-rect33" />
+  <text
+     class="mini"
+     x="317.35303"
+     y="488.10474"
+     id="fig-servercore-sendop-order-timeline-text33">A1</text>
+  <rect
+     class="b"
+     x="403.2941"
+     y="472.52216"
+     width="46.565475"
+     height="23.850948"
+     rx="4.6565475"
+     id="fig-servercore-sendop-order-timeline-rect34" />
+  <text
+     class="mini"
+     x="418.03882"
+     y="488.55237"
+     id="fig-servercore-sendop-order-timeline-text35">B0</text>
+  <rect
+     class="b"
+     x="455.35629"
+     y="472.52692"
+     width="47.003586"
+     height="23.841421"
+     rx="4.7003584"
+     id="fig-servercore-sendop-order-timeline-rect35" />
+  <text
+     class="mini"
+     x="468.75336"
+     y="488.55237"
+     id="fig-servercore-sendop-order-timeline-text36">B1</text>
+  <rect
+     class="b"
+     x="506.07559"
+     y="472.53165"
+     width="47.441738"
+     height="23.831942"
+     rx="4.744174"
+     id="fig-servercore-sendop-order-timeline-rect36" />
+  <text
+     class="mini"
+     x="534.23987"
+     y="488.55237"
+     id="fig-servercore-sendop-order-timeline-text37"
+     style="white-space:pre;inline-size:0"
+     transform="translate(-14.771959,0.44763513)">B2</text>
+  <rect
+     class="a"
+     x="690.78552"
+     y="472"
+     width="40"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect41" />
+  <text
+     class="mini"
+     x="702.47131"
+     y="488.55237"
+     id="fig-servercore-sendop-order-timeline-text42">A2</text>
+  <rect
+     class="a"
+     x="737.08325"
+     y="472.95486"
+     width="45.700058"
+     height="23.880802"
+     rx="4.5700059"
+     id="fig-servercore-sendop-order-timeline-rect42" />
+  <text
+     class="mini"
+     x="750.5"
+     y="489.4476"
+     id="fig-servercore-sendop-order-timeline-text43">A3</text>
+  <rect
+     class="goodPanel"
+     x="42"
+     y="536"
+     width="1116"
+     height="300"
+     rx="16"
+     id="fig-servercore-sendop-order-timeline-rect43" />
+  <text
+     class="t"
+     x="72"
+     y="574"
+     id="fig-servercore-sendop-order-timeline-text44">good: single active SendOp</text>
+  <text
+     class="s"
+     x="72"
+     y="600"
+     id="fig-servercore-sendop-order-timeline-text45">현재 payload가 complete되거나 partial tail로 rearm될 때까지 다음 payload는 SendQueue에 남음.</text>
+  <text
+     class="s"
+     x="78"
+     y="646"
+     id="fig-servercore-sendop-order-timeline-text46">SendQueue</text>
+  <rect
+     class="lane"
+     x="165"
+     y="622"
+     width="965"
+     height="48"
+     rx="8"
+     id="fig-servercore-sendop-order-timeline-rect46" />
+  <rect
+     class="a"
+     x="198"
+     y="632"
+     width="72"
+     height="28"
+     rx="5"
+     id="fig-servercore-sendop-order-timeline-rect47" />
+  <text
+     class="mini"
+     x="222"
+     y="651"
+     id="fig-servercore-sendop-order-timeline-text47">A</text>
+  <rect
+     class="b"
+     x="282"
+     y="632"
+     width="72"
+     height="28"
+     rx="5"
+     id="fig-servercore-sendop-order-timeline-rect48" />
+  <text
+     class="mini"
+     x="306"
+     y="651"
+     id="fig-servercore-sendop-order-timeline-text48">B</text>
+  <text
+     class="xs"
+     x="462"
+     y="651"
+     id="fig-servercore-sendop-order-timeline-text50">B는 A가 끝나기 전까지 커널에 제출되지 않음</text>
+  <text
+     class="s"
+     x="78"
+     y="712"
+     id="fig-servercore-sendop-order-timeline-text51">ActiveSendOp</text>
+  <rect
+     class="lane"
+     x="165"
+     y="688"
+     width="965"
+     height="48"
+     rx="8"
+     id="fig-servercore-sendop-order-timeline-rect51" />
+  <rect
+     class="a"
+     x="260"
+     y="698"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect52" />
+  <text
+     class="mini"
+     x="269"
+     y="715"
+     id="fig-servercore-sendop-order-timeline-text52">A0</text>
+  <rect
+     class="a"
+     x="308"
+     y="698"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect53" />
+  <text
+     class="mini"
+     x="317"
+     y="715"
+     id="fig-servercore-sendop-order-timeline-text53">A1</text>
+  <rect
+     class="ok"
+     x="420"
+     y="698"
+     width="92"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect54" />
+  <text
+     class="mini"
+     x="435"
+     y="715"
+     id="fig-servercore-sendop-order-timeline-text54">partial</text>
+  <rect
+     class="a"
+     x="548"
+     y="698"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect55" />
+  <text
+     class="mini"
+     x="557"
+     y="715"
+     id="fig-servercore-sendop-order-timeline-text55">A2</text>
+  <rect
+     class="a"
+     x="596"
+     y="698"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect56" />
+  <text
+     class="mini"
+     x="605"
+     y="715"
+     id="fig-servercore-sendop-order-timeline-text56">A3</text>
+  <rect
+     class="b"
+     x="706"
+     y="698"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect57" />
+  <text
+     class="mini"
+     x="715"
+     y="715"
+     id="fig-servercore-sendop-order-timeline-text57">B0</text>
+  <rect
+     class="b"
+     x="754"
+     y="698"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect58" />
+  <text
+     class="mini"
+     x="763"
+     y="715"
+     id="fig-servercore-sendop-order-timeline-text58">B1</text>
+  <rect
+     class="b"
+     x="802"
+     y="698"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect59" />
+  <text
+     class="mini"
+     x="811"
+     y="715"
+     id="fig-servercore-sendop-order-timeline-text59">B2</text>
+  <path
+     class="line"
+     d="M 352 710 L 414 710"
+     id="fig-servercore-sendop-order-timeline-path61" />
+  <path
+     class="line"
+     d="M 512 710 L 542 710"
+     id="fig-servercore-sendop-order-timeline-path62" />
+  <path
+     class="line"
+     d="M 640 710 L 700 710"
+     id="fig-servercore-sendop-order-timeline-path63" />
+  <text
+     class="s"
+     x="78"
+     y="778"
+     id="fig-servercore-sendop-order-timeline-text64">receiver</text>
+  <rect
+     class="lane"
+     x="165"
+     y="754"
+     width="965"
+     height="48"
+     rx="8"
+     id="fig-servercore-sendop-order-timeline-rect64" />
+  <rect
+     class="a"
+     x="260"
+     y="764"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect65" />
+  <text
+     class="mini"
+     x="269"
+     y="781"
+     id="fig-servercore-sendop-order-timeline-text65">A0</text>
+  <rect
+     class="a"
+     x="308"
+     y="764"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect66" />
+  <text
+     class="mini"
+     x="317"
+     y="781"
+     id="fig-servercore-sendop-order-timeline-text66">A1</text>
+  <rect
+     class="a"
+     x="548"
+     y="764"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect67" />
+  <text
+     class="mini"
+     x="557"
+     y="781"
+     id="fig-servercore-sendop-order-timeline-text67">A2</text>
+  <rect
+     class="a"
+     x="596"
+     y="764"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect68" />
+  <text
+     class="mini"
+     x="605"
+     y="781"
+     id="fig-servercore-sendop-order-timeline-text68">A3</text>
+  <rect
+     class="b"
+     x="706"
+     y="764"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect69" />
+  <text
+     class="mini"
+     x="715"
+     y="781"
+     id="fig-servercore-sendop-order-timeline-text69">B0</text>
+  <rect
+     class="b"
+     x="754"
+     y="764"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect70" />
+  <text
+     class="mini"
+     x="763"
+     y="781"
+     id="fig-servercore-sendop-order-timeline-text70">B1</text>
+  <rect
+     class="b"
+     x="802"
+     y="764"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-sendop-order-timeline-rect71" />
+  <text
+     class="mini"
+     x="811"
+     y="781"
+     id="fig-servercore-sendop-order-timeline-text71">B2</text>
+  <line
+     class="dash"
+     x1="357"
+     y1="128"
+     x2="357"
+     y2="836"
+     id="fig-servercore-sendop-order-timeline-line3" />
+  <line
+     class="dash"
+     x1="591"
+     y1="128"
+     x2="591"
+     y2="836"
+     id="fig-servercore-sendop-order-timeline-line3-9" />
+  <line
+     class="dash"
+     x1="813"
+     y1="128"
+     x2="813"
+     y2="836"
+     id="fig-servercore-sendop-order-timeline-line3-9-8" />
+</svg>
+</div>
+```
+
+### 세션당 단일 활성 송신 작업
+
+```{=html}
+<div class="servercore-svg-frame" data-diagram="fig-servercore-single-active-sendop-timeline">
+<svg
+   width="1200"
+   height="485"
+   viewBox="0 74 1200 485"
+   role="img"
+   aria-labelledby="fig-servercore-single-active-sendop-timeline-title fig-servercore-single-active-sendop-timeline-desc"
+   version="1.1"
+   id="fig-servercore-single-active-sendop-timeline-svg37"
+   sodipodi:docname="fig-servercore-single-active-sendop-timeline.svg"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg" class="servercore-svg-inline">
+  <sodipodi:namedview
+     id="fig-servercore-single-active-sendop-timeline-namedview37"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="2.1549079"
+     inkscape:cx="622.5324"
+     inkscape:cy="193.04769"
+     inkscape:window-width="3840"
+     inkscape:window-height="2036"
+     inkscape:window-x="3572"
+     inkscape:window-y="-12"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg37" />
+  <title
+     id="fig-servercore-single-active-sendop-timeline-title">Single active SendOp ordering timeline</title>
+  <desc
+     id="fig-servercore-single-active-sendop-timeline-desc">A timeline shows how a single active SendOp preserves FIFO order by completing or rearming the current payload before starting the next one.</desc>
+  <defs
+     id="fig-servercore-single-active-sendop-timeline-defs1">
+    <marker markerUnits="userSpaceOnUse"
+       id="fig-servercore-single-active-sendop-timeline-arrow"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="8"
+       markerHeight="8"
+       orient="auto-start-reverse">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#334155"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="fig-servercore-single-active-sendop-timeline-path1" />
+    </marker>
+    <style
+       id="fig-servercore-single-active-sendop-timeline-style1">
+      .bg{fill:#f8fafc}.goodPanel{fill:#ecfdf5;stroke:#0f766e;stroke-width:2}.lane{fill:#f8fafc;stroke:#cbd5e1;stroke-width:1.5}.a{fill:#dbeafe;stroke:#2563eb;stroke-width:1.8}.b{fill:#ccfbf1;stroke:#0f766e;stroke-width:1.8}.c{fill:#fef3c7;stroke:#ca8a04;stroke-width:1.8}.ok{fill:#dcfce7;stroke:#16a34a;stroke-width:1.8}.h{font-family:Segoe UI,Arial,sans-serif;fill:#0f172a;font-size:30px;font-weight:700}.t{font-family:Segoe UI,Arial,sans-serif;fill:#0f172a;font-size:20px;font-weight:700}.s{font-family:Segoe UI,Arial,sans-serif;fill:#475569;font-size:15px}.xs{font-family:Segoe UI,Arial,sans-serif;fill:#64748b;font-size:13px}.mini{font-family:Segoe UI,Arial,sans-serif;fill:#0f172a;font-size:13px;font-weight:700}.line{stroke:#334155;stroke-width:2.5;fill:none;marker-end:url(#fig-servercore-single-active-sendop-timeline-arrow)}.time{stroke:#334155;stroke-width:2;fill:none;marker-end:url(#fig-servercore-single-active-sendop-timeline-arrow)}.dash{stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:6 7;fill:none}
+    </style>
+  </defs>
+  <rect
+     class="bg"
+     width="1200"
+     height="590"
+     id="fig-servercore-single-active-sendop-timeline-rect1" />
+  <path
+     class="time"
+     d="M 170 128 L 1110 128"
+     id="fig-servercore-single-active-sendop-timeline-path2" />
+  <text
+     class="xs"
+     x="1040"
+     y="116"
+     id="fig-servercore-single-active-sendop-timeline-text2">time</text>
+  <line
+     class="dash"
+     x1="325"
+     y1="118"
+     x2="325"
+     y2="526"
+     id="fig-servercore-single-active-sendop-timeline-line2" />
+  <line
+     class="dash"
+     x1="520"
+     y1="118"
+     x2="520"
+     y2="526"
+     id="fig-servercore-single-active-sendop-timeline-line3" />
+  <line
+     class="dash"
+     x1="715"
+     y1="118"
+     x2="715"
+     y2="526"
+     id="fig-servercore-single-active-sendop-timeline-line4" />
+  <line
+     class="dash"
+     x1="910"
+     y1="118"
+     x2="910"
+     y2="526"
+     id="fig-servercore-single-active-sendop-timeline-line5" />
+  <rect
+     class="goodPanel"
+     x="42"
+     y="152"
+     width="1116"
+     height="374"
+     rx="16"
+     id="fig-servercore-single-active-sendop-timeline-rect5" />
+  <text
+     class="t"
+     x="72"
+     y="190"
+     id="fig-servercore-single-active-sendop-timeline-text5">good: single active SendOp</text>
+  <text
+     class="s"
+     x="72"
+     y="216"
+     id="fig-servercore-single-active-sendop-timeline-text6">A가 끝나기 전까지 B/C는 커널에 보이지 않으므로, CQE 결과는 항상 현재 cursor에만 적용.</text>
+  <text
+     class="s"
+     x="78"
+     y="262"
+     id="fig-servercore-single-active-sendop-timeline-text7">SendQueue</text>
+  <rect
+     class="lane"
+     x="180"
+     y="238"
+     width="950"
+     height="48"
+     rx="8"
+     id="fig-servercore-single-active-sendop-timeline-rect7" />
+  <rect
+     class="a"
+     x="198"
+     y="248"
+     width="72"
+     height="28"
+     rx="5"
+     id="fig-servercore-single-active-sendop-timeline-rect8" />
+  <text
+     class="mini"
+     x="222"
+     y="267"
+     id="fig-servercore-single-active-sendop-timeline-text8">A</text>
+  <rect
+     class="b"
+     x="282"
+     y="248"
+     width="72"
+     height="28"
+     rx="5"
+     id="fig-servercore-single-active-sendop-timeline-rect9" />
+  <text
+     class="mini"
+     x="306"
+     y="267"
+     id="fig-servercore-single-active-sendop-timeline-text9">B</text>
+  <rect
+     class="c"
+     x="366"
+     y="248"
+     width="72"
+     height="28"
+     rx="5"
+     id="fig-servercore-single-active-sendop-timeline-rect10" />
+  <text
+     class="mini"
+     x="390"
+     y="267"
+     id="fig-servercore-single-active-sendop-timeline-text10">C</text>
+  <text
+     class="xs"
+     x="462"
+     y="267"
+     id="fig-servercore-single-active-sendop-timeline-text11">B/C는 A가 끝나기 전까지 커널에 제출되지 않음</text>
+  <text
+     class="s"
+     x="64"
+     y="328"
+     id="fig-servercore-single-active-sendop-timeline-text12">ActiveSendOp</text>
+  <rect
+     class="lane"
+     x="180"
+     y="304"
+     width="950"
+     height="48"
+     rx="8"
+     id="fig-servercore-single-active-sendop-timeline-rect12" />
+  <rect
+     class="a"
+     x="260"
+     y="314"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect13" />
+  <text
+     class="mini"
+     x="269"
+     y="331"
+     id="fig-servercore-single-active-sendop-timeline-text13">A0</text>
+  <rect
+     class="a"
+     x="308"
+     y="314"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect14" />
+  <text
+     class="mini"
+     x="317"
+     y="331"
+     id="fig-servercore-single-active-sendop-timeline-text14">A1</text>
+  <rect
+     class="a"
+     x="548"
+     y="314"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect15" />
+  <text
+     class="mini"
+     x="557"
+     y="331"
+     id="fig-servercore-single-active-sendop-timeline-text15">A2</text>
+  <rect
+     class="a"
+     x="596"
+     y="314"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect16" />
+  <text
+     class="mini"
+     x="605"
+     y="331"
+     id="fig-servercore-single-active-sendop-timeline-text16">A3</text>
+  <rect
+     class="b"
+     x="706"
+     y="314"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect17" />
+  <text
+     class="mini"
+     x="715"
+     y="331"
+     id="fig-servercore-single-active-sendop-timeline-text17">B0</text>
+  <rect
+     class="b"
+     x="754"
+     y="314"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect18" />
+  <text
+     class="mini"
+     x="763"
+     y="331"
+     id="fig-servercore-single-active-sendop-timeline-text18">B1</text>
+  <rect
+     class="b"
+     x="802"
+     y="314"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect19" />
+  <text
+     class="mini"
+     x="811"
+     y="331"
+     id="fig-servercore-single-active-sendop-timeline-text19">B2</text>
+  <rect
+     class="c"
+     x="930"
+     y="314"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect20" />
+  <text
+     class="mini"
+     x="939"
+     y="331"
+     id="fig-servercore-single-active-sendop-timeline-text20">C0</text>
+  <rect
+     class="c"
+     x="978"
+     y="314"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect21" />
+  <text
+     class="mini"
+     x="987"
+     y="331"
+     id="fig-servercore-single-active-sendop-timeline-text21">C1</text>
+  <path
+     class="line"
+     d="M 352 326 L 542 326"
+     id="fig-servercore-single-active-sendop-timeline-path21" />
+  <path
+     class="line"
+     d="M 640 326 L 700 326"
+     id="fig-servercore-single-active-sendop-timeline-path22" />
+  <path
+     class="line"
+     d="M 846 326 L 924 326"
+     id="fig-servercore-single-active-sendop-timeline-path23" />
+  <text
+     class="s"
+     x="78"
+     y="394"
+     id="fig-servercore-single-active-sendop-timeline-text23">CQE</text>
+  <rect
+     class="lane"
+     x="180"
+     y="370"
+     width="950"
+     height="44"
+     rx="8"
+     id="fig-servercore-single-active-sendop-timeline-rect23" />
+  <rect
+     class="ok"
+     x="396"
+     y="380"
+     width="104"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect24" />
+  <text
+     class="mini"
+     x="411"
+     y="397"
+     id="fig-servercore-single-active-sendop-timeline-text24">A partial</text>
+  <rect
+     class="ok"
+     x="556"
+     y="380"
+     width="96"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect25" />
+  <text
+     class="mini"
+     x="571"
+     y="397"
+     id="fig-servercore-single-active-sendop-timeline-text25">A done</text>
+  <rect
+     class="ok"
+     x="744"
+     y="380"
+     width="96"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect26" />
+  <text
+     class="mini"
+     x="759"
+     y="397"
+     id="fig-servercore-single-active-sendop-timeline-text26">B done</text>
+  <rect
+     class="ok"
+     x="930"
+     y="380"
+     width="96"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect27" />
+  <text
+     class="mini"
+     x="945"
+     y="397"
+     id="fig-servercore-single-active-sendop-timeline-text27">C done</text>
+  <text
+     class="s"
+     x="78"
+     y="450"
+     id="fig-servercore-single-active-sendop-timeline-text28">receiver</text>
+  <rect
+     class="lane"
+     x="180"
+     y="426"
+     width="950"
+     height="48"
+     rx="8"
+     id="fig-servercore-single-active-sendop-timeline-rect28" />
+  <rect
+     class="a"
+     x="260"
+     y="436"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect29" />
+  <text
+     class="mini"
+     x="269"
+     y="453"
+     id="fig-servercore-single-active-sendop-timeline-text29">A0</text>
+  <rect
+     class="a"
+     x="308"
+     y="436"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect30" />
+  <text
+     class="mini"
+     x="317"
+     y="453"
+     id="fig-servercore-single-active-sendop-timeline-text30">A1</text>
+  <rect
+     class="a"
+     x="548"
+     y="436"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect31" />
+  <text
+     class="mini"
+     x="557"
+     y="453"
+     id="fig-servercore-single-active-sendop-timeline-text31">A2</text>
+  <rect
+     class="a"
+     x="596"
+     y="436"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect32" />
+  <text
+     class="mini"
+     x="605"
+     y="453"
+     id="fig-servercore-single-active-sendop-timeline-text32">A3</text>
+  <rect
+     class="b"
+     x="706"
+     y="436"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect33" />
+  <text
+     class="mini"
+     x="715"
+     y="453"
+     id="fig-servercore-single-active-sendop-timeline-text33">B0</text>
+  <rect
+     class="b"
+     x="754"
+     y="436"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect34" />
+  <text
+     class="mini"
+     x="763"
+     y="453"
+     id="fig-servercore-single-active-sendop-timeline-text34">B1</text>
+  <rect
+     class="b"
+     x="802"
+     y="436"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect35" />
+  <text
+     class="mini"
+     x="811"
+     y="453"
+     id="fig-servercore-single-active-sendop-timeline-text35">B2</text>
+  <rect
+     class="c"
+     x="930"
+     y="436"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect36" />
+  <text
+     class="mini"
+     x="939"
+     y="453"
+     id="fig-servercore-single-active-sendop-timeline-text36">C0</text>
+  <rect
+     class="c"
+     x="978"
+     y="436"
+     width="44"
+     height="24"
+     rx="4"
+     id="fig-servercore-single-active-sendop-timeline-rect37" />
+  <text
+     class="mini"
+     x="987"
+     y="453"
+     id="fig-servercore-single-active-sendop-timeline-text37">C1</text>
+</svg>
+</div>
+```
+
+송신 경로는 세션별 큐와 활성 송신 작업 하나로 구성됩니다. 이를 통해 아직 커널에 제출되지 않은 데이터와, 이미 커널에 제출되어 완료를 기다리는 데이터를 분리합니다.
+
+| 구성 요소             | 책임                                              |
+| ----------------- | ----------------------------------------------- |
+| `SendQueue`       | 아직 커널에 제출되지 않은 `SendBufferRef` 대기열과 등록 필요 여부 관리 |
+| `SendOp`          | 진행 중인 `msghdr`, `iovec`, 페이로드 참조, 송신 커서 유지      |
+| `active_send_ev_` | 현재 세션에서 커널에 맡긴 단 하나의 활성 송신 작업                   |
+
+소유자 실행 문맥에 들어온 `Send()`는 페이로드를 `send_queue_`에 FIFO로 추가합니다. `SendQueue::Push()`는 첫 추가 주기에서만 `needs_register`를 반환하고, `RegisterSend()`는 이미 `active_send_ev_`가 있으면 즉시 반환합니다. 따라서 현재 송신 작업이 진행 중일 때 새 페이로드가 들어와도, 그 페이로드는 큐에 남아 있을 뿐 커널에는 제출되지 않습니다.
+
+이 구조에서 커널이 알고 있는 현재 세션의 송신 작업은 항상 논리적 FIFO의 맨 앞 조각 하나뿐입니다. 그 앞쪽 조각이 완전히 처리되기 전에는 다음 큐 항목이 커널에 보이지 않습니다.
+
+`sendmsg`의 `iovec`은 하나의 바이트 스트림 앞부분으로 해석되고, CQE의 결과 바이트 수는 그 앞부분에서 몇 바이트가 처리되었는지를 의미합니다. 따라서 짧은 쓰기가 발생하더라도 완료된 바이트 수만큼 현재 `SendOp`의 커서를 전진시키면 남은 뒷부분을 정확히 계산할 수 있습니다.
+
+부분 완료가 발생하면 큐를 재구성하지 않습니다. 현재 `SendOp`의 커서만 전진시키고, 같은 페이로드의 남은 범위를 다시 제출합니다. 현재 `SendOp`이 완전히 끝나기 전까지는 다음 페이로드를 큐에서 꺼내지 않습니다.
+
+즉 송신 경로에서 항상 성립해야 하는 조건은 다음과 같습니다.
+
+1. **세션당 활성 송신 작업은 0개 또는 1개**
+   - 같은 세션 소켓에 동시에 둘 이상의 `send`를 제출하지 않음
+
+2. **활성 `SendOp`은 논리적 FIFO의 맨 앞 항목**
+   - 뒤의 페이로드가 앞의 페이로드를 추월할 수 없음.
+
+3. **CQE의 성공 결과는 커서 전진으로 처리**
+   - 요청한 길이가 아니라 실제 처리된 바이트 수를 기준으로 진행.
+
+4. **현재 `SendOp` 완료 후 다음 항목으로 이동**
+   - 부분 전송된 페이로드의 남은 범위를 먼저 처리.
+
+결과적으로 수신과 송신은 모두 “메모리 범위가 언제까지 유효한가”를 기준으로 설계됩니다. 수신은 한 번에 완성된 패킷이면 제공 버퍼 뷰를 바로 해석해 불필요한 복사를 피하고, 조각난 프레임이나 합쳐진 패킷은 `RecvBuffer`가 세션별로 보존합니다. 송신은 커널 완료 전까지 `SendBufferRef`와 `SendOp`이 원본 바이트를 붙잡고, CQE의 실제 처리 바이트 수만큼 커서를 전진시켜 남은 범위를 재제출합니다.
+
+

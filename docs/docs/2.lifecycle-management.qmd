@@ -1,0 +1,1378 @@
+---
+title: "제출된 I/O와 콜백 대상 생존"
+lang: ko
+format:
+  html:
+    css: ../../portfolio.css
+    code-overflow: wrap
+    highlight-style: github
+    fontsize: 1em
+    linestretch: 1.6
+    toc: true
+    embed-resources: true
+---
+
+클라이언트와 서버 간의 연결을 `Session`으로 관리하려고 하니 세션의 생존과 해제 조건이 명확하지 않다는 문제가 생겼습니다. 세션이 살아 있다는 말이 "세션이 연결 목록에 남아 있다"는 뜻인지, "이미 제출된 I/O의 CQE가 아직 돌아올 수 있다"는 뜻인지, "CQE 콜백을 실행하는 동안 콜백 대상이 파괴되지 않아야 한다"는 뜻인지가 서로 다르기 때문입니다.
+그래서 세션 수명 관리 장치를 하나의 소유권 이야기로 합치는 것이 아니라, 각 장치가 보장하는 방식으로 수명 관리를 설계했습니다.
+***
+## 제출된 I/O와 콜백 대상 생존
+
+`SessionManager`는 외부에서 세션을 “현재 연결된 세션”으로 취급하는 동안의 소유자입니다. 하지만 이것만으로는 이미 `io_uring`에 제출된 I/O의 CQE 콜백 대상 생존을 보장할 수 없습니다.
+
+`io_uring`의 SQE `user_data`에는 제출된 I/O 하나를 대표하는 `IoEvent*`가 들어갑니다. CQE가 도착하면 `IoRing`은 그 포인터를 복원하고, 이벤트 객체의 `Complete()`를 호출합니다.
+
+```{=html}
+<div class="servercore-svg-frame" data-diagram="fig-servercore-cqe-dispatch">
+<svg
+   width="1200"
+   height="618"
+   viewBox="0 77 1200 618"
+   role="img"
+   aria-labelledby="fig-servercore-cqe-dispatch-title fig-servercore-cqe-dispatch-desc"
+   version="1.1"
+   id="fig-servercore-cqe-dispatch-svg35"
+   sodipodi:docname="fig-servercore-cqe-dispatch.svg"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg" class="servercore-svg-inline">
+  <sodipodi:namedview
+     id="fig-servercore-cqe-dispatch-namedview35"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.71844662"
+     inkscape:cx="531.00674"
+     inkscape:cy="-29.925675"
+     inkscape:window-width="2560"
+     inkscape:window-height="1351"
+     inkscape:window-x="-9"
+     inkscape:window-y="-9"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg35" />
+  <title
+     id="fig-servercore-cqe-dispatch-title">Submitted I/O and callback target lifetime</title>
+  <desc
+     id="fig-servercore-cqe-dispatch-desc">Timeline diagram showing that SessionManager ownership, submitted IoEvent ownership, dispatch-local ownership, pending I/O accounting, and SessionState protect different intervals.</desc>
+  <defs
+     id="fig-servercore-cqe-dispatch-defs1">
+    <marker markerUnits="userSpaceOnUse"
+       id="fig-servercore-cqe-dispatch-arrow"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="8"
+       markerHeight="8"
+       orient="auto-start-reverse">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#334155"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="fig-servercore-cqe-dispatch-path1" />
+    </marker>
+    <style
+       id="fig-servercore-cqe-dispatch-style1">
+      .bg{fill:#f8fafc}.axis{stroke:#334155;stroke-width:3;marker-end:url(#fig-servercore-cqe-dispatch-arrow)}.tick{stroke:#cbd5e1;stroke-width:2}.guide{stroke:#e2e8f0;stroke-width:1.5}.panel{fill:#fff;stroke:#cbd5e1;stroke-width:2}.manager{fill:#dbeafe;stroke:#2563eb;stroke-width:2}.event{fill:#ccfbf1;stroke:#0f766e;stroke-width:2}.stack{fill:#fef3c7;stroke:#d97706;stroke-width:2}.state{fill:#dcfce7;stroke:#16a34a;stroke-width:2}.danger{fill:#fee2e2;stroke:#dc2626;stroke-width:2}.muted{fill:#f1f5f9;stroke:#94a3b8;stroke-width:2}.h{font-family:Segoe UI,Malgun Gothic,Arial,sans-serif;fill:#0f172a;font-size:30px;font-weight:700}.t{font-family:Segoe UI,Malgun Gothic,Arial,sans-serif;fill:#0f172a;font-size:19px;font-weight:700}.s{font-family:Segoe UI,Malgun Gothic,Arial,sans-serif;fill:#475569;font-size:16px}.xs{font-family:Segoe UI,Malgun Gothic,Arial,sans-serif;fill:#64748b;font-size:13px}.label{font-family:Segoe UI,Malgun Gothic,Arial,sans-serif;fill:#0f172a;font-size:17px;font-weight:700}.line{stroke:#334155;stroke-width:2.5;fill:none;marker-end:url(#fig-servercore-cqe-dispatch-arrow)}.dash{stroke:#64748b;stroke-width:2;stroke-dasharray:7 7;fill:none;marker-end:url(#fig-servercore-cqe-dispatch-arrow)}
+    </style>
+  </defs>
+  <rect
+     class="bg"
+     width="1200"
+     height="760"
+     id="fig-servercore-cqe-dispatch-rect1" />
+  <line
+     class="axis"
+     x1="250"
+     y1="145"
+     x2="1084"
+     y2="145"
+     id="fig-servercore-cqe-dispatch-line1" />
+  <line
+     class="tick"
+     x1="285"
+     y1="126"
+     x2="285"
+     y2="620"
+     id="fig-servercore-cqe-dispatch-line2" />
+  <line
+     class="tick"
+     x1="455"
+     y1="126"
+     x2="455"
+     y2="620"
+     id="fig-servercore-cqe-dispatch-line3" />
+  <line
+     class="tick"
+     x1="645"
+     y1="126"
+     x2="645"
+     y2="620"
+     id="fig-servercore-cqe-dispatch-line4" />
+  <line
+     class="tick"
+     x1="745"
+     y1="126"
+     x2="745"
+     y2="620"
+     id="fig-servercore-cqe-dispatch-line5" />
+  <line
+     class="tick"
+     x1="940"
+     y1="126"
+     x2="940"
+     y2="620"
+     id="fig-servercore-cqe-dispatch-line6" />
+  <line
+     class="tick"
+     x1="1055"
+     y1="126"
+     x2="1055"
+     y2="620"
+     id="fig-servercore-cqe-dispatch-line7" />
+  <text
+     class="xs"
+     x="285"
+     y="119"
+     text-anchor="middle"
+     id="fig-servercore-cqe-dispatch-text7">connect</text>
+  <text
+     class="xs"
+     x="455"
+     y="119"
+     text-anchor="middle"
+     id="fig-servercore-cqe-dispatch-text8">SQE submit</text>
+  <text
+     class="xs"
+     x="645"
+     y="119"
+     text-anchor="middle"
+     id="fig-servercore-cqe-dispatch-text9">CQE restore</text>
+  <text
+     class="xs"
+     x="745"
+     y="119"
+     text-anchor="middle"
+     id="fig-servercore-cqe-dispatch-text10">handler return</text>
+  <text
+     class="xs"
+     x="940"
+     y="119"
+     text-anchor="middle"
+     id="fig-servercore-cqe-dispatch-text11">final CQE</text>
+  <text
+     class="xs"
+     x="1055"
+     y="119"
+     text-anchor="middle"
+     id="fig-servercore-cqe-dispatch-text12">release</text>
+  <rect
+     class="panel"
+     x="260"
+     y="176"
+     width="135"
+     height="70"
+     rx="10"
+     id="fig-servercore-cqe-dispatch-rect12" />
+  <text
+     class="t"
+     x="285"
+     y="207"
+     id="fig-servercore-cqe-dispatch-text13">Session</text>
+  <text
+     class="xs"
+     x="285"
+     y="230"
+     id="fig-servercore-cqe-dispatch-text14">Op 생성</text>
+  <path
+     class="line"
+     d="M 398 211 L 448 211"
+     id="fig-servercore-cqe-dispatch-path14" />
+  <rect
+     class="event"
+     x="455"
+     y="176"
+     width="155"
+     height="70"
+     rx="10"
+     id="fig-servercore-cqe-dispatch-rect14" />
+  <text
+     class="t"
+     x="478"
+     y="207"
+     id="fig-servercore-cqe-dispatch-text15">IoEvent*</text>
+  <text
+     class="xs"
+     x="478"
+     y="230"
+     id="fig-servercore-cqe-dispatch-text16">user_data 저장</text>
+  <path
+     class="line"
+     d="M 613 211 L 638 211"
+     id="fig-servercore-cqe-dispatch-path16" />
+  <rect
+     class="muted"
+     x="645"
+     y="176"
+     width="145"
+     height="70"
+     rx="10"
+     id="fig-servercore-cqe-dispatch-rect16" />
+  <text
+     class="t"
+     x="669"
+     y="207"
+     id="fig-servercore-cqe-dispatch-text17">IoRing</text>
+  <text
+     class="xs"
+     x="669"
+     y="230"
+     id="fig-servercore-cqe-dispatch-text18">복원 후 dispatch</text>
+  <path
+     class="line"
+     d="M 793 211 L 838 211"
+     id="fig-servercore-cqe-dispatch-path18" />
+  <rect
+     class="panel"
+     x="845"
+     y="176"
+     width="155"
+     height="70"
+     rx="10"
+     id="fig-servercore-cqe-dispatch-rect18" />
+  <text
+     class="t"
+     x="862.14203"
+     y="207.98422"
+     id="fig-servercore-cqe-dispatch-text19">owner handler</text>
+  <text
+     class="xs"
+     x="871"
+     y="230"
+     id="fig-servercore-cqe-dispatch-text20">OnRecv / OnSend</text>
+  <line
+     class="guide"
+     x1="48"
+     y1="282"
+     x2="1112"
+     y2="282"
+     id="fig-servercore-cqe-dispatch-line20" />
+  <text
+     class="label"
+     x="56"
+     y="326"
+     id="fig-servercore-cqe-dispatch-text21">SessionManager</text>
+  <rect
+     class="manager"
+     x="285"
+     y="300"
+     width="360"
+     height="42"
+     rx="8"
+     id="fig-servercore-cqe-dispatch-rect21" />
+  <text
+     class="s"
+     x="379.94257"
+     y="327.39191"
+     id="fig-servercore-cqe-dispatch-text22">연결 세션 장기 소유</text>
+  <path
+     class="dash"
+     d="M 645 321 C 704 324 765 334 830 362"
+     id="fig-servercore-cqe-dispatch-path22" />
+  <text
+     class="xs"
+     x="684"
+     y="314"
+     id="fig-servercore-cqe-dispatch-text23">manager 제거 가능</text>
+  <text
+     class="label"
+     x="56"
+     y="406"
+     id="fig-servercore-cqe-dispatch-text24">OwnerBoundEvent</text>
+  <rect
+     class="event"
+     x="455"
+     y="380"
+     width="485"
+     height="42"
+     rx="8"
+     id="fig-servercore-cqe-dispatch-rect24" />
+  <text
+     class="s"
+     x="482"
+     y="406"
+     id="fig-servercore-cqe-dispatch-text25">SQE submit부터 final CQE까지 owner callback 대상 보장</text>
+  <text
+     class="label"
+     x="56"
+     y="486"
+     id="fig-servercore-cqe-dispatch-text26">dispatch-local owner</text>
+  <rect
+     class="stack"
+     x="645"
+     y="460"
+     width="100"
+     height="42"
+     rx="8"
+     id="fig-servercore-cqe-dispatch-rect26" />
+  <text
+     class="s"
+     x="655.9527"
+     y="486.69595"
+     id="fig-servercore-cqe-dispatch-text27">현재 stack</text>
+  <text
+     class="xs"
+     x="754.51691"
+     y="487.04391"
+     id="fig-servercore-cqe-dispatch-text28">CQE 하나를 처리하는 동안만 보호</text>
+  <text
+     class="label"
+     x="56"
+     y="566"
+     id="fig-servercore-cqe-dispatch-text29">pending_io_</text>
+  <rect
+     class="danger"
+     x="455"
+     y="540"
+     width="485"
+     height="42"
+     rx="8"
+     id="fig-servercore-cqe-dispatch-rect29" />
+  <text
+     class="s"
+     x="482"
+     y="566"
+     id="fig-servercore-cqe-dispatch-text30">아직 최종 CQE가 남은 제출 I/O 수</text>
+  <text
+     class="xs"
+     x="945.04053"
+     y="566"
+     id="fig-servercore-cqe-dispatch-text31">0일 때만 release 후보</text>
+  <text
+     class="label"
+     x="56"
+     y="646"
+     id="fig-servercore-cqe-dispatch-text32">SessionState</text>
+  <rect
+     class="state"
+     x="284.99609"
+     y="619.99609"
+     width="243.0394"
+     height="42.007832"
+     rx="7.9359803"
+     id="fig-servercore-cqe-dispatch-rect32" />
+  <text
+     class="s"
+     x="310"
+     y="646"
+     id="fig-servercore-cqe-dispatch-text33">kOpen: 새 작업 허용</text>
+  <rect
+     class="danger"
+     x="529.99835"
+     y="619.99835"
+     width="408.61142"
+     height="42.003311"
+     rx="7.9729056"
+     id="fig-servercore-cqe-dispatch-rect33" />
+  <text
+     class="s"
+     x="560"
+     y="646"
+     id="fig-servercore-cqe-dispatch-text34">kClosing / kDraining: 새 일반 I/O 차단</text>
+  <rect
+     class="panel"
+     x="941.04395"
+     y="620"
+     width="143"
+     height="42"
+     rx="8"
+     id="fig-servercore-cqe-dispatch-rect34" />
+  <text
+     class="s"
+     x="981.57092"
+     y="648.43579"
+     id="fig-servercore-cqe-dispatch-text35">kClosed</text>
+  <text
+     xml:space="preserve"
+     style="writing-mode:lr-tb;direction:ltr;fill:#efeaef;stroke:#ed3a3a"
+     x="391.4696"
+     y="331.02026"
+     id="fig-servercore-cqe-dispatch-text36"><tspan
+       sodipodi:role="line"
+       id="fig-servercore-cqe-dispatch-tspan35" /></text>
+</svg>
+</div>
+```
+
+```cpp
+auto* ev = reinterpret_cast<IoEvent*>(data);
+const auto dispatch_result = ev->Complete(result, flags);
+```
+
+`IoRing`은 이 이벤트가 `Session` 작업인지, `Listener` 작업인지 알 필요가 없습니다. `IoEvent::Complete()` 안에서 operation 타입별 `Dispatch()`가 실행되고, `RecvOp`, `SendOp`, `DisconnectOp`, `AcceptOp` 같은 제출 이벤트가 자기 owner의 handler로 완료를 넘깁니다.
+
+따라서 콜백 대상 생존은 `SessionManager`가 아니라 제출된 operation 객체가 보장합니다. `SessionManager`는 “현재 연결 목록”을 관리하고, 제출 이벤트는 “이미 커널에 제출된 I/O가 완료될 때까지 콜백 대상을 살려두는 책임”을 가집니다.
+
+***
+## `DispatchResult`와 `pending_io_`
+
+CQE를 처리한 뒤에는 두 가지를 따로 판단해야 합니다.
+
+1. 이번 CQE를 받은 `IoEvent` 객체를 끝내도 되는지
+2. 세션 전체에서 아직 돌아오지 않은 제출 I/O가 남아 있는지
+
+```{=html}
+<div class="servercore-svg-frame" data-diagram="ioevent-lifetime">
+<svg
+   width="1280"
+   height="520"
+   viewBox="0 89 1280 520"
+   role="img"
+   aria-labelledby="ioevent-lifetime-title ioevent-lifetime-desc"
+   version="1.1"
+   id="ioevent-lifetime-svg30"
+   sodipodi:docname="ioevent-lifetime.svg"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg" class="servercore-svg-inline">
+  <sodipodi:namedview
+     id="ioevent-lifetime-namedview30"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="2.0202262"
+     inkscape:cx="699.17914"
+     inkscape:cy="319.27118"
+     inkscape:window-width="3840"
+     inkscape:window-height="2036"
+     inkscape:window-x="3572"
+     inkscape:window-y="-12"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg30" />
+  <title
+     id="ioevent-lifetime-title">IoEvent and pending I/O timeline</title>
+  <desc
+     id="ioevent-lifetime-desc">A single timeline shows that submit creates an IoEvent and increments pending_io_, kPending keeps both alive through repeated CQEs, and the final kComplete CQE completes the event and decrements pending_io_ before TryRelease checks the release gate.</desc>
+  <defs
+     id="ioevent-lifetime-defs3">
+    <marker markerUnits="userSpaceOnUse"
+       id="ioevent-lifetime-arrow"
+       viewBox="0 0 10 10"
+       refX="8"
+       refY="5"
+       markerWidth="7"
+       markerHeight="7"
+       orient="auto">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#334155"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="ioevent-lifetime-path1" />
+    </marker>
+    <marker markerUnits="userSpaceOnUse"
+       id="ioevent-lifetime-orangeArrow"
+       viewBox="0 0 10 10"
+       refX="8"
+       refY="5"
+       markerWidth="7"
+       markerHeight="7"
+       orient="auto">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#ea580c"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="ioevent-lifetime-path2" />
+    </marker>
+    <marker markerUnits="userSpaceOnUse"
+       id="ioevent-lifetime-redArrow"
+       viewBox="0 0 10 10"
+       refX="8"
+       refY="5"
+       markerWidth="7"
+       markerHeight="7"
+       orient="auto">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#dc2626"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="ioevent-lifetime-path3" />
+    </marker>
+    <style
+       id="ioevent-lifetime-style3">
+      .bg{fill:#f8fafc}.panel{fill:#ffffff;stroke:#cbd5e1;stroke-width:1.5}.axis{stroke:#334155;stroke-width:4;stroke-linecap:round;marker-end:url(#ioevent-lifetime-arrow)}.tick{stroke:#94a3b8;stroke-width:2}.alive{fill:#e0f2fe;stroke:#0284c7;stroke-width:2}.active{fill:#fff7ed;stroke:#ea580c;stroke-width:2}.step{fill:#f8fafc;stroke:#64748b;stroke-width:1.5}.dispatch{fill:#dcfce7;stroke:#16a34a;stroke-width:2}.pending{fill:#fff7ed;stroke:#ea580c;stroke-width:2}.complete{fill:#fee2e2;stroke:#dc2626;stroke-width:2}.release{fill:#f5f3ff;stroke:#7c3aed;stroke-width:2}.h{font-family:Segoe UI,Arial,sans-serif;fill:#0f172a;font-size:34px;font-weight:700}.t{font-family:Segoe UI,Arial,sans-serif;fill:#111827;font-size:20px;font-weight:700}.s{font-family:Segoe UI,Arial,sans-serif;fill:#475569;font-size:16px}.xs{font-family:Segoe UI,Arial,sans-serif;fill:#64748b;font-size:14px}.code{font-family:Consolas,Segoe UI,Arial,sans-serif;fill:#334155;font-size:14px}.flow{fill:none;stroke:#334155;stroke-width:2.8;marker-end:url(#ioevent-lifetime-arrow)}.hold{fill:none;stroke:#ea580c;stroke-width:3;marker-end:url(#ioevent-lifetime-orangeArrow)}.final{fill:none;stroke:#dc2626;stroke-width:3;marker-end:url(#ioevent-lifetime-redArrow)}.soft{fill:none;stroke:#94a3b8;stroke-width:2;stroke-dasharray:7 6}
+    </style>
+  </defs>
+  <rect
+     class="bg"
+     width="1280"
+     height="720"
+     id="ioevent-lifetime-rect3" />
+  <rect
+     class="panel"
+     x="60"
+     y="122"
+     width="1160"
+     height="454"
+     rx="12"
+     id="ioevent-lifetime-rect4" />
+  <text
+     class="t"
+     x="90"
+     y="160"
+     id="ioevent-lifetime-text4">단일 제출 I/O 타임라인</text>
+  <line
+     class="axis"
+     x1="148"
+     y1="282"
+     x2="1170"
+     y2="282"
+     id="ioevent-lifetime-line4" />
+  <line
+     class="tick"
+     x1="190"
+     y1="206"
+     x2="190"
+     y2="456"
+     id="ioevent-lifetime-line5" />
+  <line
+     class="tick"
+     x1="382"
+     y1="206"
+     x2="382"
+     y2="456"
+     id="ioevent-lifetime-line6" />
+  <line
+     class="tick"
+     x1="590"
+     y1="206"
+     x2="590"
+     y2="456"
+     id="ioevent-lifetime-line7" />
+  <line
+     class="tick"
+     x1="833"
+     y1="206"
+     x2="833"
+     y2="456"
+     id="ioevent-lifetime-line8" />
+  <line
+     class="tick"
+     x1="1011"
+     y1="206"
+     x2="1011"
+     y2="456"
+     id="ioevent-lifetime-line9" />
+  <line
+     class="tick"
+     x1="1148"
+     y1="206"
+     x2="1148"
+     y2="456"
+     id="ioevent-lifetime-line10" />
+  <text
+     class="xs"
+     x="190"
+     y="198"
+     text-anchor="middle"
+     id="ioevent-lifetime-text10">op 생성</text>
+  <text
+     class="xs"
+     x="382"
+     y="198"
+     text-anchor="middle"
+     id="ioevent-lifetime-text11">submit 성공</text>
+  <text
+     class="xs"
+     x="590"
+     y="198"
+     text-anchor="middle"
+     id="ioevent-lifetime-text12">CQE dispatch</text>
+  <text
+     class="xs"
+     x="833"
+     y="198"
+     text-anchor="middle"
+     id="ioevent-lifetime-text13">kPending</text>
+  <text
+     class="xs"
+     x="1011"
+     y="198"
+     text-anchor="middle"
+     id="ioevent-lifetime-text14">final kComplete</text>
+  <text
+     class="xs"
+     x="1148"
+     y="198"
+     text-anchor="middle"
+     id="ioevent-lifetime-text15">TryRelease</text>
+  <rect
+     class="alive"
+     x="190"
+     y="224"
+     width="821"
+     height="32"
+     rx="6"
+     id="ioevent-lifetime-rect15" />
+  <text
+     class="xs"
+     x="210.84988"
+     y="244.94997"
+     id="ioevent-lifetime-text16">IoEvent 객체 생존 구간</text>
+  <rect
+     class="active"
+     x="382"
+     y="261"
+     width="629"
+     height="32"
+     rx="6"
+     id="ioevent-lifetime-rect16" />
+  <text
+     class="xs"
+     x="405.64999"
+     y="281.40005"
+     id="ioevent-lifetime-text17">pending_io_ 활성 구간</text>
+  <rect
+     class="step"
+     x="124"
+     y="316"
+     width="132"
+     height="64"
+     rx="8"
+     id="ioevent-lifetime-rect17" />
+  <text
+     class="s"
+     x="154"
+     y="344"
+     id="ioevent-lifetime-text18">Op 생성</text>
+  <text
+     class="xs"
+     x="147.69975"
+     y="366.70001"
+     id="ioevent-lifetime-text19">IoEvent* 준비</text>
+  <path
+     class="flow"
+     d="M 256 348 L 314 348"
+     id="ioevent-lifetime-path19" />
+  <rect
+     class="step"
+     x="314"
+     y="316"
+     width="136"
+     height="64"
+     rx="8"
+     id="ioevent-lifetime-rect19" />
+  <text
+     class="s"
+     x="340"
+     y="344"
+     id="ioevent-lifetime-text20">SQE submit</text>
+  <text
+     class="xs"
+     x="334.39978"
+     y="366"
+     id="ioevent-lifetime-text21">pending_io_ + 1</text>
+  <path
+     class="flow"
+     d="M 450 348 L 512 348"
+     id="ioevent-lifetime-path21" />
+  <rect
+     class="dispatch"
+     x="512"
+     y="316"
+     width="156"
+     height="64"
+     rx="8"
+     id="ioevent-lifetime-rect21" />
+  <text
+     class="s"
+     x="554.40033"
+     y="344.35001"
+     id="ioevent-lifetime-text22">CQE 처리</text>
+  <text
+     class="code"
+     x="545.35028"
+     y="367.75006"
+     id="ioevent-lifetime-text23">Complete()</text>
+  <path
+     class="hold"
+     d="m 667.64999,355.4006 c 4.24829,-17.19934 73.89992,-17.54936 93.64999,-16.64971"
+     id="ioevent-lifetime-path23"
+     sodipodi:nodetypes="cc" />
+  <rect
+     class="pending"
+     x="762"
+     y="316"
+     width="142"
+     height="64"
+     rx="8"
+     id="ioevent-lifetime-rect23" />
+  <text
+     class="s"
+     x="792"
+     y="344"
+     id="ioevent-lifetime-text24">kPending</text>
+  <text
+     class="xs"
+     x="792"
+     y="366"
+     id="ioevent-lifetime-text25">둘 다 유지</text>
+  <path
+     class="hold"
+     d="M 832 316 C 812 250 642 246 590 310"
+     id="ioevent-lifetime-path25" />
+  <text
+     class="xs"
+     x="651.79877"
+     y="308.45285"
+     id="ioevent-lifetime-text26">다음 CQE까지 loop</text>
+  <path
+     class="final"
+     d="M 668 356 C 772 434 908 430 942 380"
+     id="ioevent-lifetime-path26" />
+  <rect
+     class="complete"
+     x="942"
+     y="316"
+     width="138"
+     height="64"
+     rx="8"
+     id="ioevent-lifetime-rect26" />
+  <text
+     class="s"
+     x="970"
+     y="344"
+     id="ioevent-lifetime-text27">kComplete</text>
+  <text
+     class="xs"
+     x="966.14984"
+     y="366.35001"
+     id="ioevent-lifetime-text28">pending_io_ - 1</text>
+  <path
+     class="final"
+     d="M 1080 348 L 1100 348"
+     id="ioevent-lifetime-path28" />
+  <rect
+     class="release"
+     x="1100"
+     y="316"
+     width="96"
+     height="64"
+     rx="8"
+     id="ioevent-lifetime-rect28" />
+  <text
+     class="s"
+     x="1118"
+     y="344"
+     id="ioevent-lifetime-text29">release</text>
+  <text
+     class="xs"
+     x="1118"
+     y="366"
+     id="ioevent-lifetime-text30">gate 확인</text>
+</svg>
+</div>
+```
+
+multishot 수신에서는 하나의 SQE가 여러 CQE를 만들 수 있습니다. 중간 CQE는 데이터를 하나 전달하지만, 같은 수신 제출은 계속 살아 있을 수 있습니다. 따라서 CQE 하나를 받았다고 해서 항상 제출 I/O 하나가 끝났다고 볼 수 없습니다.
+
+이를 분리하기 위해 이벤트 콜백은 `DispatchResult`를 반환하고, 세션은 제출 I/O 단위로 `pending_io_`를 관리합니다.
+
+| 경로 | CQE 의미 | `DispatchResult` | `pending_io_` 처리 |
+| --- | --- | --- | --- |
+| 단일 송신 완료 | 제출한 send 하나가 끝남 | `kComplete` | 감소 |
+| 짧은 쓰기 | 같은 `SendOp`를 남은 바이트로 재제출 | `kPending` | 재제출 성공 시 유지 |
+| multishot 수신 중간 CQE | 같은 수신 제출이 계속 살아 있음 | `kPending` | 유지 |
+| multishot 수신 최종 CQE | multishot 제출이 종료됨 | `kComplete` | 감소 |
+| cancel/shutdown 완료 | 종료용 제출이 완료됨 | `kComplete` | 감소 |
+
+`kPending`은 이벤트 객체가 아직 끝나지 않았다는 뜻입니다. multishot receive에서 `IORING_CQE_F_MORE`가 붙은 CQE가 대표적입니다. 같은 수신 SQE에서 CQE가 더 올 수 있으므로 이벤트 객체를 유지하고, `pending_io_`도 감소시키지 않습니다.
+
+부분 send도 같은 이유로 `kPending`이 될 수 있습니다. CQE를 받은 뒤 같은 `SendOp`를 남은 바이트 범위의 새 send SQE에 다시 연결해야 하므로 이벤트 객체를 삭제하지 않습니다. 재제출이 성공하면 기존 제출 흐름을 유지하고, 재제출이 실패한 경우에만 `CompletePendingIo()`로 기존 제출분을 정리합니다.
+
+`kComplete`는 이번 CQE 처리 뒤 이벤트 객체를 완료 처리할 수 있다는 뜻입니다. 단일 send 완료, cancel 완료, shutdown 완료, 또는 `IORING_CQE_F_MORE`가 없는 multishot 최종 CQE가 여기에 해당합니다.
+
+***
+## 종료 상태와 해제 조건
+
+`pending_io_`는 이미 제출된 I/O가 남았는지만 셉니다. 하지만 종료가 시작된 세션이 새 수신, 송신, 등록 작업을 받아도 되는지는 별도의 상태 판단입니다.
+
+| `SessionState` | 의미 |
+| --- | --- |
+| `kOpen` | 정상 송수신 가능 |
+| `kClosing` | 종료 시작, 새 일반 작업 차단 |
+| `kDraining` | 종료 관련 제출 이후 남은 CQE를 비우는 중 |
+| `kClosed` | 연결 종료 통지와 manager 해제 완료 |
+
+종료 흐름은 “새 작업 차단 → 종료 관련 작업 제출 → 남은 CQE 비우기 → 한 번만 해제” 순서로 진행됩니다.
+
+```{=html}
+<div class="servercore-svg-frame" data-diagram="session-close-flow-timeline">
+<svg
+   width="1280"
+   height="540"
+   viewBox="0 0 1280 540"
+   role="img"
+   aria-labelledby="session-close-flow-timeline-title session-close-flow-timeline-desc"
+   version="1.1"
+   id="session-close-flow-timeline-svg45"
+   sodipodi:docname="session-close-flow-timeline.svg"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg" class="servercore-svg-inline">
+  <sodipodi:namedview
+     id="session-close-flow-timeline-namedview45"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="2.8570312"
+     inkscape:cx="576.64753"
+     inkscape:cy="219.45857"
+     inkscape:window-width="3840"
+     inkscape:window-height="2036"
+     inkscape:window-x="3572"
+     inkscape:window-y="-12"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg45" />
+  <title
+     id="session-close-flow-timeline-title">Session close flow timeline</title>
+  <desc
+     id="session-close-flow-timeline-desc">Session close timeline from normal I/O through disconnect, close submissions, CQE drain, release gate, SessionManager release, and final references.</desc>
+  <defs
+     id="session-close-flow-timeline-defs4">
+    <style
+       id="session-close-flow-timeline-style1">
+      .bg { fill: #f8fafc; }
+      text { font-family: &quot;Noto Sans CJK KR&quot;, &quot;Noto Sans KR&quot;, &quot;DejaVu Sans&quot;, sans-serif; }
+      .axis { stroke: #334155; stroke-width: 4; stroke-linecap: round; marker-end: url(#session-close-flow-timeline-axisArrow); }
+      .tick { stroke: #94a3b8; stroke-width: 2.2; }
+      .tickText { fill: #52637a; font-size: 13px; font-weight: 700; }
+      .laneText { fill: #111827; font-size: 18px; font-weight: 800; }
+      .small { fill: #475569; font-size: 14px; font-weight: 600; }
+      .tiny { fill: #64748b; font-size: 12px; font-weight: 600; }
+      .code { fill: #334155; font-size: 12px; font-weight: 700; }
+      .stateOpen { fill: #dcfce7; stroke: #16a34a; stroke-width: 2.4; }
+      .stateClosing { fill: #fef3c7; stroke: #d97706; stroke-width: 2.4; }
+      .stateDraining { fill: #ffe4e6; stroke: #e11d48; stroke-width: 2.4; }
+      .stateClosed { fill: #e5e7eb; stroke: #64748b; stroke-width: 2.4; }
+      .manager { fill: #dbeafe; stroke: #2563eb; stroke-width: 2.4; }
+      .eventOwner { fill: #ede9fe; stroke: #7c3aed; stroke-width: 2.4; }
+      .gate { fill: #ffffff; stroke: #334155; stroke-width: 2.2; }
+      .noteBox { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; }
+      .flow { fill: none; stroke: #334155; stroke-width: 2.5; marker-end: url(#session-close-flow-timeline-arrow); }
+      .softFlow { fill: none; stroke: #64748b; stroke-width: 2.2; stroke-dasharray: 7 6; marker-end: url(#session-close-flow-timeline-softArrow); }
+      .redFlow { fill: none; stroke: #dc2626; stroke-width: 2.5; marker-end: url(#session-close-flow-timeline-redArrow); }
+      .blocked { stroke: #dc2626; stroke-width: 3; }
+    </style>
+    <marker
+       markerUnits="userSpaceOnUse"
+       id="session-close-flow-timeline-axisArrow"
+       viewBox="0 0 10 10"
+       refX="8"
+       refY="5"
+       markerWidth="5.5"
+       markerHeight="5.5"
+       orient="auto">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#334155"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="session-close-flow-timeline-path1" />
+    </marker>
+    <marker
+       markerUnits="userSpaceOnUse"
+       id="session-close-flow-timeline-arrow"
+       viewBox="0 0 10 10"
+       refX="8"
+       refY="5"
+       markerWidth="5.5"
+       markerHeight="5.5"
+       orient="auto-start-reverse">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#334155"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="session-close-flow-timeline-path2" />
+    </marker>
+    <marker
+       markerUnits="userSpaceOnUse"
+       id="session-close-flow-timeline-softArrow"
+       viewBox="0 0 10 10"
+       refX="8"
+       refY="5"
+       markerWidth="5.5"
+       markerHeight="5.5"
+       orient="auto-start-reverse">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#64748b"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="session-close-flow-timeline-path3" />
+    </marker>
+    <marker
+       markerUnits="userSpaceOnUse"
+       id="session-close-flow-timeline-redArrow"
+       viewBox="0 0 10 10"
+       refX="8"
+       refY="5"
+       markerWidth="5.5"
+       markerHeight="5.5"
+       orient="auto-start-reverse">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#dc2626"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="session-close-flow-timeline-path4" />
+    </marker>
+  </defs>
+  <rect
+     class="bg"
+     width="1280"
+     height="540"
+     id="session-close-flow-timeline-rect4" />
+  <line
+     class="axis"
+     x1="168"
+     y1="70"
+     x2="1138"
+     y2="70"
+     id="session-close-flow-timeline-line4" />
+  <g
+     id="session-close-flow-timeline-g15">
+    <line
+       class="tick"
+       x1="190"
+       y1="48"
+       x2="190"
+       y2="504"
+       id="session-close-flow-timeline-line5" />
+    <line
+       class="tick"
+       x1="390"
+       y1="48"
+       x2="390"
+       y2="504"
+       id="session-close-flow-timeline-line6" />
+    <line
+       class="tick"
+       x1="590"
+       y1="48"
+       x2="590"
+       y2="504"
+       id="session-close-flow-timeline-line7" />
+    <line
+       class="tick"
+       x1="790"
+       y1="48"
+       x2="790"
+       y2="504"
+       id="session-close-flow-timeline-line8" />
+    <line
+       class="tick"
+       x1="990"
+       y1="48"
+       x2="990"
+       y2="504"
+       id="session-close-flow-timeline-line9" />
+    <line
+       class="tick"
+       x1="1130"
+       y1="48"
+       x2="1130"
+       y2="504"
+       id="session-close-flow-timeline-line10" />
+    <text
+       class="tickText"
+       x="190"
+       y="44"
+       text-anchor="middle"
+       id="session-close-flow-timeline-text10">normal I/O</text>
+    <text
+       class="tickText"
+       x="390"
+       y="44"
+       text-anchor="middle"
+       id="session-close-flow-timeline-text11">disconnect</text>
+    <text
+       class="tickText"
+       x="590"
+       y="44"
+       text-anchor="middle"
+       id="session-close-flow-timeline-text12">close submit</text>
+    <text
+       class="tickText"
+       x="790"
+       y="44"
+       text-anchor="middle"
+       id="session-close-flow-timeline-text13">CQE drain</text>
+    <text
+       class="tickText"
+       x="990"
+       y="44"
+       text-anchor="middle"
+       id="session-close-flow-timeline-text14">release</text>
+    <text
+       class="tickText"
+       x="1130"
+       y="44"
+       text-anchor="middle"
+       id="session-close-flow-timeline-text15">final refs</text>
+  </g>
+  <text
+     class="laneText"
+     x="165"
+     y="138"
+     text-anchor="end"
+     id="session-close-flow-timeline-text16">SessionState</text>
+  <rect
+     class="stateOpen"
+     x="192.43562"
+     y="103.98553"
+     width="195.12875"
+     height="74.028946"
+     rx="7.80515"
+     id="session-close-flow-timeline-rect16" />
+  <text
+     class="small"
+     x="214"
+     y="133"
+     id="session-close-flow-timeline-text17">kOpen</text>
+  <text
+     class="tiny"
+     x="214"
+     y="154"
+     id="session-close-flow-timeline-text18">Send / Recv 허용</text>
+  <rect
+     class="stateClosing"
+     x="392.43457"
+     y="103.98449"
+     width="194.78082"
+     height="74.031029"
+     rx="7.7912326"
+     id="session-close-flow-timeline-rect18" />
+  <text
+     class="small"
+     x="414"
+     y="133"
+     id="session-close-flow-timeline-text19">kClosing</text>
+  <text
+     class="tiny"
+     x="414"
+     y="154"
+     id="session-close-flow-timeline-text20">새 일반 작업 차단</text>
+  <rect
+     class="stateDraining"
+     x="592.79242"
+     y="103.99225"
+     width="394.76532"
+     height="74.015503"
+     rx="7.8953056"
+     id="session-close-flow-timeline-rect20" />
+  <text
+     class="small"
+     x="614"
+     y="133"
+     id="session-close-flow-timeline-text21">kDraining</text>
+  <text
+     class="tiny"
+     x="614"
+     y="154"
+     id="session-close-flow-timeline-text22">close / cancel 완료와 남은 CQE 정리</text>
+  <rect
+     class="stateClosed"
+     x="992.78833"
+     y="103.98823"
+     width="137.22343"
+     height="74.023537"
+     rx="7.8413391"
+     id="session-close-flow-timeline-rect22" />
+  <text
+     class="small"
+     x="1014"
+     y="133"
+     id="session-close-flow-timeline-text23">kClosed</text>
+  <text
+     class="tiny"
+     x="1014"
+     y="154"
+     id="session-close-flow-timeline-text24">세션 상태 종료</text>
+  <text
+     class="laneText"
+     x="165"
+     y="248"
+     text-anchor="end"
+     id="session-close-flow-timeline-text25">SessionManager</text>
+  <rect
+     class="manager"
+     x="192.09752"
+     y="212.9624"
+     width="796.15674"
+     height="82.005653"
+     rx="7.9615679"
+     id="session-close-flow-timeline-rect25"
+     transform="matrix(0.99999846,0.0017533,0,1,0,0)" />
+  <text
+     class="small"
+     x="214"
+     y="243"
+     id="session-close-flow-timeline-text26">connected session 목록에 남아 외부에서 현재 연결로 보임 </text>
+  <text
+     class="tiny"
+     x="214"
+     y="264"
+     id="session-close-flow-timeline-text27">Release(self) 전까지 lookup / broadcast 대상에 포함될 수 있음</text>
+  <path
+     class="redFlow"
+     d="M 990 255 L 1138 255"
+     id="session-close-flow-timeline-path27" />
+  <text
+     class="small"
+     x="1012"
+     y="232"
+     id="session-close-flow-timeline-text28">Sessions().Release(self)</text>
+  <text
+     class="laneText"
+     x="165"
+     y="364"
+     text-anchor="end"
+     id="session-close-flow-timeline-text29">callback 참조</text>
+  <rect
+     class="eventOwner"
+     x="392.44336"
+     y="329.99326"
+     width="395.46326"
+     height="82.013451"
+     rx="7.9092655"
+     id="session-close-flow-timeline-rect29" />
+  <text
+     class="small"
+     x="414"
+     y="359"
+     id="session-close-flow-timeline-text30">pending_io_</text>
+  <text
+     class="tiny"
+     x="414"
+     y="380"
+     id="session-close-flow-timeline-text31">성공한 SQE마다 증가, final CQE에서 감소</text>
+  <rect
+     class="eventOwner"
+     x="792.44287"
+     y="329.99277"
+     width="197.56435"
+     height="82.01445"
+     rx="7.9025741"
+     id="session-close-flow-timeline-rect31" />
+  <text
+     class="small"
+     x="814"
+     y="359"
+     id="session-close-flow-timeline-text32">CQE drain 완료</text>
+  <text
+     class="tiny"
+     x="814"
+     y="380"
+     id="session-close-flow-timeline-text33">pending_io_ == 0</text>
+  <path
+     class="softFlow"
+     d="M 590 330 L 590 296"
+     id="session-close-flow-timeline-path33" />
+  <text
+     class="code"
+     x="614"
+     y="316"
+     id="session-close-flow-timeline-text34">close / cancel 제출</text>
+  <path
+     class="softFlow"
+     d="M 790 330 L 790 296"
+     id="session-close-flow-timeline-path34" />
+  <text
+     class="code"
+     x="814"
+     y="316"
+     id="session-close-flow-timeline-text35">final CQE</text>
+  <text
+     class="laneText"
+     x="165"
+     y="480"
+     text-anchor="end"
+     id="session-close-flow-timeline-text36">해제 게이트</text>
+  <rect
+     class="gate"
+     x="790"
+     y="446"
+     width="200"
+     height="58"
+     rx="8"
+     id="session-close-flow-timeline-rect36" />
+  <text
+     class="small"
+     x="814"
+     y="471"
+     id="session-close-flow-timeline-text37">TryRelease()</text>
+  <text
+     class="tiny"
+     x="814"
+     y="490"
+     id="session-close-flow-timeline-text38">pending_io_ == 0</text>
+  <rect
+     class="noteBox"
+     x="1030"
+     y="446"
+     width="150"
+     height="58"
+     rx="8"
+     id="session-close-flow-timeline-rect38" />
+  <text
+     class="small"
+     x="1052"
+     y="471"
+     id="session-close-flow-timeline-text39">final refs</text>
+  <text
+     class="tiny"
+     x="1052"
+     y="490"
+     id="session-close-flow-timeline-text40">소멸자 실행 가능</text>
+  <path
+     class="flow"
+     d="m 390,178.45146 v 35.82858"
+     id="session-close-flow-timeline-path40" />
+  <path
+     class="flow"
+     d="M 590,177.75144 V 330.10162"
+     id="session-close-flow-timeline-path41" />
+  <path
+     class="flow"
+     d="M 890 412 C 904 428, 904 438, 884 446"
+     id="session-close-flow-timeline-path42" />
+  <path
+     class="flow"
+     d="M 990 475 L 1030 475"
+     id="session-close-flow-timeline-path43" />
+  <line
+     class="blocked"
+     x1="438"
+     y1="188"
+     x2="468"
+     y2="218"
+     id="session-close-flow-timeline-line43" />
+  <line
+     class="blocked"
+     x1="468"
+     y1="188"
+     x2="438"
+     y2="218"
+     id="session-close-flow-timeline-line44" />
+  <text
+     class="code"
+     x="488.4501"
+     y="205.94997"
+     id="session-close-flow-timeline-text44">kOpen이 아니면 새 Send / RegisterRecv 차단</text>
+  <path
+     class="softFlow"
+     d="M 972 412 C 1010 422, 1014 438, 990 446"
+     id="session-close-flow-timeline-path44" />
+  <text
+     class="code"
+     x="1020"
+     y="432"
+     id="session-close-flow-timeline-text45">CQE 남으면 대기</text>
+</svg>
+</div>
+```
+
+1. `Disconnect()`가 호출되면 `SessionState`를 `kClosing`으로 전환합니다.
+2. `kOpen`이 아니면 새 수신, 새 송신, 새 등록 작업을 차단합니다.
+3. 이미 큐에 들어간 송신 데이터는 정책에 따라 폐기하거나, 종료 전에 drain할지 결정합니다.
+4. 취소, `shutdown`, close 관련 정리처럼 커널 제출이 필요한 종료 작업을 등록합니다.
+5. 제출에 성공한 종료 작업은 `pending_io_`에 반영합니다.
+6. CQE가 도착할 때마다 이벤트 dispatch가 `DispatchResult`를 반환합니다.
+7. 최종 완료 CQE는 `pending_io_`를 감소시킵니다.
+8. `ClosingStarted() && pending_io_ == 0 && !disconnected_notified_` 조건을 통과하면 `TryRelease()`가 `OnDisconnected()`와 manager 해제를 한 번만 실행합니다.
+9. 해제가 끝나면 상태를 `kClosed`로 전환합니다.
+
+`SessionState`가 없으면 이미 종료가 시작된 세션에 새 작업이 다시 들어갈 수 있습니다. 예를 들어 수신 CQE에서 `res == 0`을 보고 peer close를 감지해 종료를 시작했는데, 다른 경로의 `Send()`나 `RegisterRecv()`가 아직 세션을 정상 상태로 보고 새 SQE를 제출할 수 있습니다.
+
+이 경우 닫히는 세션에 multishot recv가 다시 걸리거나, 이미 닫히는 소켓에 새 송신이 들어가거나, drain 중이던 `pending_io_`가 다시 증가할 수 있습니다. 더 나쁘게는 서로 다른 CQE 경로가 동시에 종료 조건을 만족해 `OnDisconnected()`가 중복 호출될 수도 있습니다.
+
+따라서 `pending_io_`는 “이미 제출한 I/O가 모두 끝났는가?”를 판단하고, `SessionState`는 “지금 새 I/O를 받아도 되는가?”를 판단합니다. 둘 중 하나만으로는 안전한 종료 조건을 만들 수 없습니다.
+
+세션 해제는 다음 조건이 모두 만족될 때만 가능합니다.
+
+```text
+1. 세션이 종료를 시작한 상태.
+2. 새 일반 작업이 차단되어 있음.
+3. 이미 제출된 I/O의 최종 CQE가 모두 돌아왔음.
+4. 종료 통지가 아직 실행되지 않았음.
+```
+
+이를 코드 관점으로 표현하면 다음과 같습니다.
+
+```cpp
+bool Session::CanRelease() const {
+    return ClosingStarted()
+        && pending_io_ == 0
+        && !disconnected_notified_;
+}
+```
+
+`TryRelease()`는 이 조건을 통과한 경우에만 `OnDisconnected()`와 `SessionManager` 해제를 수행합니다. 또한 `disconnected_notified_`를 통해 동일 세션의 종료 통지가 한 번만 실행되도록 막습니다.
+
+```cpp
+void Session::TryRelease() {
+    if (!CanRelease()) {
+        return;
+    }
+
+    disconnected_notified_ = true;
+    state_ = SessionState::kClosed;
+
+    OnDisconnected();
+    manager_->Remove(session_id_);
+
+    // 세션 소유자 실행 문맥에서 호출되어야 순서가 보장됨
+}
+```
+
+수명 관리는 하나의 세션 소유자를 관리하는것이 아니라, 각 장치가 보장하는 방식으로 설계되었습니다. `SessionManager`는 외부에 노출되는 연결 목록을 관리하고, `OwnerBoundEvent`는 CQE 콜백 대상의 생존을 보장하며, `DispatchResult`는 이벤트를 완료할지 유지할지 재사용할지 결정합니다. 여기에 `pending_io_`가 최종 CQE 대기 수를 추적하고, `SessionState`가 새 작업 허용 여부와 종료 단계를 막아 줍니다.
+
+결국 세션은 새 작업이 차단되고, 제출된 I/O의 최종 CQE가 모두 돌아오고, 종료 통지가 아직 실행되지 않았을 때만 해제될 수 있습니다. 이 경계가 닫혀야 이후 장에서 다루는 버퍼와 송신 큐도 반환된 세션이나 버퍼를 다시 참조하지 않습니다.
+

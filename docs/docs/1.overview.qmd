@@ -1,0 +1,993 @@
+---
+title: "전체 구조"
+lang: ko
+format:
+  html:
+    css: ../../portfolio.css
+    code-overflow: wrap
+    highlight-style: github
+    fontsize: 1em
+    linestretch: 1.6
+    toc: true
+    embed-resources: true
+---
+
+### 전체 구조
+
+`ServerCore`는 Linux `io_uring`을 기반으로 구현한 비동기 서버 런타임입니다.
+
+처음에는 게임 서버를 만들기 위한 기반 코드로 시작했지만, 구현을 진행하면서 TCP 연결 수락, 수신/송신, 시간 초과와 취소, 버퍼 소유권, 세션 수명주기, 스레드 간 작업 전달과 같은 요소들이 특정 게임 로직에만 종속되는 기능이 아니라는 점을 알게 되었습니다. 
+
+이들은 여러 서버 애플리케이션에서 공통적으로 필요한 실행 기반에 가깝다고 판단했고, 해당 기능들을 게임 서버 코드에 직접 묶어두지 않고 여러 프로토콜과 서비스가 공유할 수 있는 Core 런타임으로 분리했습니다.
+
+Core의 역할은 바이트 스트림을 수신하고 송신하며, 비동기 I/O 완료 통지를 처리하는 것입니다. 다만 수신된 바이트가 HTTP 요청인지, 프록시 스트림인지, 게임 패킷인지는 Core가 해석하지 않고, HTTP, Proxy, Game은 Core 위에 올라가는 선택 모듈로 분리되며 각 모듈은 자신에게 필요한 파서, 라우팅, 패킷 프레이밍, Room 실행 모델과 같은 기능만 추가합니다.
+
+구현된 런타임은 `io_uring` 기반 TCP 비동기 I/O 처리와 그 수명주기를 관리합니다. 각 소켓은 `Session` 단위로 감싸지며, 연결 수락, 수신/송신, 버퍼 관리, 시간 초과, 취소, 동시성 제어, 세션 수명주기 처리는 Core에서 담당합니다.
+
+프로토콜 해석과 애플리케이션 정책은 상위 모듈로 분리됩니다. 예를 들어 Web 요청은 Core의 `Session`을 통해 수신된 뒤 `HttpSession::OnRecv()`로 전달되고, HTTP 파싱, 라우팅, 핸들러 실행은 Web 모듈에서 처리됩니다. 응답 데이터는 다시 Core의 `Session::Send()`를 통해 송신 경로로 내려갑니다.
+
+`HttpSession`과 `PacketSession`은 모두 Core의 `Session`을 기반으로 동작하지만, 수신된 TCP 바이트 스트림을 메시지 단위로 해석하는 방식이 다릅니다. `PacketSession`은 `[size][id][payload]` 형식의 고정 헤더를 기준으로 패킷 경계를 판단하고, `HttpSession`은 HTTP 파서 상태를 유지하며 헤더 종료, `Content-Length`, chunked 본문, 파이프라이닝 여부를 해석합니다.
+
+Core는 연결 수명주기와 비동기 I/O 처리, 버퍼 및 완료 이벤트 관리를 공통으로 담당하고, 스트림을 어떤 메시지 모델로 변환할지는 각 프로토콜 세션이 담당합니다. 이를 통해 게임 서버뿐 아니라 HTTP 서버, 프록시 서버, 패킷 기반 서비스 등 다양한 서버 모듈이 동일한 Core 런타임 위에서 동작할 수 있도록 설계했습니다.
+
+```{=html}
+<div class="servercore-svg-frame" data-diagram="fig-servercore-eventloop-group">
+<svg
+   width="1200"
+   height="522"
+   viewBox="0 95 1200 522"
+   role="img"
+   aria-labelledby="fig-servercore-eventloop-group-title fig-servercore-eventloop-group-desc"
+   version="1.1"
+   id="fig-servercore-eventloop-group-svg34"
+   sodipodi:docname="fig-servercore-eventloop-group.svg"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg" class="servercore-svg-inline">
+  <sodipodi:namedview
+     id="fig-servercore-eventloop-group-namedview34"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="2.1549079"
+     inkscape:cx="507.91034"
+     inkscape:cy="278.43417"
+     inkscape:window-width="3840"
+     inkscape:window-height="2036"
+     inkscape:window-x="3572"
+     inkscape:window-y="-12"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg34" />
+  <title
+     id="fig-servercore-eventloop-group-title">ServerCore 워커 풀과 io_uring 실행 루프</title>
+  <desc
+     id="fig-servercore-eventloop-group-desc">각 워커 스레드는 IoRing, Listener, BufferPool, SessionManager를 소유하고, 수락과 세션 I/O 완료를 같은 owner 실행 루프에서 처리한다. 프로토콜 모듈은 Core 밖에서 바이트 의미를 해석하고 다시 Session send 표면으로 내려온다.</desc>
+  <defs
+     id="fig-servercore-eventloop-group-defs3">
+    <marker markerUnits="userSpaceOnUse"
+       id="fig-servercore-eventloop-group-arrow"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="5.5"
+       markerHeight="5.5"
+       orient="auto-start-reverse">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#334155"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="fig-servercore-eventloop-group-path1" />
+    </marker>
+    <marker markerUnits="userSpaceOnUse"
+       id="fig-servercore-eventloop-group-tealArrow"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="5.5"
+       markerHeight="5.5"
+       orient="auto-start-reverse">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#0f766e"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="fig-servercore-eventloop-group-path2" />
+    </marker>
+    <marker markerUnits="userSpaceOnUse"
+       id="fig-servercore-eventloop-group-orangeArrow"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="5.5"
+       markerHeight="5.5"
+       orient="auto-start-reverse">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#ea580c"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="fig-servercore-eventloop-group-path3" />
+    </marker>
+    <style
+       id="fig-servercore-eventloop-group-style3">
+      .bg{fill:#f8fafc}.panel{fill:#ffffff;stroke:#cbd5e1;stroke-width:1.5}.pool{fill:#ffffff;stroke:#64748b;stroke-width:1.5;stroke-dasharray:7 7}.worker{fill:#eff6ff;stroke:#2563eb;stroke-width:2}.loop{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.5}.core{fill:#dbeafe;stroke:#2563eb;stroke-width:1.5}.module{fill:#f0fdfa;stroke:#0f766e;stroke-width:2}.send{fill:#fff7ed;stroke:#ea580c;stroke-width:1.5}.note{fill:#ffffff;stroke:#cbd5e1;stroke-width:1.5}.chip{fill:#ffffff;stroke:#94a3b8;stroke-width:1.5}.h{font-family:Segoe UI,Arial,sans-serif;fill:#0f172a;font-size:30px;font-weight:700}.t{font-family:Segoe UI,Arial,sans-serif;fill:#0f172a;font-size:20px;font-weight:700}.s{font-family:Segoe UI,Arial,sans-serif;fill:#475569;font-size:16px}.xs{font-family:Segoe UI,Arial,sans-serif;fill:#64748b;font-size:14px}.mini{font-family:Segoe UI,Arial,sans-serif;fill:#0f172a;font-size:13px;font-weight:700}.line{stroke:#334155;stroke-width:2.2;fill:none;marker-end:url(#fig-servercore-eventloop-group-arrow)}.tealLine{stroke:#0f766e;stroke-width:2.2;fill:none;marker-end:url(#fig-servercore-eventloop-group-tealArrow)}.orangeLine{stroke:#ea580c;stroke-width:2.2;fill:none;marker-end:url(#fig-servercore-eventloop-group-orangeArrow)}.dash{stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:7 7;fill:none}
+    </style>
+  </defs>
+  <rect
+     class="bg"
+     width="1200"
+     height="760"
+     id="fig-servercore-eventloop-group-rect3" />
+  <rect
+     class="panel"
+     x="54"
+     y="154"
+     width="152"
+     height="310"
+     rx="12"
+     id="fig-servercore-eventloop-group-rect4" />
+  <text
+     class="t"
+     x="86"
+     y="194"
+     id="fig-servercore-eventloop-group-text4">클라이언트</text>
+  <rect
+     class="chip"
+     x="82"
+     y="232"
+     width="96"
+     height="38"
+     rx="6"
+     id="fig-servercore-eventloop-group-rect5" />
+  <text
+     class="xs"
+     x="108"
+     y="256"
+     id="fig-servercore-eventloop-group-text5">client</text>
+  <rect
+     class="chip"
+     x="82"
+     y="304"
+     width="96"
+     height="38"
+     rx="6"
+     id="fig-servercore-eventloop-group-rect6" />
+  <text
+     class="xs"
+     x="108"
+     y="328"
+     id="fig-servercore-eventloop-group-text6">client</text>
+  <rect
+     class="chip"
+     x="82"
+     y="376"
+     width="96"
+     height="38"
+     rx="6"
+     id="fig-servercore-eventloop-group-rect7" />
+  <text
+     class="xs"
+     x="108"
+     y="400"
+     id="fig-servercore-eventloop-group-text7">client</text>
+  <rect
+     class="pool"
+     x="246"
+     y="128"
+     width="610"
+     height="456"
+     rx="18"
+     id="fig-servercore-eventloop-group-rect8" />
+  <text
+     class="t"
+     x="506"
+     y="164"
+     id="fig-servercore-eventloop-group-text8">워커 풀</text>
+  <text
+     class="xs"
+     x="474.26193"
+     y="191.39218"
+     id="fig-servercore-eventloop-group-text9">스레드별 독립 IoRing</text>
+  <rect
+     class="worker"
+     x="282"
+     y="220"
+     width="250"
+     height="310"
+     rx="12"
+     id="fig-servercore-eventloop-group-rect9" />
+  <text
+     class="t"
+     x="340"
+     y="254"
+     id="fig-servercore-eventloop-group-text10">워커 #0</text>
+  <text
+     class="xs"
+     x="340"
+     y="278"
+     id="fig-servercore-eventloop-group-text11">accept owner</text>
+  <rect
+     class="loop"
+     x="314.02188"
+     y="306.02188"
+     width="185.95621"
+     height="86.878273"
+     rx="9.9976454"
+     id="fig-servercore-eventloop-group-rect11" />
+  <text
+     class="mini"
+     x="371.51599"
+     y="327.43726"
+     id="fig-servercore-eventloop-group-text12">IoRing loop</text>
+  <rect
+     class="chip"
+     x="341.51599"
+     y="345.43726"
+     width="48"
+     height="22"
+     rx="4"
+     id="fig-servercore-eventloop-group-rect12" />
+  <text
+     class="xs"
+     x="351.51599"
+     y="361.43726"
+     id="fig-servercore-eventloop-group-text13">SQE</text>
+  <rect
+     class="chip"
+     x="407.51599"
+     y="345.43726"
+     width="48"
+     height="22"
+     rx="4"
+     id="fig-servercore-eventloop-group-rect13" />
+  <text
+     class="xs"
+     x="417.51599"
+     y="361.43726"
+     id="fig-servercore-eventloop-group-text14">CQE</text>
+  <path
+     class="line"
+     d="m 389.516,356.43724 h 14"
+     id="fig-servercore-eventloop-group-path14" />
+  <path
+     class="line"
+     d="m 454.86229,356.57904 c 29.32731,28.57567 -72.80556,42.45268 -90.85314,12.63459"
+     id="fig-servercore-eventloop-group-path15"
+     sodipodi:nodetypes="cc" />
+  <rect
+     class="core"
+     x="314"
+     y="420"
+     width="186"
+     height="82"
+     rx="10"
+     id="fig-servercore-eventloop-group-rect15" />
+  <text
+     class="mini"
+     x="348"
+     y="446"
+     id="fig-servercore-eventloop-group-text15">Core session path</text>
+  <text
+     class="xs"
+     x="350.81708"
+     y="472"
+     id="fig-servercore-eventloop-group-text16">Listener / Session</text>
+  <text
+     class="xs"
+     x="342"
+     y="492"
+     id="fig-servercore-eventloop-group-text17">Manager / BufferPool</text>
+  <path
+     class="orangeLine"
+     d="m 407,393.90648 v 22.33819"
+     id="fig-servercore-eventloop-group-path17" />
+  <rect
+     class="worker"
+     x="568"
+     y="220"
+     width="250"
+     height="310"
+     rx="12"
+     id="fig-servercore-eventloop-group-rect17" />
+  <text
+     class="t"
+     x="626"
+     y="254"
+     id="fig-servercore-eventloop-group-text18">워커 #1</text>
+  <text
+     class="xs"
+     x="626"
+     y="278"
+     id="fig-servercore-eventloop-group-text19">session I/O owner</text>
+  <rect
+     class="loop"
+     x="600.02191"
+     y="306.02188"
+     width="185.95621"
+     height="86.878273"
+     rx="9.9976454"
+     id="fig-servercore-eventloop-group-rect19" />
+  <text
+     class="mini"
+     x="655.54718"
+     y="328.42166"
+     id="fig-servercore-eventloop-group-text20">IoRing loop</text>
+  <rect
+     class="chip"
+     x="636.37573"
+     y="344.45282"
+     width="48"
+     height="22"
+     rx="4"
+     id="fig-servercore-eventloop-group-rect20" />
+  <text
+     class="xs"
+     x="646.37573"
+     y="360.45282"
+     id="fig-servercore-eventloop-group-text21">SQE</text>
+  <rect
+     class="chip"
+     x="702.37573"
+     y="344.45282"
+     width="48"
+     height="22"
+     rx="4"
+     id="fig-servercore-eventloop-group-rect21" />
+  <text
+     class="xs"
+     x="712.37573"
+     y="360.45282"
+     id="fig-servercore-eventloop-group-text22">CQE</text>
+  <path
+     class="line"
+     d="m 684.37572,355.45283 h 15.96883"
+     id="fig-servercore-eventloop-group-path22"
+     sodipodi:nodetypes="cc" />
+  <path
+     class="line"
+     d="m 750.37572,355.45283 c 26,23 -79.29614,37.23462 -95.29614,13.23462"
+     id="fig-servercore-eventloop-group-path23"
+     sodipodi:nodetypes="cc" />
+  <rect
+     class="core"
+     x="600"
+     y="420"
+     width="186"
+     height="82"
+     rx="10"
+     id="fig-servercore-eventloop-group-rect23" />
+  <text
+     class="mini"
+     x="634"
+     y="446"
+     id="fig-servercore-eventloop-group-text23">Core session path</text>
+  <text
+     class="xs"
+     x="628"
+     y="472"
+     id="fig-servercore-eventloop-group-text24">OnRecv / OnSend</text>
+  <text
+     class="xs"
+     x="618.25482"
+     y="492.46405"
+     id="fig-servercore-eventloop-group-text25">SendQueue / BufferPool</text>
+  <path
+     class="orangeLine"
+     d="M 692.67186,393.25021 693,416"
+     id="fig-servercore-eventloop-group-path25"
+     sodipodi:nodetypes="cc" />
+  <path
+     class="line"
+     d="M 178 251 C 204 251 218 282 282 332"
+     id="fig-servercore-eventloop-group-path26" />
+  <path
+     class="line"
+     d="M 178 323 C 214 323 228 356 282 356"
+     id="fig-servercore-eventloop-group-path27" />
+  <path
+     class="line"
+     d="M 178 395 C 214 395 230 430 282 458"
+     id="fig-servercore-eventloop-group-path28" />
+  <rect
+     class="panel"
+     x="906"
+     y="154"
+     width="240"
+     height="310"
+     rx="12"
+     id="fig-servercore-eventloop-group-rect28" />
+  <text
+     class="t"
+     x="954"
+     y="194"
+     id="fig-servercore-eventloop-group-text28">프로토콜 모듈</text>
+  <text
+     class="xs"
+     x="954"
+     y="220"
+     id="fig-servercore-eventloop-group-text29">바이트 의미는 Core 밖</text>
+  <rect
+     class="module"
+     x="944"
+     y="252"
+     width="164"
+     height="44"
+     rx="8"
+     id="fig-servercore-eventloop-group-rect29" />
+  <text
+     class="mini"
+     x="1010"
+     y="280"
+     id="fig-servercore-eventloop-group-text30">Web</text>
+  <rect
+     class="module"
+     x="944"
+     y="318"
+     width="164"
+     height="44"
+     rx="8"
+     id="fig-servercore-eventloop-group-rect30" />
+  <text
+     class="mini"
+     x="1004"
+     y="346"
+     id="fig-servercore-eventloop-group-text31">Proxy</text>
+  <rect
+     class="module"
+     x="944"
+     y="384"
+     width="164"
+     height="44"
+     rx="8"
+     id="fig-servercore-eventloop-group-rect31" />
+  <text
+     class="mini"
+     x="1006"
+     y="412"
+     id="fig-servercore-eventloop-group-text32">Game</text>
+  <path
+     class="tealLine"
+     d="M 786 462 C 842 462 874 288 944 274"
+     id="fig-servercore-eventloop-group-path32" />
+  <text
+     class="xs"
+     x="812"
+     y="332"
+     id="fig-servercore-eventloop-group-text33">OnRecv(bytes)</text>
+  <path
+     class="orangeLine"
+     d="M 944 406 C 870 414 842 482 786 482"
+     id="fig-servercore-eventloop-group-path33" />
+  <text
+     class="xs"
+     x="828"
+     y="448"
+     id="fig-servercore-eventloop-group-text34">Session::Send</text>
+  <text
+     xml:space="preserve"
+     style="writing-mode:lr-tb;direction:ltr;fill:#ffffff;fill-opacity:1;stroke:#ed3a3a"
+     x="460.80856"
+     y="165.0726"
+     id="fig-servercore-eventloop-group-text35"><tspan
+       sodipodi:role="line"
+       id="fig-servercore-eventloop-group-tspan34" /></text>
+  <text
+     xml:space="preserve"
+     style="writing-mode:lr-tb;direction:ltr;fill:#ffffff;fill-opacity:1;stroke:#ed3a3a"
+     x="445.95874"
+     y="144.6541"
+     id="fig-servercore-eventloop-group-text36"><tspan
+       sodipodi:role="line"
+       id="fig-servercore-eventloop-group-tspan35"
+       x="445.95874"
+       y="144.6541" /></text>
+</svg>
+</div>
+```
+
+### 주요 클래스
+
+|Core|설명|
+|---|---|
+|`Listener`|소켓 bind/listen, 다중 완료 연결 수락, 연결 분산|
+|`Session`|fd 상태, 수신/송신 흐름, 닫힘 상태 전환|
+|`IoRing`|SQE 제출, CQE 비우기, `user_data` 기반 이벤트 복원|
+|`RingBuffer`|제공 버퍼 관리, 뷰 생성, 반환 정책|
+|`SendQueue`|대기 중인 송신 관리, 부분 송신 재시도, watermark|
+|`Timeout / Cancel`|비활성 시간, deadline, 취소 요청|
+|`Owner Ring`|세션 I/O 상태 직렬화|
+
+### 실행 루프
+
+실행 흐름의 중심은 `IoRing`입니다. `IoRing`은 사용자 객체를 `IoEvent`로 감싼 뒤 SQE에 연결해 커널에 제출하고, CQE가 도착하면 `user_data`에서 다시 `IoEvent`를 복원합니다. 복원된 이벤트는 해당 `Session` 또는 `Listener`로 dispatch됩니다.
+
+이때 `IoRing`은 완료 통지를 사용자 객체로 되돌리는 실행 장치이고, `Session`은 그 완료가 연결 상태, 수신/송신 큐, 버퍼 반환, 종료 절차에 어떤 의미를 갖는지 판단하는 소유 객체입니다.
+
+
+
+실행 루프는 다음 다섯 구간으로 나눌 수 있습니다.
+
+| 구간          | 책임                                       | 의미                      |
+| ----------- | ---------------------------------------- | ----------------------- |
+| submit      | `IoEvent`를 SQE에 연결하고 커널에 제출              | 사용자 객체와 커널 작업을 묶는 지점    |
+| kernel      | `io_uring`이 비동기 작업을 수행하고 CQE 생성          | 사용자 코드 밖에서 I/O가 진행되는 구간 |
+| cqe restore | `IoRing`이 CQE를 꺼내 `user_data`에서 이벤트 복원   | 커널 완료가 런타임 객체로 돌아오는 경계  |
+| dispatch    | 복원된 이벤트를 `Session` 또는 `Listener` 콜백으로 전달 | 완료 통지를 소유 객체에 넘기는 경계    |
+| disposition | 콜백 결과로 이벤트 처분 결정                         | 완료, 유지, 재제출 중 무엇을 할지 판단 |
+
+세션 콜백은 이번 CQE로 이벤트가 끝났는지, 같은 multishot 제출이 계속 살아 있는지, 또는 같은 이벤트 객체로 새 SQE를 재제출했는지를 반환합니다. 이 결과에 따라 `IoRing`은 이벤트를 정리하거나 유지하거나 다시 제출 상태로 둡니다.
+
+***
+전체 흐름은 다음과 같습니다.
+
+```text
+상위 모듈
+  -> Session::Send() / OnRecv()
+  -> Core Session 상태 변경
+  -> IoEvent 생성
+  -> IoRing submit
+  -> kernel io_uring 처리
+  -> CQE 도착
+  -> IoRing user_data 복원
+  -> Session / Listener dispatch
+  -> DispatchResult에 따라 완료, 유지, 재제출
+```
+
+```{=html}
+<div class="servercore-svg-frame" data-diagram="fig-servercore-execution-timeline">
+<svg
+   width="1280"
+   height="626"
+   viewBox="0 83 1280 626"
+   role="img"
+   aria-labelledby="fig-servercore-execution-timeline-title fig-servercore-execution-timeline-desc"
+  
+   version="1.1"
+   id="fig-servercore-execution-timeline-svg42"
+   sodipodi:docname="fig-servercore-execution-timeline.svg"
+   inkscape:version="1.4.3 (0d15f75, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg" class="servercore-svg-inline">
+  <sodipodi:namedview
+     id="fig-servercore-execution-timeline-namedview42"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="2.0061049"
+     inkscape:cx="603.40814"
+     inkscape:cy="318.02924"
+     inkscape:window-width="3840"
+     inkscape:window-height="2036"
+     inkscape:window-x="3572"
+     inkscape:window-y="-12"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg42" />
+  <title
+     id="fig-servercore-execution-timeline-title">ServerCore execution round trip</title>
+  <desc
+     id="fig-servercore-execution-timeline-desc">A two-lane overview of ServerCore execution. The submit path moves from upper module policy through Session and IoEvent to kernel io_uring. The completion path returns through CQE receive, user_data restore, owner dispatch, and DispatchResult.</desc>
+  <defs
+     id="fig-servercore-execution-timeline-defs3">
+    <marker markerUnits="userSpaceOnUse"
+       id="fig-servercore-execution-timeline-arrowBlue"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="8"
+       markerHeight="8"
+       orient="auto">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#2563eb"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="fig-servercore-execution-timeline-path1" />
+    </marker>
+    <marker markerUnits="userSpaceOnUse"
+       id="fig-servercore-execution-timeline-arrowTeal"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="8"
+       markerHeight="8"
+       orient="auto">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#0f766e"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="fig-servercore-execution-timeline-path2" />
+    </marker>
+    <marker markerUnits="userSpaceOnUse"
+       id="fig-servercore-execution-timeline-arrowSlate"
+       viewBox="0 0 10 10"
+       refX="9"
+       refY="5"
+       markerWidth="8"
+       markerHeight="8"
+       orient="auto">
+      <path
+         d="M 2 1 L 8 5 L 2 9"
+         fill="none"
+         stroke="#334155"
+         stroke-width="2"
+         stroke-linecap="round"
+         stroke-linejoin="round"
+         id="fig-servercore-execution-timeline-path3" />
+    </marker>
+    <style
+       id="fig-servercore-execution-timeline-style3">
+      .bg{fill:#f8fafc}.panel{fill:#ffffff;stroke:#d7dee8;stroke-width:1.5}.submitBand{fill:#eff6ff;stroke:#bfdbfe;stroke-width:1.5}.completeBand{fill:#f8fafc;stroke:#cbd5e1;stroke-width:1.5}.module{fill:#f0fdf4;stroke:#16a34a;stroke-width:2}.core{fill:#eff6ff;stroke:#2563eb;stroke-width:2}.ring{fill:#f0fdfa;stroke:#0f766e;stroke-width:2}.kernel{fill:#fefce8;stroke:#ca8a04;stroke-width:2}.decision{fill:#f5f3ff;stroke:#7c3aed;stroke-width:2}.note{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.4}.chip{fill:#ffffff;stroke:#94a3b8;stroke-width:1.5}.blueLine{stroke:#2563eb;stroke-width:3;fill:none;marker-end:url(#fig-servercore-execution-timeline-arrowBlue)}.tealLine{stroke:#0f766e;stroke-width:3;fill:none;marker-end:url(#fig-servercore-execution-timeline-arrowTeal)}.slateLine{stroke:#334155;stroke-width:2.8;fill:none;marker-end:url(#fig-servercore-execution-timeline-arrowSlate)}.dash{stroke:#64748b;stroke-width:2;stroke-dasharray:7 7;fill:none;marker-end:url(#fig-servercore-execution-timeline-arrowSlate)}.h{fill:#0f172a;font-size:31px;font-weight:700}.s{fill:#475569;font-size:16px}.tag{fill:#1e40af;font-size:14px;font-weight:700}.tagGray{fill:#475569;font-size:14px;font-weight:700}.t{fill:#0f172a;font-size:19px;font-weight:700}.small{fill:#475569;font-size:14px}.xs{fill:#64748b;font-size:13px}.mono{font-family:Consolas,Segoe UI Mono,monospace;fill:#0f172a;font-size:15px}
+    </style>
+  </defs>
+  <rect
+     class="bg"
+     width="1280"
+     height="720"
+     id="fig-servercore-execution-timeline-rect3" />
+  <rect
+     class="panel"
+     x="40"
+     y="116"
+     width="1200"
+     height="560"
+     rx="14"
+     id="fig-servercore-execution-timeline-rect4" />
+  <rect
+     class="submitBand"
+     x="72"
+     y="148"
+     width="1136"
+     height="188"
+     rx="12"
+     id="fig-servercore-execution-timeline-rect5" />
+  <text
+     class="tag"
+     x="96"
+     y="178"
+     id="fig-servercore-execution-timeline-text5">submit path</text>
+  <text
+     class="xs"
+     x="96"
+     y="201"
+     id="fig-servercore-execution-timeline-text6">상위 요청이 Core 상태 변경과 SQE 제출로 내려가는 방향</text>
+  <rect
+     class="completeBand"
+     x="72"
+     y="384"
+     width="1136"
+     height="226"
+     rx="12"
+     id="fig-servercore-execution-timeline-rect6" />
+  <text
+     class="tagGray"
+     x="96"
+     y="414"
+     id="fig-servercore-execution-timeline-text7">completion return path</text>
+  <text
+     class="xs"
+     x="96"
+     y="437"
+     id="fig-servercore-execution-timeline-text8">커널 완료가 IoEvent 복원과 owner 실행 문맥으로 돌아오는 방향</text>
+  <g
+     id="fig-servercore-execution-timeline-g10">
+    <rect
+       class="module"
+       x="108"
+       y="236"
+       width="176"
+       height="64"
+       rx="9"
+       id="fig-servercore-execution-timeline-rect8" />
+    <text
+       class="t"
+       x="136"
+       y="264"
+       id="fig-servercore-execution-timeline-text9">상위 모듈</text>
+    <text
+       class="small"
+       x="136"
+       y="286"
+       id="fig-servercore-execution-timeline-text10">HTTP / Game / Proxy</text>
+  </g>
+  <g
+     id="fig-servercore-execution-timeline-g12">
+    <rect
+       class="core"
+       x="342"
+       y="236"
+       width="176"
+       height="64"
+       rx="9"
+       id="fig-servercore-execution-timeline-rect10" />
+    <text
+       class="t"
+       x="374"
+       y="264"
+       id="fig-servercore-execution-timeline-text11">Session 경계</text>
+    <text
+       class="mono"
+       x="374"
+       y="286"
+       id="fig-servercore-execution-timeline-text12">Send(), recv arm</text>
+  </g>
+  <g
+     id="fig-servercore-execution-timeline-g14">
+    <rect
+       class="ring"
+       x="576"
+       y="236"
+       width="176"
+       height="64"
+       rx="9"
+       id="fig-servercore-execution-timeline-rect12" />
+    <text
+       class="t"
+       x="606"
+       y="264"
+       id="fig-servercore-execution-timeline-text13">IoEvent / SQE</text>
+    <text
+       class="small"
+       x="606"
+       y="286"
+       id="fig-servercore-execution-timeline-text14">user_data 연결</text>
+  </g>
+  <g
+     id="fig-servercore-execution-timeline-g16">
+    <rect
+       class="kernel"
+       x="810"
+       y="236"
+       width="176"
+       height="64"
+       rx="9"
+       id="fig-servercore-execution-timeline-rect14" />
+    <text
+       class="t"
+       x="854"
+       y="264"
+       id="fig-servercore-execution-timeline-text15">kernel</text>
+    <text
+       class="small"
+       x="854"
+       y="286"
+       id="fig-servercore-execution-timeline-text16">io_uring 처리</text>
+  </g>
+  <path
+     class="blueLine"
+     d="M 284 268 L 336 268"
+     id="fig-servercore-execution-timeline-path16" />
+  <path
+     class="blueLine"
+     d="M 518 268 L 570 268"
+     id="fig-servercore-execution-timeline-path17" />
+  <path
+     class="tealLine"
+     d="M 752 268 L 804 268"
+     id="fig-servercore-execution-timeline-path18" />
+  <text
+     class="xs"
+     x="287.04565"
+     y="235.535"
+     id="fig-servercore-execution-timeline-text18">정책 유지</text>
+  <text
+     class="xs"
+     x="522.0426"
+     y="236.53195"
+     id="fig-servercore-execution-timeline-text19">상태 갱신</text>
+  <text
+     class="xs"
+     x="755.54413"
+     y="245.50456"
+     id="fig-servercore-execution-timeline-text20">SQE 제출</text>
+  <path
+     class="slateLine"
+     d="M 898 300 L 898 460"
+     id="fig-servercore-execution-timeline-path21" />
+  <text
+     class="xs"
+     x="914"
+     y="374"
+     id="fig-servercore-execution-timeline-text22">CQE 생성</text>
+  <g
+     id="fig-servercore-execution-timeline-g24">
+    <rect
+       class="kernel"
+       x="810"
+       y="472"
+       width="176"
+       height="64"
+       rx="9"
+       id="fig-servercore-execution-timeline-rect22" />
+    <text
+       class="t"
+       x="854"
+       y="500"
+       id="fig-servercore-execution-timeline-text23">CQE 수신</text>
+    <text
+       class="small"
+       x="854"
+       y="522"
+       id="fig-servercore-execution-timeline-text24">res, flags, data</text>
+  </g>
+  <g
+     id="fig-servercore-execution-timeline-g26">
+    <rect
+       class="ring"
+       x="576"
+       y="472"
+       width="176"
+       height="64"
+       rx="9"
+       id="fig-servercore-execution-timeline-rect24" />
+    <text
+       class="t"
+       x="604"
+       y="500"
+       id="fig-servercore-execution-timeline-text25">user_data 복원</text>
+    <text
+       class="small"
+       x="604"
+       y="522"
+       id="fig-servercore-execution-timeline-text26">IoEvent* 회수</text>
+  </g>
+  <g
+     id="fig-servercore-execution-timeline-g28">
+    <rect
+       class="core"
+       x="342"
+       y="472"
+       width="176"
+       height="64"
+       rx="9"
+       id="fig-servercore-execution-timeline-rect26" />
+    <text
+       class="t"
+       x="360.54718"
+       y="499.50153"
+       id="fig-servercore-execution-timeline-text27">owner dispatch</text>
+    <text
+       class="small"
+       x="376"
+       y="522"
+       id="fig-servercore-execution-timeline-text28">Session / Listener</text>
+  </g>
+  <g
+     id="fig-servercore-execution-timeline-g30">
+    <rect
+       class="decision"
+       x="108"
+       y="464"
+       width="176"
+       height="80"
+       rx="9"
+       id="fig-servercore-execution-timeline-rect28" />
+    <text
+       class="t"
+       x="142"
+       y="498"
+       id="fig-servercore-execution-timeline-text29">DispatchResult</text>
+    <text
+       class="small"
+       x="142"
+       y="520"
+       id="fig-servercore-execution-timeline-text30">이벤트 처분 결정</text>
+  </g>
+  <path
+     class="tealLine"
+     d="M 810 504 L 758 504"
+     id="fig-servercore-execution-timeline-path30" />
+  <path
+     class="tealLine"
+     d="M 576 504 L 524 504"
+     id="fig-servercore-execution-timeline-path31" />
+  <path
+     class="blueLine"
+     d="M 342 504 L 290 504"
+     id="fig-servercore-execution-timeline-path32" />
+  <text
+     class="xs"
+     x="752.55328"
+     y="470.0426"
+     id="fig-servercore-execution-timeline-text32">CQE drain</text>
+  <text
+     class="xs"
+     x="523.03345"
+     y="472.0365"
+     id="fig-servercore-execution-timeline-text33">객체 복원</text>
+  <text
+     class="xs"
+     x="291.02737"
+     y="470.54108"
+     id="fig-servercore-execution-timeline-text34">완료 판단</text>
+  <path
+     class="slateLine"
+     d="M 196 544 L 196 572"
+     id="fig-servercore-execution-timeline-path34" />
+  <rect
+     class="chip"
+     x="79.586731"
+     y="570.03046"
+     width="104"
+     height="36"
+     rx="7"
+     id="fig-servercore-execution-timeline-rect34" />
+  <text
+     class="small"
+     x="98.635422"
+     y="591.53503"
+     id="fig-servercore-execution-timeline-text35">complete</text>
+  <rect
+     class="chip"
+     x="199.58673"
+     y="570.03046"
+     width="104"
+     height="36"
+     rx="7"
+     id="fig-servercore-execution-timeline-rect35" />
+  <text
+     class="small"
+     x="238.58673"
+     y="593.03046"
+     id="fig-servercore-execution-timeline-text36">keep</text>
+  <rect
+     class="chip"
+     x="319.58673"
+     y="570.03046"
+     width="104"
+     height="36"
+     rx="7"
+     id="fig-servercore-execution-timeline-rect36" />
+  <text
+     class="small"
+     x="353.58673"
+     y="593.03046"
+     id="fig-servercore-execution-timeline-text37">rearm</text>
+  <path
+     class="dash"
+     d="M 400 580 C 530 650 820 644 898 536"
+     id="fig-servercore-execution-timeline-path37" />
+  <text
+     class="xs"
+     x="510"
+     y="640"
+     id="fig-servercore-execution-timeline-text38">rearm은 같은 owner context 에서 다음 SQE 제출로 이어짐</text>
+  <path
+     class="dash"
+     d="M 430 472 C 382 386 250 350 196 300"
+     id="fig-servercore-execution-timeline-path38" />
+  <text
+     class="xs"
+     x="314.76569"
+     y="367.49542"
+     id="fig-servercore-execution-timeline-text39">수신 완료는 모듈 콜백으로 올라감</text>
+</svg>
+</div>
+```
+
+이 구조 덕분에 Core는 프로토콜을 해석하지 않으면서도, 비동기 I/O 완료, 버퍼 수명, 세션 종료, 재제출 여부를 일관된 실행 모델 안에서 처리할 수 있습니다.
+
+
