@@ -18,12 +18,12 @@ const excludedDocs = new Set([
 ]);
 
 const chapterSummaries = new Map([
-  ["1.overview.md", "io_uring 기반 Core가 소켓, CQE, Session을 어떻게 하나의 실행 모델로 묶는지 정리합니다."],
-  ["2.lifecycle-management.md", "SessionManager, IoEvent, pending_io_, SessionState가 각각 어느 생존 범위를 판단하는지 분리합니다."],
-  ["3.buffer-management.md", "수신 fast/slow path와 송신 순서 보장, 부분 송신 복구를 설명합니다."],
-  ["4.concurrency-management.md", "Room 상태 순서, WorkerOutbox, Session owner ring이 서로 다른 순서를 보장하는 이유를 다룹니다."],
-  ["5.producer-consumer-backpressure.md", "SendQueue, Proxy, Paused recv, HTTP streaming에서 느린 소비자 앞의 생산 위치를 조절합니다."],
-  ["6.summary.md", "Web/Proxy/Game 모듈과 검증 결과를 통해 Core 불변식이 유지되는지 확인합니다."],
+  ["1.overview.md", "io_uring 기반으로 구현한 Core 런타임의 전체 구조와 실행 모델을 설명"],
+  ["2.lifecycle-management.md", "SessionManager, IoEvent, pending_io_, SessionState가 각각 어느 생존 범위를 판단하는지 분리"],
+  ["3.buffer-management.md", "수신 fast/slow path와 송신 순서 보장, 부분 송신 복구를 설명"],
+  ["4.concurrency-management.md", "Room 상태 순서, WorkerOutbox, Session owner ring이 해결하는 동시성 문제를 설명"],
+  ["5.producer-consumer-backpressure.md", "생산자-소비자 모델에서 발생하는 backpressure문제와 해결"],
+  ["6.summary.md", "런타임 위의 모듈 구성 설명 및 전체 문서 정리"],
 ]);
 
 function ensureDir(dir) {
