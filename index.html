@@ -289,68 +289,68 @@ window.Quarto = {
 </thead>
 <tbody class="list">
 
-<tr data-index="0" data-listing-file-modified-sort="1780806109557" data-listing-reading-time-sort="4" data-listing-word-count-sort="704" data-listing-title-sort="전체 구조" onclick="href = this.querySelector('a').getAttribute('href');
+<tr data-index="0" data-listing-file-modified-sort="1780806598642" data-listing-reading-time-sort="4" data-listing-word-count-sort="704" data-listing-title-sort="전체 구조" onclick="href = this.querySelector('a').getAttribute('href');
  if (href) { window.location=href ; return false; }">
 <td>
 <a href="./docs/1.overview.html" class="title listing-title">전체 구조</a>
 </td>
 <td>
-<span class="listing-description">io_uring 기반 Core가 소켓, CQE, Session을 어떻게 하나의 실행 모델로 묶는지 정리합니다.</span>
+<span class="listing-description">io_uring 기반으로 구현한 Core 런타임의 전체 구조와 실행 모델을 설명</span>
 </td>
 
 </tr>
 
-<tr data-index="1" data-listing-file-modified-sort="1780806109557" data-listing-reading-time-sort="5" data-listing-word-count-sort="888" data-listing-title-sort="제출된 I/O와 콜백 대상 생존" onclick="href = this.querySelector('a').getAttribute('href');
+<tr data-index="1" data-listing-file-modified-sort="1780806598642" data-listing-reading-time-sort="5" data-listing-word-count-sort="888" data-listing-title-sort="제출된 I/O와 콜백 대상 생존" onclick="href = this.querySelector('a').getAttribute('href');
  if (href) { window.location=href ; return false; }">
 <td>
 <a href="./docs/2.lifecycle-management.html" class="title listing-title">제출된 I/O와 콜백 대상 생존</a>
 </td>
 <td>
-<span class="listing-description">SessionManager, IoEvent, pending_io_, SessionState가 각각 어느 생존 범위를 판단하는지 분리합니다.</span>
+<span class="listing-description">SessionManager, IoEvent, pending_io_, SessionState가 각각 어느 생존 범위를 판단하는지 분리</span>
 </td>
 
 </tr>
 
-<tr data-index="2" data-listing-file-modified-sort="1780806109557" data-listing-reading-time-sort="6" data-listing-word-count-sort="1198" data-listing-title-sort="수신 버퍼" onclick="href = this.querySelector('a').getAttribute('href');
+<tr data-index="2" data-listing-file-modified-sort="1780806598642" data-listing-reading-time-sort="6" data-listing-word-count-sort="1198" data-listing-title-sort="수신 버퍼" onclick="href = this.querySelector('a').getAttribute('href');
  if (href) { window.location=href ; return false; }">
 <td>
 <a href="./docs/3.buffer-management.html" class="title listing-title">수신 버퍼</a>
 </td>
 <td>
-<span class="listing-description">수신 fast/slow path와 송신 순서 보장, 부분 송신 복구를 설명합니다.</span>
+<span class="listing-description">수신 fast/slow path와 송신 순서 보장, 부분 송신 복구를 설명</span>
 </td>
 
 </tr>
 
-<tr data-index="3" data-listing-file-modified-sort="1780806109557" data-listing-reading-time-sort="6" data-listing-word-count-sort="1055" data-listing-title-sort="Room과 Session 직렬화" onclick="href = this.querySelector('a').getAttribute('href');
+<tr data-index="3" data-listing-file-modified-sort="1780806598642" data-listing-reading-time-sort="6" data-listing-word-count-sort="1055" data-listing-title-sort="Room과 Session 직렬화" onclick="href = this.querySelector('a').getAttribute('href');
  if (href) { window.location=href ; return false; }">
 <td>
 <a href="./docs/4.concurrency-management.html" class="title listing-title">Room과 Session 직렬화</a>
 </td>
 <td>
-<span class="listing-description">Room 상태 순서, WorkerOutbox, Session owner ring이 서로 다른 순서를 보장하는 이유를 다룹니다.</span>
+<span class="listing-description">Room 상태 순서, WorkerOutbox, Session owner ring이 해결하는 동시성 문제를 설명</span>
 </td>
 
 </tr>
 
-<tr data-index="4" data-listing-file-modified-sort="1780806109558" data-listing-reading-time-sort="7" data-listing-word-count-sort="1249" data-listing-title-sort="SendQueue를 메모리 압력 측정 단위로" onclick="href = this.querySelector('a').getAttribute('href');
+<tr data-index="4" data-listing-file-modified-sort="1780806598642" data-listing-reading-time-sort="7" data-listing-word-count-sort="1249" data-listing-title-sort="SendQueue를 메모리 압력 측정 단위로" onclick="href = this.querySelector('a').getAttribute('href');
  if (href) { window.location=href ; return false; }">
 <td>
 <a href="./docs/5.producer-consumer-backpressure.html" class="title listing-title">SendQueue를 메모리 압력 측정 단위로</a>
 </td>
 <td>
-<span class="listing-description">SendQueue, Proxy, Paused recv, HTTP streaming에서 느린 소비자 앞의 생산 위치를 조절합니다.</span>
+<span class="listing-description">생산자-소비자 모델에서 발생하는 backpressure문제와 해결</span>
 </td>
 
 </tr>
 
-<tr data-index="5" data-listing-file-modified-sort="1780806109558" data-listing-reading-time-sort="4" data-listing-word-count-sort="703" data-listing-title-sort="선택 모듈로 확장한 결과" onclick="href = this.querySelector('a').getAttribute('href');
+<tr data-index="5" data-listing-file-modified-sort="1780806598643" data-listing-reading-time-sort="4" data-listing-word-count-sort="703" data-listing-title-sort="선택 모듈로 확장한 결과" onclick="href = this.querySelector('a').getAttribute('href');
  if (href) { window.location=href ; return false; }">
 <td>
 <a href="./docs/6.summary.html" class="title listing-title">선택 모듈로 확장한 결과</a>
 </td>
 <td>
-<span class="listing-description">Web/Proxy/Game 모듈과 검증 결과를 통해 Core 불변식이 유지되는지 확인합니다.</span>
+<span class="listing-description">런타임 위의 모듈 구성 설명 및 전체 문서 정리</span>
 </td>
 
 </tr>
