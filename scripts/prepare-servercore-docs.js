@@ -18,12 +18,12 @@ const excludedDocs = new Set([
 ]);
 
 const chapterSummaries = new Map([
-  ["1.overview.md", "io_uring 기반으로 구현한 Core 런타임의 전체 구조와 실행 모델을 설명"],
-  ["2.lifecycle-management.md", "SessionManager, IoEvent, pending_io_, SessionState가 각각 어느 생존 범위를 판단하는지 분리"],
-  ["3.buffer-management.md", "수신 fast/slow path와 송신 순서 보장, 부분 송신 복구를 설명"],
-  ["4.concurrency-management.md", "Room 상태 순서, WorkerOutbox, Session owner ring이 해결하는 동시성 문제를 설명"],
-  ["5.producer-consumer-backpressure.md", "생산자-소비자 모델에서 발생하는 backpressure문제와 해결"],
-  ["6.summary.md", "런타임 위의 모듈 구성 설명 및 전체 문서 정리"],
+  ["1.overview.md", "1. io_uring 기반으로 구현한 Core 런타임의 전체 구조와 실행 모델을 설명"],
+  ["2.lifecycle-management.md", "2. SessionManager, IoEvent, pending_io_, SessionState가 각각 어느 생존 범위를 판단하는지 분리"],
+  ["3.buffer-management.md", "3. 수신 fast/slow path와 송신 순서 보장, 부분 송신 복구를 설명"],
+  ["4.concurrency-management.md", "4. Room 상태 순서, WorkerOutbox, Session owner ring이 해결하는 동시성 문제를 설명"],
+  ["5.producer-consumer-backpressure.md", "5. 생산자-소비자 모델에서 발생하는 backpressure문제와 해결"],
+  ["6.summary.md", "6. 런타임 위의 모듈 구성 설명 및 전체 문서 정리"],
 ]);
 
 function ensureDir(dir) {
@@ -130,8 +130,8 @@ Obsidian Vault의 Markdown 원본을 GitHub Actions에서 Quarto 문서로 렌�
 | 항목 | 링크 |
 | --- | --- |
 | 구현 저장소 | [iouring-runtime](https://github.com/mint-cocoa/iouring-runtime) |
-| 공개 문서 기준 URL | [mint-cocoa.github.io/portfolio/](https://mint-cocoa.github.io/portfolio/) |
-| 인쇄용 PDF | [ServerCore-Portfolio-chromium.pdf](downloads/ServerCore-Portfolio-chromium.pdf) |
+| 문서 URL | [mint-cocoa.github.io/portfolio/](https://mint-cocoa.github.io/portfolio/) |
+|  PDF | [ServerCore-Portfolio-jinhoo.pdf](downloads/ServerCore-Portfolio-jinhoo.pdf) |
 :::
 `;
 }
