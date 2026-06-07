@@ -5,10 +5,12 @@ const repoRoot = path.resolve(__dirname, "..");
 const contentRoot = path.join(repoRoot, "content");
 const sourceDocsDir = path.join(contentRoot, "docs");
 const sourceDiagramsDir = path.join(contentRoot, "diagrams");
+const sourceDownloadsDir = path.join(contentRoot, "downloads");
 const sourceCssPath = path.join(contentRoot, "portfolio.css");
 const buildDir = path.join(repoRoot, "generated-quarto");
 const buildDocsDir = path.join(buildDir, "docs");
 const buildDiagramsDir = path.join(buildDir, "diagrams");
+const buildDownloadsDir = path.join(buildDir, "downloads");
 const quartoOutputDir = process.env.QUARTO_OUTPUT_DIR || "../docs";
 
 const chapterSummaries = new Map([
@@ -125,6 +127,7 @@ Obsidian Vault의 Markdown 원본을 GitHub Actions에서 Quarto 문서로 렌�
 | --- | --- |
 | 구현 저장소 | [iouring-runtime](https://github.com/mint-cocoa/iouring-runtime) |
 | 공개 문서 기준 URL | [mint-cocoa.github.io/portfolio/](https://mint-cocoa.github.io/portfolio/) |
+| 인쇄용 PDF | [ServerCore-Portfolio-chromium.pdf](downloads/ServerCore-Portfolio-chromium.pdf) |
 :::
 `;
 }
@@ -137,6 +140,7 @@ function main() {
   removeDir(buildDir);
   ensureDir(buildDocsDir);
   copyDir(sourceDiagramsDir, buildDiagramsDir);
+  copyDir(sourceDownloadsDir, buildDownloadsDir);
   fs.copyFileSync(sourceCssPath, path.join(buildDir, "portfolio.css"));
 
   const files = fs
@@ -167,6 +171,7 @@ function main() {
   output-dir: ${quartoOutputDir}
   resources:
     - diagrams/
+    - downloads/
 
 website:
   title: "서버 런타임 구현 포트폴리오"
