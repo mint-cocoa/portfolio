@@ -34,5 +34,4 @@ test -f docs/docs/3.buffer-management.html
 test -f docs/docs/4.concurrency-management.html
 test -f docs/docs/5.producer-consumer-backpressure.html
 test -f docs/docs/6.summary.html
-test -f docs/docs/backend-platform-self-introduction.html
 test -f docs/diagrams/servercore-site-style/fig-servercore-proxy-backpressure-example.svg

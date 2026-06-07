@@ -13,6 +13,10 @@ const buildDiagramsDir = path.join(buildDir, "diagrams");
 const buildDownloadsDir = path.join(buildDir, "downloads");
 const quartoOutputDir = process.env.QUARTO_OUTPUT_DIR || "../docs";
 
+const excludedDocs = new Set([
+  "backend-platform-self-introduction.md",
+]);
+
 const chapterSummaries = new Map([
   ["1.overview.md", "io_uring 기반 Core가 소켓, CQE, Session을 어떻게 하나의 실행 모델로 묶는지 정리합니다."],
   ["2.lifecycle-management.md", "SessionManager, IoEvent, pending_io_, SessionState가 각각 어느 생존 범위를 판단하는지 분리합니다."],
@@ -146,6 +150,7 @@ function main() {
   const files = fs
     .readdirSync(sourceDocsDir)
     .filter((file) => file.toLowerCase().endsWith(".md"))
+    .filter((file) => !excludedDocs.has(file))
     .sort((a, b) => a.localeCompare(b, "ko"));
 
   const chapters = files.map((file) => {
