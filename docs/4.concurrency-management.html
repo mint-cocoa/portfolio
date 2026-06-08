@@ -8,7 +8,7 @@
 
 <meta name="description" content="4. Room 상태 순서, WorkerOutbox, Session owner ring이 해결하는 동시성 문제를 설명">
 
-<title>Room과 Session 직렬화 – 서버 런타임 구현 포트폴리오</title>
+<title>4. Room과 Session 직렬화 – 서버 런타임 구현 포트폴리오</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -110,7 +110,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="사이드바 전환" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../docs/1.overview.html">Docs</a></li><li class="breadcrumb-item"><a href="../docs/4.concurrency-management.html">Room과 Session 직렬화</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../docs/1.overview.html">Docs</a></li><li class="breadcrumb-item"><a href="../docs/4.concurrency-management.html">4. Room과 Session 직렬화</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="사이드바 전환" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
     </div>
@@ -134,37 +134,37 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../docs/1.overview.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">전체 구조</span></a>
+ <span class="menu-text">1. 전체 구조</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../docs/2.lifecycle-management.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">제출된 I/O와 콜백 대상 생존</span></a>
+ <span class="menu-text">2. 제출된 I/O와 콜백 대상 생존</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../docs/3.buffer-management.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">수신 버퍼</span></a>
+ <span class="menu-text">3. 수신 버퍼</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../docs/4.concurrency-management.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Room과 Session 직렬화</span></a>
+ <span class="menu-text">4. Room과 Session 직렬화</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../docs/5.producer-consumer-backpressure.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">SendQueue를 메모리 압력 측정 단위로</span></a>
+ <span class="menu-text">5. SendQueue를 메모리 압력 측정 단위로</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../docs/6.summary.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">선택 모듈로 확장한 결과</span></a>
+ <span class="menu-text">6. 선택 모듈로 확장한 결과</span></a>
   </div>
 </li>
       </ul>
@@ -189,9 +189,9 @@ ul.task-list li input[type="checkbox"] {
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../docs/1.overview.html">Docs</a></li><li class="breadcrumb-item"><a href="../docs/4.concurrency-management.html">Room과 Session 직렬화</a></li></ol></nav>
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../docs/1.overview.html">Docs</a></li><li class="breadcrumb-item"><a href="../docs/4.concurrency-management.html">4. Room과 Session 직렬화</a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title">Room과 Session 직렬화</h1>
+<h1 class="title">4. Room과 Session 직렬화</h1>
 </div>
 
 <div>
@@ -776,13 +776,13 @@ ul.task-list li input[type="checkbox"] {
   </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="../docs/3.buffer-management.html" class="pagination-link" aria-label="수신 버퍼">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">수신 버퍼</span>
+      <a href="../docs/3.buffer-management.html" class="pagination-link" aria-label="3. 수신 버퍼">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">3. 수신 버퍼</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../docs/5.producer-consumer-backpressure.html" class="pagination-link" aria-label="SendQueue를 메모리 압력 측정 단위로">
-        <span class="nav-page-text">SendQueue를 메모리 압력 측정 단위로</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="../docs/5.producer-consumer-backpressure.html" class="pagination-link" aria-label="5. SendQueue를 메모리 압력 측정 단위로">
+        <span class="nav-page-text">5. SendQueue를 메모리 압력 측정 단위로</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>
