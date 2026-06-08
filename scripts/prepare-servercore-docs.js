@@ -164,7 +164,8 @@ function main() {
 
   chapters.forEach((chapter, index) => {
     const body = convertObsidianEmbeds(normalizeMarkdownForQmd(chapter.markdown));
-    const qmd = `${frontMatter(chapter.title, index + 1, chapter.description)}${body}\n`;
+    const numberedTitle = `${index + 1}. ${chapter.title.replace(/^\d+\.\s*/, "")}`;
+    const qmd = `${frontMatter(numberedTitle, index + 1, chapter.description)}${body}\n`;
     fs.writeFileSync(path.join(buildDocsDir, `${chapter.stem}.qmd`), qmd, "utf8");
   });
 
