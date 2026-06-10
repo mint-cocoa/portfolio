@@ -62,10 +62,11 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#대표-워크로드-runtimeweb-dropapp" id="toc-대표-워크로드-runtimeweb-dropapp" class="nav-link" data-scroll-target="#대표-워크로드-runtimeweb-dropapp"><span class="header-section-number">6</span> 대표 워크로드: RuntimeWeb dropapp</a></li>
   <li><a href="#관측성-구성" id="toc-관측성-구성" class="nav-link" data-scroll-target="#관측성-구성"><span class="header-section-number">7</span> 관측성 구성</a></li>
   <li><a href="#장애-대응-및-운영-판단-사례" id="toc-장애-대응-및-운영-판단-사례" class="nav-link" data-scroll-target="#장애-대응-및-운영-판단-사례"><span class="header-section-number">8</span> 장애 대응 및 운영 판단 사례</a></li>
-  <li><a href="#결과물" id="toc-결과물" class="nav-link" data-scroll-target="#결과물"><span class="header-section-number">9</span> 결과물</a></li>
-  <li><a href="#관련-레포와-문서" id="toc-관련-레포와-문서" class="nav-link" data-scroll-target="#관련-레포와-문서"><span class="header-section-number">10</span> 관련 레포와 문서</a></li>
-  <li><a href="#면접에서-설명할-포인트" id="toc-면접에서-설명할-포인트" class="nav-link" data-scroll-target="#면접에서-설명할-포인트"><span class="header-section-number">11</span> 면접에서 설명할 포인트</a></li>
-  <li><a href="#다음-문서" id="toc-다음-문서" class="nav-link" data-scroll-target="#다음-문서"><span class="header-section-number">12</span> 다음 문서</a></li>
+  <li><a href="#운영-검증-스냅샷" id="toc-운영-검증-스냅샷" class="nav-link" data-scroll-target="#운영-검증-스냅샷"><span class="header-section-number">9</span> 운영 검증 스냅샷</a></li>
+  <li><a href="#결과물" id="toc-결과물" class="nav-link" data-scroll-target="#결과물"><span class="header-section-number">10</span> 결과물</a></li>
+  <li><a href="#관련-레포와-문서" id="toc-관련-레포와-문서" class="nav-link" data-scroll-target="#관련-레포와-문서"><span class="header-section-number">11</span> 관련 레포와 문서</a></li>
+  <li><a href="#면접에서-설명할-포인트" id="toc-면접에서-설명할-포인트" class="nav-link" data-scroll-target="#면접에서-설명할-포인트"><span class="header-section-number">12</span> 면접에서 설명할 포인트</a></li>
+  <li><a href="#다음-문서" id="toc-다음-문서" class="nav-link" data-scroll-target="#다음-문서"><span class="header-section-number">13</span> 다음 문서</a></li>
   </ul>
 </nav>
 </div>
@@ -136,8 +137,12 @@ ul.task-list li input[type="checkbox"] {
     Repo --&gt; Argo[Argo CD]
     Argo --&gt; Home[home k3s staging]
     Argo --&gt; OKE[OCI OKE production]
+    Runtime[iouring-runtime] --&gt; GHCR[GHCR dropapp image]
+    GHCR --&gt; Repo
     Home --&gt; Promote[manual promotion workflow]
     Promote --&gt; OKE
+    OKE --&gt; Ingress[ingress-nginx / cert-manager]
+    Ingress --&gt; Public[drop.mintcocoa.dev]
     OKE --&gt; Obs[Prometheus / Grafana / Loki / Tempo]
 </pre>
 </div>
@@ -183,7 +188,7 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 <tr class="odd">
 <td>Public endpoint</td>
-<td><code>https://drop.mintcocoa.cc</code></td>
+<td><code>https://drop.mintcocoa.dev</code></td>
 </tr>
 <tr class="even">
 <td>Observability</td>
@@ -271,6 +276,7 @@ ul.task-list li input[type="checkbox"] {
 <li>민감정보 패턴 검사</li>
 </ol>
 <p>production 반영은 <code>Promote home overlay to OKE</code> 수동 workflow로 분리했습니다. 홈랩에서 먼저 검증하고, 같은 이미지 태그를 OKE overlay에 반영하는 구조입니다.</p>
+<p><code>iouring-runtime</code> 저장소의 <code>dropapp image</code> workflow는 <code>ghcr.io/mint-cocoa/dropapp</code> 이미지를 Git SHA 태그로 빌드하고, <code>mintcocoa-ops</code>의 home overlay 이미지 태그를 자동 갱신합니다. production 반영은 별도 <code>Promote home overlay to OKE</code> workflow로 같은 이미지 태그를 OKE overlay에 승격합니다.</p>
 </section>
 <section id="대표-워크로드-runtimeweb-dropapp" class="level2" data-number="6">
 <h2 data-number="6" class="anchored" data-anchor-id="대표-워크로드-runtimeweb-dropapp"><span class="header-section-number">6</span> 대표 워크로드: RuntimeWeb dropapp</h2>
@@ -293,7 +299,7 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 <tr class="odd">
 <td>OKE 공개</td>
-<td><code>prod-services</code>, Ingress <code>drop.mintcocoa.cc</code></td>
+<td><code>prod-services</code>, Ingress <code>drop.mintcocoa.dev</code></td>
 </tr>
 <tr class="even">
 <td>쓰기 권한</td>
@@ -310,7 +316,7 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 <p>이 앱은 <code>RuntimeWeb</code> 문서에서 설명한 streaming upload, static file response, route parameter, token-protected write path, timeout/backpressure 설정을 실제 서비스 매니페스트로 연결합니다. 즉 서버 구현 포트폴리오와 DevOps 포트폴리오가 분리된 글이 아니라 하나의 배포 사례로 이어집니다.</p>
-<p>OKE 공개 경로는 <code>ingress-nginx</code>와 <code>cert-manager</code>를 GitOps Application으로 관리하고, <code>letsencrypt-prod</code> <code>ClusterIssuer</code>로 TLS 인증서를 발급하는 구조입니다.</p>
+<p>OKE 공개 경로는 <code>ingress-nginx</code>와 <code>cert-manager</code>를 GitOps Application으로 관리하고, <code>letsencrypt-prod</code> <code>ClusterIssuer</code>로 TLS 인증서를 발급하는 구조입니다. 최종 공개 도메인은 HSTS preload가 적용되는 <code>.dev</code> 도메인인 <code>https://drop.mintcocoa.dev</code>로 정리했습니다.</p>
 </section>
 <section id="관측성-구성" class="level2" data-number="7">
 <h2 data-number="7" class="anchored" data-anchor-id="관측성-구성"><span class="header-section-number">7</span> 관측성 구성</h2>
@@ -393,6 +399,36 @@ Tempo /ready                      # ready</code></pre>
 <td>public OKE endpoint를 기준 접근 경로로 문서화</td>
 </tr>
 <tr class="even">
+<td>Argo CD repo-server GitHub timeout</td>
+<td>OKE Pod subnet은 public subnet이지만 Pod에는 public IP가 없어 egress가 실패</td>
+<td>NAT Gateway와 Pod subnet 전용 route table을 만들고 <code>0.0.0.0/0 -&gt; NAT Gateway</code>로 분리</td>
+</tr>
+<tr class="odd">
+<td>Argo CD private repo 인증 실패</td>
+<td>NAT 이후 GitHub에는 닿았지만 repo credential이 없어 clone 실패</td>
+<td>Argo CD repository Secret에 GitHub token을 저장하고 root app sync 성공 확인</td>
+</tr>
+<tr class="even">
+<td><code>dropapp</code> Pod readiness 실패</td>
+<td>OKE Oracle Linux 8.10 / UEK 5.15에서 <code>RuntimeDefault</code> seccomp가 <code>io_uring</code> setup을 막음</td>
+<td>OKE overlay에만 <code>seccompProfile: Unconfined</code> 적용</td>
+</tr>
+<tr class="odd">
+<td><code>io_uring</code> provided buffer ring 실패</td>
+<td>5.15 커널에서 <code>io_uring_register_buf_ring</code>이 <code>-22</code>로 실패</td>
+<td><code>iouring-runtime</code>에 compatibility recv path를 구현해 기본 accept/recv 경로로 fallback</td>
+</tr>
+<tr class="even">
+<td>TLS HTTP-01 검증 지연</td>
+<td>Cloudflare public DNS는 정상이나 OCI VCN resolver가 NXDOMAIN을 캐시</td>
+<td>CoreDNS hosts override로 임시 통과 후 <code>.dev</code> 전환 시 override 제거</td>
+</tr>
+<tr class="odd">
+<td><code>.cc</code>와 <code>.dev</code> 도메인 혼재</td>
+<td>초기 공개 도메인과 최종 브랜드 도메인이 동시에 남아 인증서 SAN이 넓어짐</td>
+<td>Ingress/TLS에서 <code>.cc</code> 제거, <code>drop.mintcocoa.dev</code> 단독 인증서로 재발급</td>
+</tr>
+<tr class="even">
 <td>Loki 기본값 과다</td>
 <td>기본 cache 설정이 작은 클러스터에 과함</td>
 <td>SingleBinary, cache 비활성화, 제한된 retention으로 조정</td>
@@ -417,10 +453,30 @@ Tempo /ready                      # ready</code></pre>
 <li>OKE Argo CD가 home k3s를 원격 관리하는 구조를 목표로 한다.</li>
 <li>토큰, kubeconfig, Grafana 비밀번호는 Git에 저장하지 않는다.</li>
 <li>외부 공개는 명시적으로 필요한 앱만 Ingress로 열고, 쓰기 권한은 Secret 기반으로 둔다.</li>
+<li>production 공개 도메인은 <code>drop.mintcocoa.dev</code>로 단일화하고, TLS 인증서 SAN도 필요한 host만 포함한다.</li>
 </ul>
 </section>
-<section id="결과물" class="level2" data-number="9">
-<h2 data-number="9" class="anchored" data-anchor-id="결과물"><span class="header-section-number">9</span> 결과물</h2>
+<section id="운영-검증-스냅샷" class="level2" data-number="9">
+<h2 data-number="9" class="anchored" data-anchor-id="운영-검증-스냅샷"><span class="header-section-number">9</span> 운영 검증 스냅샷</h2>
+<p>최종 배포 상태는 다음 기준으로 확인했습니다.</p>
+<pre class="text"><code>prod-dropapp Argo CD Application: Synced / Healthy
+dropapp Deployment: 2/2 Ready
+Ingress host: drop.mintcocoa.dev
+Certificate: dropapp-tls Ready=True
+TLS SAN: DNS:drop.mintcocoa.dev
+Health check: https://drop.mintcocoa.dev/healthz -&gt; HTTP/2 200, ok
+Image: ghcr.io/mint-cocoa/dropapp:4f86a2ed21bef5a477f1be027eaeb19fcc8c5691</code></pre>
+<p>운영 저장소의 주요 변경 이력도 배포 증거로 남겼습니다.</p>
+<pre class="text"><code>46875b7 Remove dropapp mintcocoa.cc host
+752ad1b Add mintcocoa.dev host for dropapp
+d98fc1c Allow dropapp seccomp for io_uring on OKE
+f6cb7c8 Promote dropapp to ghcr.io/mint-cocoa/dropapp:4f86a2ed21bef5a477f1be027eaeb19fcc8c5691</code></pre>
+<p>애플리케이션 저장소에는 OKE 커널 제약을 반영한 compatibility path를 남겼습니다.</p>
+<pre class="text"><code>4f86a2e Add io_uring compatibility recv path
+09a2bba Update dropapp GitOps deployment workflow</code></pre>
+</section>
+<section id="결과물" class="level2" data-number="10">
+<h2 data-number="10" class="anchored" data-anchor-id="결과물"><span class="header-section-number">10</span> 결과물</h2>
 <ul>
 <li>OKE production kubeconfig 구성과 접근 검증</li>
 <li>ServiceAccount 기반 외부 수동 클라이언트 접근 경로 정리</li>
@@ -428,12 +484,15 @@ Tempo /ready                      # ready</code></pre>
 <li>home k3s -&gt; OKE production 승격 파이프라인 설계</li>
 <li>C++ <code>RuntimeWeb</code> 기반 <code>dropapp</code>을 홈랩 검증 후 OKE production Ingress로 공개하는 구조 추가</li>
 <li><code>ingress-nginx</code>, <code>cert-manager</code>, <code>letsencrypt-prod</code> GitOps 구성 추가</li>
+<li><code>drop.mintcocoa.dev</code> HTTPS 공개와 Let’s Encrypt 인증서 자동 발급 검증</li>
+<li>OKE Pod egress용 NAT Gateway와 Pod subnet route table 분리</li>
+<li>OKE 커널/seccomp 제약에 맞춘 <code>io_uring</code> runtime compatibility path 구현</li>
 <li>metrics/logs/traces 관측 스택 설치 및 동작 검증</li>
 <li>bootstrap, access, observability, rebuild runbook 작성</li>
 </ul>
 </section>
-<section id="관련-레포와-문서" class="level2" data-number="10">
-<h2 data-number="10" class="anchored" data-anchor-id="관련-레포와-문서"><span class="header-section-number">10</span> 관련 레포와 문서</h2>
+<section id="관련-레포와-문서" class="level2" data-number="11">
+<h2 data-number="11" class="anchored" data-anchor-id="관련-레포와-문서"><span class="header-section-number">11</span> 관련 레포와 문서</h2>
 <div class="repo-links">
 <table class="caption-top table">
 <thead>
@@ -471,8 +530,8 @@ Tempo /ready                      # ready</code></pre>
 </table>
 </div>
 </section>
-<section id="면접에서-설명할-포인트" class="level2" data-number="11">
-<h2 data-number="11" class="anchored" data-anchor-id="면접에서-설명할-포인트"><span class="header-section-number">11</span> 면접에서 설명할 포인트</h2>
+<section id="면접에서-설명할-포인트" class="level2" data-number="12">
+<h2 data-number="12" class="anchored" data-anchor-id="면접에서-설명할-포인트"><span class="header-section-number">12</span> 면접에서 설명할 포인트</h2>
 <p>이 프로젝트는 완성된 SaaS 운영팀 수준의 대규모 플랫폼이라기보다, 작은 클러스터에서 운영자가 직접 결정해야 하는 문제를 끝까지 다룬 사례입니다.</p>
 <ul>
 <li>어떤 endpoint를 production 접근 기준으로 삼을지 결정</li>
@@ -481,10 +540,11 @@ Tempo /ready                      # ready</code></pre>
 <li>GitOps repo를 기존 kubeadm cloud 기준에서 OKE production 기준으로 재작성</li>
 <li>home과 production을 섞지 않고 promotion 흐름으로 분리</li>
 <li>직접 만든 <code>io_uring</code> 기반 앱을 컨테이너, GitOps, Ingress, TLS, 로그/메트릭까지 연결</li>
+<li>네트워크, DNS, 인증서, 컨테이너 런타임 제약을 실제 장애 로그에서 원인 분리하고 코드와 인프라 양쪽으로 해결</li>
 </ul>
 </section>
-<section id="다음-문서" class="level2" data-number="12">
-<h2 data-number="12" class="anchored" data-anchor-id="다음-문서"><span class="header-section-number">12</span> 다음 문서</h2>
+<section id="다음-문서" class="level2" data-number="13">
+<h2 data-number="13" class="anchored" data-anchor-id="다음-문서"><span class="header-section-number">13</span> 다음 문서</h2>
 <div class="next-docs">
 <p><a href="../index.html">포트폴리오 문서 인덱스</a> · <a href="DevOpsPortfolio.html">홈랩 DevOps 포트폴리오</a> · <a href="OpsDashboard.html">Live Ops Dashboard</a></p>
 </div>
