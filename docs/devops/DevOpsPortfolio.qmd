@@ -28,7 +28,7 @@ GitHub Actions, GHCR, GitOps, Argo CD로 commit 기반 배포 흐름 구성
 ::: {.summary-card}
 **C++ Edge**
 
-직접 만든 C++ 서버 엔진 위에 정적 파일 서버와 reverse proxy 경로 구현
+RuntimeWeb 기반 정적 파일 서버와 reverse proxy 경로 구성
 :::
 
 ::: {.summary-card}
@@ -40,10 +40,9 @@ GitHub Actions, GHCR, GitOps, Argo CD로 commit 기반 배포 흐름 구성
 
 ## 개요
 
-이 문서는 직접 만든 C++ `io_uring` 서버 엔진 기반 서비스를 실제 홈랩 환경에
-배포하고 운영한 과정을 정리한 문서입니다. 단순히 서버를 구현하는 데서 끝내지 않고,
-컨테이너 이미지 빌드, GitOps 배포, Kubernetes Ingress, persistent storage,
-관측성까지 이어지는 운영 흐름을 구성했습니다.
+이 문서는 C++ `io_uring` Runtime 기반 서비스를 홈랩 Kubernetes 환경에 배포한
+내용을 정리한 문서입니다. 컨테이너 이미지 빌드, GitOps 배포, Kubernetes Ingress,
+persistent storage, 관측성 경로를 다룹니다.
 
 현재 공개 포트폴리오의 기준 경로는 GitHub Pages이고,
 `portfolio.mintcocoa.cc`는 같은 산출물을 홈랩 Kubernetes와 C++ `RuntimeWeb`
@@ -83,10 +82,8 @@ flowchart LR
 구성했습니다. 이 서버는 `/healthz` 같은 운영용 endpoint와 정적 파일 서빙을 담당하고,
 컨테이너 이미지로 빌드되어 Kubernetes workload로 배포됩니다.
 
-또한 reverse proxy 경로를 별도로 구현해 개인 도메인으로 들어온 트래픽을
-Kubernetes Ingress, local service, RuntimeWeb service로 분기하는 구조를 검증했습니다.
-즉, C++ 서버 엔진이 단순 예제 코드가 아니라 홈랩 서비스의 edge/runtime 구성 요소로
-사용될 수 있는지 확인한 작업입니다.
+또한 reverse proxy 경로를 별도로 두어 개인 도메인으로 들어온 트래픽을
+Kubernetes Ingress, local service, RuntimeWeb service로 분기했습니다.
 
 ## 배포 흐름
 
@@ -103,7 +100,7 @@ Kubernetes Ingress, local service, RuntimeWeb service로 분기하는 구조를 
 
 | 영역 | 역할 |
 |---|---|
-| Management | Terraform, Kubespray, kubectl, Helm, GitOps bootstrap |
+| Management | kubectl, Helm, GitOps 운영 진입점 |
 | Workload | Kubernetes 위에서 portfolio, monitoring 등 workload 실행 |
 | Delivery | GitHub Actions, GHCR, Argo CD가 이미지와 배포 상태 관리 |
 | Storage | NAS/NFS 기반 PVC 제공 |
@@ -115,10 +112,10 @@ Kubernetes Ingress, local service, RuntimeWeb service로 분기하는 구조를 
 
 대시보드: [Live Ops Dashboard](OpsDashboard.html)
 
-## 검증한 내용
+## 확인한 내용
 
 ::: {.evidence-block}
-| 검증 항목 | 확인한 내용 |
+| 항목 | 확인한 내용 |
 |---|---|
 | GitOps 배포 | GitHub Actions가 image push 후 GitOps image tag를 갱신 |
 | Argo CD 동기화 | Application이 `Synced` / `Healthy` 상태로 수렴 |
@@ -127,7 +124,7 @@ Kubernetes Ingress, local service, RuntimeWeb service로 분기하는 구조를 
 | 관측성 | Prometheus/Grafana workload와 Ops Dashboard 동작 |
 :::
 
-아래 캡처는 실제 홈랩 클러스터와 배포 파이프라인에서 수집한 운영 증거입니다.
+아래 캡처는 홈랩 클러스터와 배포 파이프라인에서 수집한 화면입니다.
 민감한 token, secret, credential 원문은 포함하지 않았습니다.
 
 ![](assets/argocd-applications-synced.png)
@@ -146,13 +143,13 @@ Kubernetes Ingress, local service, RuntimeWeb service로 분기하는 구조를 
 - GitHub Actions, GHCR, GitOps, Argo CD를 연결해 commit 기반 자동 배포 흐름을 구성했습니다.
 - 개인 도메인과 Ingress를 통해 홈랩 미러 경로를 외부에서 접근 가능하게 만들었습니다.
 - Prometheus/Grafana, NFS storage, Ops Dashboard를 붙여 운영 상태를 확인할 수 있게 했습니다.
-- 서버 구현, 배포 자동화, 운영 관측을 하나의 end-to-end 흐름으로 연결했습니다.
+- 서버 구현, 배포 자동화, 운영 관측 경로를 함께 정리했습니다.
 
 ## 남은 작업
 
 - reverse proxy virtual host mapping을 더 정리해 여러 공개 hostname을 안정적으로 분기
-- `k8s-status`, `dropapp` 같은 추가 공개 workload를 GitOps Application으로 활성화
-- Terraform state backend, SOPS/age secret, restic backup/restore smoke test 보강
+- OKE의 `dropapp` 공개 운영 결과를 홈랩 미러와 함께 비교할 수 있게 스크린샷 보강
+- SOPS/age secret 관리와 restic backup/restore smoke test 보강
 
 ## 관련 레포
 
@@ -168,6 +165,7 @@ Kubernetes Ingress, local service, RuntimeWeb service로 분기하는 구조를 
 
 ::: {.next-docs}
 [포트폴리오 문서 인덱스](../index.html) ·
+[OCI OKE 프로덕션 GitOps](OciOkeGitOpsPortfolio.html) ·
 [서버 구현 포트폴리오](../server/ServerCorePortfolio.html) ·
 [클라이언트 구현 포트폴리오](../client/ClientPortfolio.html)
 :::

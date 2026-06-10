@@ -8,7 +8,7 @@
 
 <meta name="author" content="배진후">
 
-<title>홈랩 DevOps 포트폴리오</title>
+<title>OCI OKE 프로덕션 GitOps 포트폴리오</title>
 <style>
 /* Default styles provided by pandoc.
 ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
@@ -27,20 +27,20 @@ ul.task-list li input[type="checkbox"] {
 </style>
 
 
-<script src="DevOpsPortfolio_files/libs/clipboard/clipboard.min.js"></script>
-<script src="DevOpsPortfolio_files/libs/quarto-html/quarto.js" type="module"></script>
-<script src="DevOpsPortfolio_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="DevOpsPortfolio_files/libs/quarto-html/popper.min.js"></script>
-<script src="DevOpsPortfolio_files/libs/quarto-html/tippy.umd.min.js"></script>
-<script src="DevOpsPortfolio_files/libs/quarto-html/anchor.min.js"></script>
-<link href="DevOpsPortfolio_files/libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="DevOpsPortfolio_files/libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="DevOpsPortfolio_files/libs/bootstrap/bootstrap.min.js"></script>
-<link href="DevOpsPortfolio_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="DevOpsPortfolio_files/libs/bootstrap/bootstrap-b266025aee7dee100f5553a3ab926a66.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
-<script src="DevOpsPortfolio_files/libs/quarto-diagram/mermaid.min.js"></script>
-<script src="DevOpsPortfolio_files/libs/quarto-diagram/mermaid-init.js"></script>
-<link href="DevOpsPortfolio_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
+<script src="OciOkeGitOpsPortfolio_files/libs/clipboard/clipboard.min.js"></script>
+<script src="OciOkeGitOpsPortfolio_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="OciOkeGitOpsPortfolio_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="OciOkeGitOpsPortfolio_files/libs/quarto-html/popper.min.js"></script>
+<script src="OciOkeGitOpsPortfolio_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="OciOkeGitOpsPortfolio_files/libs/quarto-html/anchor.min.js"></script>
+<link href="OciOkeGitOpsPortfolio_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="OciOkeGitOpsPortfolio_files/libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="OciOkeGitOpsPortfolio_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="OciOkeGitOpsPortfolio_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="OciOkeGitOpsPortfolio_files/libs/bootstrap/bootstrap-b266025aee7dee100f5553a3ab926a66.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="OciOkeGitOpsPortfolio_files/libs/quarto-diagram/mermaid.min.js"></script>
+<script src="OciOkeGitOpsPortfolio_files/libs/quarto-diagram/mermaid-init.js"></script>
+<link href="OciOkeGitOpsPortfolio_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
 
 
 <link rel="stylesheet" href="../portfolio.css">
@@ -55,16 +55,17 @@ ul.task-list li input[type="checkbox"] {
    
   <ul>
   <li><a href="#핵심-요약" id="toc-핵심-요약" class="nav-link active" data-scroll-target="#핵심-요약"><span class="header-section-number">1</span> 핵심 요약</a></li>
-  <li><a href="#개요" id="toc-개요" class="nav-link" data-scroll-target="#개요"><span class="header-section-number">2</span> 개요</a></li>
-  <li><a href="#전체-구조" id="toc-전체-구조" class="nav-link" data-scroll-target="#전체-구조"><span class="header-section-number">3</span> 전체 구조</a></li>
-  <li><a href="#c-서버-엔진과-연결한-부분" id="toc-c-서버-엔진과-연결한-부분" class="nav-link" data-scroll-target="#c-서버-엔진과-연결한-부분"><span class="header-section-number">4</span> C++ 서버 엔진과 연결한 부분</a></li>
-  <li><a href="#배포-흐름" id="toc-배포-흐름" class="nav-link" data-scroll-target="#배포-흐름"><span class="header-section-number">5</span> 배포 흐름</a></li>
-  <li><a href="#운영-구성" id="toc-운영-구성" class="nav-link" data-scroll-target="#운영-구성"><span class="header-section-number">6</span> 운영 구성</a></li>
-  <li><a href="#확인한-내용" id="toc-확인한-내용" class="nav-link" data-scroll-target="#확인한-내용"><span class="header-section-number">7</span> 확인한 내용</a></li>
-  <li><a href="#결과" id="toc-결과" class="nav-link" data-scroll-target="#결과"><span class="header-section-number">8</span> 결과</a></li>
-  <li><a href="#남은-작업" id="toc-남은-작업" class="nav-link" data-scroll-target="#남은-작업"><span class="header-section-number">9</span> 남은 작업</a></li>
-  <li><a href="#관련-레포" id="toc-관련-레포" class="nav-link" data-scroll-target="#관련-레포"><span class="header-section-number">10</span> 관련 레포</a></li>
-  <li><a href="#다음-문서" id="toc-다음-문서" class="nav-link" data-scroll-target="#다음-문서"><span class="header-section-number">11</span> 다음 문서</a></li>
+  <li><a href="#프로젝트-배경" id="toc-프로젝트-배경" class="nav-link" data-scroll-target="#프로젝트-배경"><span class="header-section-number">2</span> 프로젝트 배경</a></li>
+  <li><a href="#최종-구조" id="toc-최종-구조" class="nav-link" data-scroll-target="#최종-구조"><span class="header-section-number">3</span> 최종 구조</a></li>
+  <li><a href="#인프라-구축-과정" id="toc-인프라-구축-과정" class="nav-link" data-scroll-target="#인프라-구축-과정"><span class="header-section-number">4</span> 인프라 구축 과정</a></li>
+  <li><a href="#배포-자동화-방식" id="toc-배포-자동화-방식" class="nav-link" data-scroll-target="#배포-자동화-방식"><span class="header-section-number">5</span> 배포 자동화 방식</a></li>
+  <li><a href="#대표-워크로드-runtimeweb-dropapp" id="toc-대표-워크로드-runtimeweb-dropapp" class="nav-link" data-scroll-target="#대표-워크로드-runtimeweb-dropapp"><span class="header-section-number">6</span> 대표 워크로드: RuntimeWeb dropapp</a></li>
+  <li><a href="#관측성-구성" id="toc-관측성-구성" class="nav-link" data-scroll-target="#관측성-구성"><span class="header-section-number">7</span> 관측성 구성</a></li>
+  <li><a href="#장애-대응-및-운영-판단-사례" id="toc-장애-대응-및-운영-판단-사례" class="nav-link" data-scroll-target="#장애-대응-및-운영-판단-사례"><span class="header-section-number">8</span> 장애 대응 및 운영 판단 사례</a></li>
+  <li><a href="#결과물" id="toc-결과물" class="nav-link" data-scroll-target="#결과물"><span class="header-section-number">9</span> 결과물</a></li>
+  <li><a href="#관련-레포와-문서" id="toc-관련-레포와-문서" class="nav-link" data-scroll-target="#관련-레포와-문서"><span class="header-section-number">10</span> 관련 레포와 문서</a></li>
+  <li><a href="#면접에서-설명할-포인트" id="toc-면접에서-설명할-포인트" class="nav-link" data-scroll-target="#면접에서-설명할-포인트"><span class="header-section-number">11</span> 면접에서 설명할 포인트</a></li>
+  <li><a href="#다음-문서" id="toc-다음-문서" class="nav-link" data-scroll-target="#다음-문서"><span class="header-section-number">12</span> 다음 문서</a></li>
   </ul>
 </nav>
 </div>
@@ -72,8 +73,8 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">홈랩 DevOps 포트폴리오</h1>
-<p class="subtitle lead">C++ 서버 엔진 기반 서비스를 GitOps로 배포하는 홈랩 운영 구조</p>
+<h1 class="title">OCI OKE 프로덕션 GitOps 포트폴리오</h1>
+<p class="subtitle lead">홈랩 k3s에서 검증하고 Oracle Kubernetes Engine으로 승격하는 운영 파이프라인</p>
 </div>
 
 
@@ -100,27 +101,180 @@ ul.task-list li input[type="checkbox"] {
 <h2 data-number="1" class="anchored" data-anchor-id="핵심-요약"><span class="header-section-number">1</span> 핵심 요약</h2>
 <div class="summary-grid">
 <div class="summary-card">
-<p><strong>Infra</strong></p>
-<p>NAS, Mini PC, Proxmox VM을 묶어 Kubernetes 기반 홈랩 운영 환경 구성</p>
+<p><strong>Production</strong></p>
+<p>Oracle Kubernetes Engine을 프로덕션 클러스터로 잡고 kubeconfig, 접근 권한, 스토리지, 관측성을 구성</p>
 </div>
 <div class="summary-card">
-<p><strong>Delivery</strong></p>
-<p>GitHub Actions, GHCR, GitOps, Argo CD로 commit 기반 배포 흐름 구성</p>
+<p><strong>GitOps</strong></p>
+<p><code>mintcocoa-ops</code> 저장소를 OKE 중심으로 재작성하고 Argo CD Application 구조로 desired state를 선언</p>
 </div>
 <div class="summary-card">
-<p><strong>C++ Edge</strong></p>
-<p>RuntimeWeb 기반 정적 파일 서버와 reverse proxy 경로 구성</p>
+<p><strong>Pipeline</strong></p>
+<p>홈랩 k3s를 staging/dev 환경으로 두고 검증 후 OKE production overlay로 승격</p>
 </div>
 <div class="summary-card">
 <p><strong>Operate</strong></p>
-<p>개인 도메인, Ingress, Prometheus/Grafana, NFS storage까지 연결</p>
+<p>Prometheus, Grafana, Loki, Promtail, Tempo, metrics-server를 설치하고 실제 API 응답까지 검증</p>
 </div>
 </div>
 </section>
-<section id="개요" class="level2" data-number="2">
-<h2 data-number="2" class="anchored" data-anchor-id="개요"><span class="header-section-number">2</span> 개요</h2>
-<p>이 문서는 C++ <code>io_uring</code> Runtime 기반 서비스를 홈랩 Kubernetes 환경에 배포한 내용을 정리한 문서입니다. 컨테이너 이미지 빌드, GitOps 배포, Kubernetes Ingress, persistent storage, 관측성 경로를 다룹니다.</p>
-<p>현재 공개 포트폴리오의 기준 경로는 GitHub Pages이고, <code>portfolio.mintcocoa.cc</code>는 같은 산출물을 홈랩 Kubernetes와 C++ <code>RuntimeWeb</code> 컨테이너를 통해 서빙하는 미러 경로입니다.</p>
+<section id="프로젝트-배경" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="프로젝트-배경"><span class="header-section-number">2</span> 프로젝트 배경</h2>
+<p>DevOps 포트폴리오에서 보여주고 싶었던 것은 단순히 Kubernetes를 사용했다는 사실이 아니라, <strong>클러스터를 직접 연결하고, 운영 기준을 정하고, 배포 흐름을 Git으로 관리할 수 있게 만든 과정</strong>입니다.</p>
+<p>기존에는 홈랩 중심의 Kubernetes/GitOps 실험이 있었고, 새로 OCI OKE 클러스터를 프로덕션 기준 환경으로 잡았습니다. 이후 홈랩 k3s는 staging/dev 역할로 남기고, OKE는 production 역할로 분리했습니다.</p>
+</section>
+<section id="최종-구조" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="최종-구조"><span class="header-section-number">3</span> 최종 구조</h2>
+<div class="cell" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class="figure"><p></p>
+<div>
+<pre class="mermaid mermaid-js">flowchart LR
+    Dev[Developer] --&gt; Repo[mintcocoa-ops]
+    Repo --&gt; Validate[GitHub Actions render validation]
+    Repo --&gt; Argo[Argo CD]
+    Argo --&gt; Home[home k3s staging]
+    Argo --&gt; OKE[OCI OKE production]
+    Home --&gt; Promote[manual promotion workflow]
+    Promote --&gt; OKE
+    OKE --&gt; Obs[Prometheus / Grafana / Loki / Tempo]
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>영역</th>
+<th>구성</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Production cluster</td>
+<td>OCI OKE <code>home-oci-oke-cluster</code></td>
+</tr>
+<tr class="even">
+<td>Region</td>
+<td><code>ap-chuncheon-1</code></td>
+</tr>
+<tr class="odd">
+<td>Kubernetes API</td>
+<td>Public endpoint <code>168.110.124.39:6443</code></td>
+</tr>
+<tr class="even">
+<td>Home staging</td>
+<td>k3s, Argo CD cluster name <code>mintcocoa-home</code></td>
+</tr>
+<tr class="odd">
+<td>GitOps repo</td>
+<td><code>mint-cocoa/mintcocoa-ops</code></td>
+</tr>
+<tr class="even">
+<td>Portfolio workload</td>
+<td><code>dropapp</code> on C++ <code>iouring-runtime</code> <code>RuntimeWeb</code></td>
+</tr>
+<tr class="odd">
+<td>Public endpoint</td>
+<td><code>https://drop.mintcocoa.cc</code></td>
+</tr>
+<tr class="even">
+<td>Observability</td>
+<td>metrics-server, kube-prometheus-stack, Loki, Promtail, Tempo</td>
+</tr>
+<tr class="odd">
+<td>Storage</td>
+<td>OCI Block Volume <code>oci-bv</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="인프라-구축-과정" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="인프라-구축-과정"><span class="header-section-number">4</span> 인프라 구축 과정</h2>
+<p>처음에는 로컬 kubeconfig가 다른 클러스터를 가리키고 있어 OKE API에 바로 접근할 수 없었습니다. OCI CLI로 클러스터를 조회하고, OKE public endpoint를 사용하는 kubeconfig를 새로 생성해 기본 kubectl 컨텍스트를 교체했습니다.</p>
+<div class="evidence-block">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>확인 항목</th>
+<th>결과</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>OCI CLI 인증</td>
+<td>정상</td>
+</tr>
+<tr class="even">
+<td>OKE cluster</td>
+<td><code>home-oci-oke-cluster</code></td>
+</tr>
+<tr class="odd">
+<td>API endpoint</td>
+<td><code>https://168.110.124.39:6443</code></td>
+</tr>
+<tr class="even">
+<td>Node 상태</td>
+<td>arm64 worker node 3개 <code>Ready</code></td>
+</tr>
+<tr class="odd">
+<td>Kubernetes version</td>
+<td><code>v1.33.1</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>외부 모바일/GUI 클라이언트처럼 OCI CLI exec 인증을 실행할 수 없는 경우를 위해 ServiceAccount 기반 정적 kubeconfig도 만들었습니다. 다만 이 방식은 권한이 강할수록 위험하므로, Git에는 토큰을 저장하지 않고 폐기 명령까지 runbook에 남겼습니다.</p>
+</section>
+<section id="배포-자동화-방식" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="배포-자동화-방식"><span class="header-section-number">5</span> 배포 자동화 방식</h2>
+<p>운영 저장소는 OKE production을 중심으로 다시 구성했습니다.</p>
+<pre class="text"><code>mintcocoa-ops/
+  bootstrap/
+    oke-prod-root.yaml
+    home-root.yaml
+  clusters/
+    oke-prod/
+    home/
+  apps/
+    dropapp/
+      base/
+      overlays/home/
+      overlays/oke-prod/
+    whoami/
+      base/
+      overlays/home/
+      overlays/oke-prod/
+  infrastructure/
+    kubernetes/cluster-issuers/
+    kubernetes/grafana-datasources/
+  docs/
+    runbooks/</code></pre>
+<p>공통 앱은 <code>base</code>에 두고, 환경별 차이는 overlay에 둡니다.</p>
+<pre class="text"><code>apps/&lt;app&gt;/base
+  -&gt; apps/&lt;app&gt;/overlays/home
+  -&gt; apps/&lt;app&gt;/overlays/oke-prod</code></pre>
+<p>GitHub Actions는 PR이나 main push 때 다음을 검증합니다.</p>
+<ol type="1">
+<li><code>clusters/home</code> 렌더링</li>
+<li><code>clusters/oke-prod</code> 렌더링</li>
+<li><code>apps/whoami/overlays/home</code>와 <code>apps/whoami/overlays/oke-prod</code> 렌더링</li>
+<li><code>apps/dropapp/overlays/home</code>와 <code>apps/dropapp/overlays/oke-prod</code> 렌더링</li>
+<li><code>cluster-issuers</code>, Grafana datasource 렌더링</li>
+<li>민감정보 패턴 검사</li>
+</ol>
+<p>production 반영은 <code>Promote home overlay to OKE</code> 수동 workflow로 분리했습니다. 홈랩에서 먼저 검증하고, 같은 이미지 태그를 OKE overlay에 반영하는 구조입니다.</p>
+</section>
+<section id="대표-워크로드-runtimeweb-dropapp" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="대표-워크로드-runtimeweb-dropapp"><span class="header-section-number">6</span> 대표 워크로드: RuntimeWeb dropapp</h2>
+<p><code>whoami</code>는 파이프라인 증명용으로 남겨두고, 실제 포트폴리오 대표 앱은 <code>iouring-runtime</code>의 <code>dropapp</code>으로 잡았습니다. <code>dropapp</code>은 C++ <code>RuntimeWeb</code> 위에서 동작하는 TTL 파일 전송 앱입니다. 단순 hello world보다 포트폴리오에서 보여줄 수 있는 운영 표면이 넓습니다.</p>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -130,197 +284,209 @@ ul.task-list li input[type="checkbox"] {
 </thead>
 <tbody>
 <tr class="odd">
-<td>애플리케이션 이미지</td>
-<td>GHCR</td>
+<td>이미지</td>
+<td><code>ghcr.io/mint-cocoa/dropapp:&lt;git-sha&gt;</code></td>
 </tr>
 <tr class="even">
-<td>배포 제어</td>
-<td>GitHub Actions + GitOps + Argo CD</td>
+<td>Home 검증</td>
+<td><code>home-services</code>, NodePort <code>30081</code></td>
 </tr>
 <tr class="odd">
-<td>실행 환경</td>
-<td>Proxmox VM 기반 Kubernetes cluster</td>
+<td>OKE 공개</td>
+<td><code>prod-services</code>, Ingress <code>drop.mintcocoa.cc</code></td>
 </tr>
 <tr class="even">
-<td>외부 노출</td>
-<td>ingress-nginx + MetalLB + 개인 도메인</td>
+<td>쓰기 권한</td>
+<td><code>DROPAPP_AUTH_TOKEN</code> bearer token Secret</td>
 </tr>
 <tr class="odd">
-<td>저장소</td>
-<td>NAS/NFS 기반 dynamic provisioning</td>
+<td>저장 정책</td>
+<td><code>emptyDir</code> <code>1Gi</code>, <code>DROPAPP_DEFAULT_TTL_SECONDS=3600</code></td>
 </tr>
 <tr class="even">
-<td>관측성</td>
-<td>Prometheus + Grafana lightweight profile</td>
+<td>최대 업로드</td>
+<td><code>DROPAPP_MAX_UPLOAD_BYTES=104857600</code></td>
 </tr>
 </tbody>
 </table>
+<p>이 앱은 <code>RuntimeWeb</code> 문서에서 설명한 streaming upload, static file response, route parameter, token-protected write path, timeout/backpressure 설정을 실제 서비스 매니페스트로 연결합니다. 즉 서버 구현 포트폴리오와 DevOps 포트폴리오가 분리된 글이 아니라 하나의 배포 사례로 이어집니다.</p>
+<p>OKE 공개 경로는 <code>ingress-nginx</code>와 <code>cert-manager</code>를 GitOps Application으로 관리하고, <code>letsencrypt-prod</code> <code>ClusterIssuer</code>로 TLS 인증서를 발급하는 구조입니다.</p>
 </section>
-<section id="전체-구조" class="level2" data-number="3">
-<h2 data-number="3" class="anchored" data-anchor-id="전체-구조"><span class="header-section-number">3</span> 전체 구조</h2>
-<div class="cell" data-layout-align="default">
-<div class="cell-output-display">
-<div>
-<p></p><figure class="figure"><p></p>
-<div>
-<pre class="mermaid mermaid-js">flowchart LR
-    Dev[Developer PC] --&gt; GitHub[GitHub push]
-    GitHub --&gt; Actions[GitHub Actions]
-    Actions --&gt; GHCR[GHCR image]
-    Actions --&gt; GitOps[GitOps values update]
-    GitOps --&gt; Argo[Argo CD sync]
-    Argo --&gt; K8s[Kubernetes workload]
-    K8s --&gt; Ingress[ingress-nginx + MetalLB]
-    Ingress --&gt; Domain[portfolio.mintcocoa.cc]
-</pre>
-</div>
-<p></p></figure><p></p>
-</div>
-</div>
-</div>
-<p>운영 흐름은 애플리케이션 코드와 운영 매니페스트를 분리했습니다. 앱 저장소에서 이미지를 만들고, GitOps 저장소의 image tag만 갱신하면 Argo CD가 클러스터 상태를 맞추는 구조입니다. 실행 중인 이미지 tag가 Git commit SHA와 연결되므로 문제가 생겼을 때 어떤 코드가 배포되어 있는지 추적할 수 있습니다.</p>
-</section>
-<section id="c-서버-엔진과-연결한-부분" class="level2" data-number="4">
-<h2 data-number="4" class="anchored" data-anchor-id="c-서버-엔진과-연결한-부분"><span class="header-section-number">4</span> C++ 서버 엔진과 연결한 부분</h2>
-<p><code>iouring-runtime</code>의 <code>RuntimeWeb</code> 모듈을 사용해 포트폴리오 정적 파일 서버를 구성했습니다. 이 서버는 <code>/healthz</code> 같은 운영용 endpoint와 정적 파일 서빙을 담당하고, 컨테이너 이미지로 빌드되어 Kubernetes workload로 배포됩니다.</p>
-<p>또한 reverse proxy 경로를 별도로 두어 개인 도메인으로 들어온 트래픽을 Kubernetes Ingress, local service, RuntimeWeb service로 분기했습니다.</p>
-</section>
-<section id="배포-흐름" class="level2" data-number="5">
-<h2 data-number="5" class="anchored" data-anchor-id="배포-흐름"><span class="header-section-number">5</span> 배포 흐름</h2>
-<ol type="1">
-<li><code>portfolio</code> 또는 <code>iouring-runtime</code> 저장소에 변경을 push합니다.</li>
-<li>GitHub Actions가 문서를 렌더링하고 컨테이너 이미지를 빌드합니다.</li>
-<li>이미지는 <code>ghcr.io/mint-cocoa/&lt;app&gt;:&lt;GITHUB_SHA&gt;</code> 형식으로 push됩니다.</li>
-<li>GitOps 저장소의 Helm values image tag를 같은 SHA로 갱신합니다.</li>
-<li>Argo CD가 변경을 감지해 Kubernetes workload를 동기화합니다.</li>
-</ol>
-<p>이 구조 덕분에 수동으로 서버에 접속해 파일을 덮어쓰지 않고, Git commit을 기준으로 배포와 롤백 경로를 관리할 수 있습니다.</p>
-</section>
-<section id="운영-구성" class="level2" data-number="6">
-<h2 data-number="6" class="anchored" data-anchor-id="운영-구성"><span class="header-section-number">6</span> 운영 구성</h2>
+<section id="관측성-구성" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="관측성-구성"><span class="header-section-number">7</span> 관측성 구성</h2>
+<p>OKE 클러스터에는 운영 확인을 위해 다음 스택을 구성했습니다.</p>
 <table class="caption-top table">
 <thead>
 <tr class="header">
-<th>영역</th>
+<th>구성요소</th>
 <th>역할</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>Management</td>
-<td>kubectl, Helm, GitOps 운영 진입점</td>
+<td>metrics-server</td>
+<td><code>kubectl top</code>과 기본 리소스 메트릭</td>
 </tr>
 <tr class="even">
-<td>Workload</td>
-<td>Kubernetes 위에서 portfolio, monitoring 등 workload 실행</td>
+<td>Prometheus</td>
+<td>cluster/workload metrics 수집</td>
 </tr>
 <tr class="odd">
-<td>Delivery</td>
-<td>GitHub Actions, GHCR, Argo CD가 이미지와 배포 상태 관리</td>
+<td>Grafana</td>
+<td>dashboard와 datasource 통합</td>
 </tr>
 <tr class="even">
-<td>Storage</td>
-<td>NAS/NFS 기반 PVC 제공</td>
+<td>Alertmanager</td>
+<td>알림 경로 준비</td>
 </tr>
 <tr class="odd">
-<td>Observability</td>
-<td>Prometheus와 Grafana로 cluster/workload 상태 확인</td>
+<td>Loki</td>
+<td>로그 저장</td>
+</tr>
+<tr class="even">
+<td>Promtail</td>
+<td>node log shipping</td>
+</tr>
+<tr class="odd">
+<td>Tempo</td>
+<td>trace ingest/query 준비</td>
 </tr>
 </tbody>
 </table>
-<p>스토리지는 NFS provisioner를 통해 PVC 요청 시 PV가 자동 생성되도록 구성했습니다. 관측성은 홈랩 규모에 맞춰 Prometheus와 Grafana를 가볍게 분리 구성했고, 운영 대시보드는 별도 read-only Ops API를 통해 Prometheus와 Proxmox 상태를 읽습니다.</p>
-<p>대시보드: <a href="OpsDashboard.html">Live Ops Dashboard</a></p>
+<p>설치 후 단순히 Pod가 떴는지만 본 것이 아니라, 실제 API 응답까지 확인했습니다.</p>
+<pre class="text"><code>kubectl top nodes                 # 성공
+Prometheus /api/v1/query?query=up # 성공
+Loki /loki/api/v1/labels          # 성공
+Tempo /ready                      # ready</code></pre>
+<p>OCI Block Volume은 최소 프로비저닝 단위 때문에 요청값보다 큰 <code>50Gi</code> PVC가 생성되는 특성이 있었습니다. 이 점은 GitOps values와 운영 문서에 반영했습니다.</p>
 </section>
-<section id="확인한-내용" class="level2" data-number="7">
-<h2 data-number="7" class="anchored" data-anchor-id="확인한-내용"><span class="header-section-number">7</span> 확인한 내용</h2>
+<section id="장애-대응-및-운영-판단-사례" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="장애-대응-및-운영-판단-사례"><span class="header-section-number">8</span> 장애 대응 및 운영 판단 사례</h2>
 <div class="evidence-block">
 <table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
 <thead>
 <tr class="header">
-<th>항목</th>
-<th>확인한 내용</th>
+<th>상황</th>
+<th>원인</th>
+<th>조치</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>GitOps 배포</td>
-<td>GitHub Actions가 image push 후 GitOps image tag를 갱신</td>
+<td>기본 kubeconfig 접속 실패</td>
+<td>기존 context가 <code>172.30.1.27:6443</code> 내부 주소를 바라봄</td>
+<td>OCI OKE public endpoint kubeconfig 생성 후 기본 context 교체</td>
 </tr>
 <tr class="even">
-<td>Argo CD 동기화</td>
-<td>Application이 <code>Synced</code> / <code>Healthy</code> 상태로 수렴</td>
+<td>외부 클라이언트 인증 제약</td>
+<td>모바일 앱은 <code>oci ce cluster generate-token</code> 실행 불가</td>
+<td>ServiceAccount token 방식 kubeconfig 별도 생성</td>
 </tr>
 <tr class="odd">
-<td>Ingress 노출</td>
-<td><code>portfolio.mintcocoa.cc</code>에서 홈랩 미러 경로 응답</td>
+<td>Bastion 경로 오해 가능성</td>
+<td>WireGuard VM은 있었지만 OKE VCN과 peering/route 없음</td>
+<td>public OKE endpoint를 기준 접근 경로로 문서화</td>
 </tr>
 <tr class="even">
-<td>Storage</td>
-<td>NFS 기반 PVC/PV가 <code>Bound</code> 상태로 유지</td>
+<td>Loki 기본값 과다</td>
+<td>기본 cache 설정이 작은 클러스터에 과함</td>
+<td>SingleBinary, cache 비활성화, 제한된 retention으로 조정</td>
 </tr>
 <tr class="odd">
-<td>관측성</td>
-<td>Prometheus/Grafana workload와 Ops Dashboard 동작</td>
+<td>Grafana password 평문 위험</td>
+<td>초기 values에 임시 비밀번호가 남을 수 있음</td>
+<td>Kubernetes Secret 참조 방식으로 전환</td>
+</tr>
+<tr class="even">
+<td>공개 업로드 악용 가능성</td>
+<td>파일 전송 앱을 인터넷에 공개하면 쓰기 경로가 공격 표면이 됨</td>
+<td>업로드/삭제는 bearer token으로 보호하고 파일은 TTL과 <code>emptyDir</code> 크기 제한으로 회수</td>
 </tr>
 </tbody>
 </table>
 </div>
-<p>아래 캡처는 홈랩 클러스터와 배포 파이프라인에서 수집한 화면입니다. 민감한 token, secret, credential 원문은 포함하지 않았습니다.</p>
-<p><img src="assets/argocd-applications-synced.png" class="img-fluid"></p>
-<p><img src="assets/kubectl-nodes-wide.png" class="img-fluid"></p>
-<p><img src="assets/portfolio-live-domain.png" class="img-fluid"></p>
-<p><img src="assets/github-actions-portfolio-image.png" class="img-fluid"></p>
-<p><img src="assets/monitoring-pods-pvc.png" class="img-fluid"></p>
-</section>
-<section id="결과" class="level2" data-number="8">
-<h2 data-number="8" class="anchored" data-anchor-id="결과"><span class="header-section-number">8</span> 결과</h2>
+<p>이 과정에서 운영 기준도 함께 정했습니다.</p>
 <ul>
-<li>C++ 서버 엔진 기반 포트폴리오 서버를 컨테이너 이미지로 빌드하고 Kubernetes에 배포했습니다.</li>
-<li>GitHub Actions, GHCR, GitOps, Argo CD를 연결해 commit 기반 자동 배포 흐름을 구성했습니다.</li>
-<li>개인 도메인과 Ingress를 통해 홈랩 미러 경로를 외부에서 접근 가능하게 만들었습니다.</li>
-<li>Prometheus/Grafana, NFS storage, Ops Dashboard를 붙여 운영 상태를 확인할 수 있게 했습니다.</li>
-<li>서버 구현, 배포 자동화, 운영 관측 경로를 함께 정리했습니다.</li>
+<li>production 서비스는 홈랩에 의존하지 않는다.</li>
+<li>홈랩은 staging/dev와 복구 연습 환경으로 둔다.</li>
+<li>OKE Argo CD가 home k3s를 원격 관리하는 구조를 목표로 한다.</li>
+<li>토큰, kubeconfig, Grafana 비밀번호는 Git에 저장하지 않는다.</li>
+<li>외부 공개는 명시적으로 필요한 앱만 Ingress로 열고, 쓰기 권한은 Secret 기반으로 둔다.</li>
 </ul>
 </section>
-<section id="남은-작업" class="level2" data-number="9">
-<h2 data-number="9" class="anchored" data-anchor-id="남은-작업"><span class="header-section-number">9</span> 남은 작업</h2>
+<section id="결과물" class="level2" data-number="9">
+<h2 data-number="9" class="anchored" data-anchor-id="결과물"><span class="header-section-number">9</span> 결과물</h2>
 <ul>
-<li>reverse proxy virtual host mapping을 더 정리해 여러 공개 hostname을 안정적으로 분기</li>
-<li>OKE의 <code>dropapp</code> 공개 운영 결과를 홈랩 미러와 함께 비교할 수 있게 스크린샷 보강</li>
-<li>SOPS/age secret 관리와 restic backup/restore smoke test 보강</li>
+<li>OKE production kubeconfig 구성과 접근 검증</li>
+<li>ServiceAccount 기반 외부 수동 클라이언트 접근 경로 정리</li>
+<li><code>mintcocoa-ops</code> 저장소를 OKE production 중심 GitOps 구조로 재작성</li>
+<li>home k3s -&gt; OKE production 승격 파이프라인 설계</li>
+<li>C++ <code>RuntimeWeb</code> 기반 <code>dropapp</code>을 홈랩 검증 후 OKE production Ingress로 공개하는 구조 추가</li>
+<li><code>ingress-nginx</code>, <code>cert-manager</code>, <code>letsencrypt-prod</code> GitOps 구성 추가</li>
+<li>metrics/logs/traces 관측 스택 설치 및 동작 검증</li>
+<li>bootstrap, access, observability, rebuild runbook 작성</li>
 </ul>
 </section>
-<section id="관련-레포" class="level2" data-number="10">
-<h2 data-number="10" class="anchored" data-anchor-id="관련-레포"><span class="header-section-number">10</span> 관련 레포</h2>
+<section id="관련-레포와-문서" class="level2" data-number="10">
+<h2 data-number="10" class="anchored" data-anchor-id="관련-레포와-문서"><span class="header-section-number">10</span> 관련 레포와 문서</h2>
 <div class="repo-links">
 <table class="caption-top table">
 <thead>
 <tr class="header">
-<th>레포</th>
+<th>레포/문서</th>
 <th>역할</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td><a href="https://github.com/mint-cocoa/iouring-runtime">iouring-runtime</a></td>
-<td>C++ server engine, RuntimeWeb, RuntimeProxy, RuntimeGame</td>
+<td><code>dropapp</code>과 <code>RuntimeWeb</code> 서버 구현</td>
 </tr>
 <tr class="even">
-<td><a href="https://github.com/mint-cocoa/portfolio">portfolio</a></td>
-<td>이 문서와 C++ 정적 파일 서버 이미지</td>
+<td><a href="https://github.com/mint-cocoa/mintcocoa-ops">mintcocoa-ops</a></td>
+<td>OKE production + home k3s GitOps desired state</td>
 </tr>
 <tr class="odd">
-<td><a href="https://github.com/mint-cocoa/home-k8s-gitops">home-k8s-gitops</a></td>
-<td>Helm values, Argo CD Application, cluster desired state</td>
+<td><a href="https://github.com/mint-cocoa/portfolio">portfolio</a></td>
+<td>이 포트폴리오 문서와 공개 페이지</td>
+</tr>
+<tr class="even">
+<td><a href="../server/RuntimeWebPortfolio.html">RuntimeWeb 모듈 구현</a></td>
+<td><code>dropapp</code>이 사용하는 HTTP/streaming 서버 계층</td>
+</tr>
+<tr class="odd">
+<td><a href="DevOpsPortfolio.html">홈랩 DevOps 포트폴리오</a></td>
+<td>기존 홈랩 Kubernetes 배포 사례</td>
+</tr>
+<tr class="even">
+<td><a href="OpsDashboard.html">Live Ops Dashboard</a></td>
+<td>Prometheus/Proxmox 기반 운영 대시보드</td>
 </tr>
 </tbody>
 </table>
 </div>
 </section>
-<section id="다음-문서" class="level2" data-number="11">
-<h2 data-number="11" class="anchored" data-anchor-id="다음-문서"><span class="header-section-number">11</span> 다음 문서</h2>
+<section id="면접에서-설명할-포인트" class="level2" data-number="11">
+<h2 data-number="11" class="anchored" data-anchor-id="면접에서-설명할-포인트"><span class="header-section-number">11</span> 면접에서 설명할 포인트</h2>
+<p>이 프로젝트는 완성된 SaaS 운영팀 수준의 대규모 플랫폼이라기보다, 작은 클러스터에서 운영자가 직접 결정해야 하는 문제를 끝까지 다룬 사례입니다.</p>
+<ul>
+<li>어떤 endpoint를 production 접근 기준으로 삼을지 결정</li>
+<li>어떤 인증 방식이 사람/자동화/모바일 클라이언트에 맞는지 구분</li>
+<li>기본 Helm chart 값을 그대로 쓰지 않고 클러스터 크기에 맞게 조정</li>
+<li>GitOps repo를 기존 kubeadm cloud 기준에서 OKE production 기준으로 재작성</li>
+<li>home과 production을 섞지 않고 promotion 흐름으로 분리</li>
+<li>직접 만든 <code>io_uring</code> 기반 앱을 컨테이너, GitOps, Ingress, TLS, 로그/메트릭까지 연결</li>
+</ul>
+</section>
+<section id="다음-문서" class="level2" data-number="12">
+<h2 data-number="12" class="anchored" data-anchor-id="다음-문서"><span class="header-section-number">12</span> 다음 문서</h2>
 <div class="next-docs">
-<p><a href="../index.html">포트폴리오 문서 인덱스</a> · <a href="OciOkeGitOpsPortfolio.html">OCI OKE 프로덕션 GitOps</a> · <a href="../server/ServerCorePortfolio.html">서버 구현 포트폴리오</a> · <a href="../client/ClientPortfolio.html">클라이언트 구현 포트폴리오</a></p>
+<p><a href="../index.html">포트폴리오 문서 인덱스</a> · <a href="DevOpsPortfolio.html">홈랩 DevOps 포트폴리오</a> · <a href="OpsDashboard.html">Live Ops Dashboard</a></p>
 </div>
 </section>
 
